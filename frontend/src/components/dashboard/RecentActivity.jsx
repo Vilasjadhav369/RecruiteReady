@@ -1,66 +1,129 @@
-﻿import { Link } from "react-router-dom";
-import { ArrowRightIcon } from "./DashboardIcons.jsx";
+import React from "react";
+import { Link } from "react-router-dom";
+import { Card, CardHeader, CardTitle, CardContent } from "../ui/Card.jsx";
+import { AptitudeIcon, CodingIcon, MockTestIcon, ArrowRightIcon, ClockIcon } from "../ui/Icons.jsx";
+import { Badge } from "../ui/Badge.jsx";
+import { Button } from "../ui/Button.jsx";
 
 /**
- * RecentActivity — Activity feed with truthful empty state when no activity has occurred yet.
+ * RecentActivity — Activity feed reflecting real student submissions and attempts.
+ * Truthful empty state when zero activity has occurred.
  */
 function RecentActivity({ activities = [] }) {
   const hasActivity = Array.isArray(activities) && activities.length > 0;
 
-  return (
-    <div className="bg-white border border-[#D9E2EC] rounded-2xl p-6 shadow-xs flex flex-col justify-between h-full">
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-bold text-[#172B4D]">Recent Activity</h2>
-          {hasActivity && (
-            <span className="text-xs text-[#2563EB] font-semibold cursor-pointer">
-              View All
-            </span>
-          )}
-        </div>
+  const getActivityIcon = (type) => {
+    switch (type) {
+      case "aptitude":
+        return <AptitudeIcon className="w-4 h-4 text-blue-600" />;
+      case "coding":
+        return <CodingIcon className="w-4 h-4 text-violet-600" />;
+      case "mock_test":
+        return <MockTestIcon className="w-4 h-4 text-amber-600" />;
+      default:
+        return <ClockIcon className="w-4 h-4 text-slate-500" />;
+    }
+  };
 
-        {hasActivity ? (
-          <div className="divide-y divide-[#D9E2EC]/70">
-            {activities.map((item, idx) => (
-              <div key={idx} className="py-3 first:pt-0 last:pb-0 flex items-center justify-between">
-                <div>
-                  <span className="text-sm font-medium text-[#172B4D] block">{item.title}</span>
-                  <span className="text-xs text-[#52606D] block">{item.timestamp}</span>
+  const getStatusBadge = (status) => {
+    if (!status) return null;
+    const s = String(status).toLowerCase();
+    if (s === "accepted" || s === "passed" || s === "submitted") {
+      return <Badge variant="success" size="sm">{status}</Badge>;
+    }
+    if (s === "failed" || s === "wrong_answer") {
+      return <Badge variant="danger" size="sm">{status.replace(/_/g, " ")}</Badge>;
+    }
+    return <Badge variant="default" size="sm">{status.replace(/_/g, " ")}</Badge>;
+  };
+
+  const formatTimestamp = (ts) => {
+    if (!ts) return "";
+    try {
+      const d = new Date(ts);
+      return d.toLocaleDateString("en-IN", {
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      return String(ts);
+    }
+  };
+
+  return (
+    <Card className="flex flex-col justify-between h-full">
+      <div>
+        <CardHeader className="pb-3 border-b border-slate-100">
+          <div className="flex items-center justify-between w-full">
+            <CardTitle>Recent Activity</CardTitle>
+            {hasActivity && (
+              <Link
+                to="/progress"
+                className="text-xs font-semibold text-blue-600 hover:text-blue-700 no-underline"
+              >
+                View Analytics
+              </Link>
+            )}
+          </div>
+        </CardHeader>
+
+        <CardContent className="pt-3 pb-2">
+          {hasActivity ? (
+            <div className="divide-y divide-slate-100">
+              {activities.map((item, idx) => (
+                <div key={item.id || idx} className="py-3 first:pt-0 last:pb-0 flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center shrink-0 mt-0.5">
+                      {getActivityIcon(item.type)}
+                    </div>
+                    <div className="min-w-0">
+                      <span className="text-xs sm:text-sm font-semibold text-slate-900 block truncate">
+                        {item.title}
+                      </span>
+                      <span className="text-[11px] text-slate-500 block truncate mt-0.5">
+                        {item.subtitle}
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-mono block mt-1">
+                        {formatTimestamp(item.timestamp)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="shrink-0 self-center">
+                    {getStatusBadge(item.status)}
+                  </div>
                 </div>
-                {item.score && (
-                  <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded">
-                    {item.score}
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="py-8 text-center">
-            <div className="w-12 h-12 rounded-full bg-[#F8FAFC] border border-[#D9E2EC] mx-auto flex items-center justify-center text-[#9FB3C8] mb-3">
-              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <circle cx="12" cy="12" r="9" />
-                <polyline points="12 7 12 12 15 15" />
-              </svg>
+              ))}
             </div>
-            <h3 className="text-sm font-bold text-[#172B4D] mb-1">No activity yet</h3>
-            <p className="text-xs text-[#52606D] max-w-xs mx-auto leading-relaxed">
-              Your preparation activity will appear here as you practice questions and solve problems.
-            </p>
-          </div>
-        )}
+          ) : (
+            <div className="py-8 text-center space-y-2">
+              <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-400 mx-auto flex items-center justify-center">
+                <ClockIcon className="w-5 h-5" />
+              </div>
+              <h4 className="text-sm font-semibold text-slate-800">No activity yet</h4>
+              <p className="text-xs text-slate-500 max-w-xs mx-auto leading-relaxed">
+                Your recent preparation activity will appear here as you practice questions and complete tests.
+              </p>
+            </div>
+          )}
+        </CardContent>
       </div>
 
-      <div className="mt-5 pt-3.5 border-t border-[#D9E2EC]">
-        <Link
-          to="/aptitude"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#2563EB] hover:text-[#1d4ed8] no-underline"
-        >
-          <span>Start Practicing</span>
-          <ArrowRightIcon className="w-3.5 h-3.5" />
+      <div className="px-5 py-3.5 bg-slate-50/60 border-t border-slate-100 flex items-center justify-between">
+        <Link to="/aptitude" className="w-full no-underline">
+          <Button
+            variant="outline"
+            size="sm"
+            fullWidth
+            iconRight={<ArrowRightIcon className="w-3.5 h-3.5" />}
+          >
+            Start Practicing
+          </Button>
         </Link>
       </div>
-    </div>
+    </Card>
   );
 }
 

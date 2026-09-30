@@ -1,15 +1,18 @@
-﻿import { Link } from "react-router-dom";
-import ProgressBar from "../ProgressBar.jsx";
-import { ArrowRightIcon } from "./DashboardIcons.jsx";
+import React from "react";
+import { Link } from "react-router-dom";
+import { Card, CardHeader, CardTitle, CardContent } from "../ui/Card.jsx";
+import { ProgressBar } from "../ui/ProgressBar.jsx";
+import { Badge } from "../ui/Badge.jsx";
+import { ArrowRightIcon, CheckIcon } from "../ui/Icons.jsx";
+import { Button } from "../ui/Button.jsx";
 
 /**
- * ProfileCompletionCard — Calculates profile completeness dynamically from real user fields.
- * No fabricated percentages.
+ * ProfileCompletionCard — Compact card calculating profile completeness from real user fields.
+ * Strictly reflects actual database profile attributes.
  */
 function ProfileCompletionCard({ user }) {
   if (!user) return null;
 
-  // 7 key fields evaluated
   const fields = [
     { label: "First Name", completed: Boolean(user.firstName?.trim()) },
     { label: "Last Name", completed: Boolean(user.lastName?.trim()) },
@@ -26,43 +29,62 @@ function ProfileCompletionCard({ user }) {
   const isComplete = percentage === 100;
 
   return (
-    <div className="bg-white border border-[#D9E2EC] rounded-2xl p-6 shadow-xs flex flex-col justify-between">
+    <Card className="flex flex-col justify-between h-full">
       <div>
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-xs font-semibold uppercase tracking-wider text-[#52606D]">
-            Profile Status
-          </span>
-          <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${isComplete ? "bg-green-50 text-green-700" : "bg-[#E8F1FF] text-[#2563EB]"}`}>
-            {isComplete ? "Complete" : `${completedCount}/${totalCount} Fields`}
-          </span>
-        </div>
+        <CardHeader className="pb-3 border-b-0">
+          <div className="flex items-center justify-between w-full">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+              Profile
+            </span>
+            <Badge
+              variant={isComplete ? "success" : "primary"}
+              size="sm"
+              dot={isComplete}
+            >
+              {isComplete ? "Complete" : `${completedCount}/${totalCount} fields`}
+            </Badge>
+          </div>
+        </CardHeader>
 
-        <div className="flex items-baseline justify-between mb-2">
-          <h2 className="text-lg font-bold text-[#172B4D]">
-            {isComplete ? "Profile Complete" : "Complete Your Profile"}
-          </h2>
-          <span className="text-xl font-bold text-[#172B4D]">{percentage}%</span>
-        </div>
+        <CardContent className="pt-0 pb-4 space-y-3">
+          <div>
+            <div className="flex items-baseline justify-between mb-1.5">
+              <h3 className="text-sm font-semibold text-slate-900">
+                {isComplete ? "Profile Configured" : "Complete Your Profile"}
+              </h3>
+              <span className="text-sm font-bold text-slate-900 font-mono">
+                {percentage}%
+              </span>
+            </div>
 
-        <ProgressBar value={percentage} color={isComplete ? "bg-green-600" : "bg-[#2563EB]"} size="md" />
+            <ProgressBar
+              value={percentage}
+              variant={isComplete ? "success" : "primary"}
+              size="sm"
+            />
+          </div>
 
-        <p className="text-xs text-[#52606D] mt-3 leading-relaxed">
-          {isComplete
-            ? "Your academic details and target companies are all set up."
-            : "Add your college, department, and target companies to personalize your preparation journey."}
-        </p>
+          <p className="text-xs text-slate-500 leading-relaxed">
+            {isComplete
+              ? "Your academic details and target companies are configured to tailor your preparation."
+              : "Complete your profile to personalize your preparation and unlock company-specific tracks."}
+          </p>
+        </CardContent>
       </div>
 
-      <div className="mt-5 pt-4 border-t border-[#D9E2EC]">
-        <Link
-          to="/profile"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#2563EB] hover:text-[#1d4ed8] no-underline"
-        >
-          <span>{isComplete ? "Manage Profile" : "Complete Profile"}</span>
-          <ArrowRightIcon className="w-3.5 h-3.5" />
+      <div className="px-5 py-3.5 bg-slate-50/60 border-t border-slate-100 flex items-center justify-between">
+        <Link to="/profile" className="w-full no-underline">
+          <Button
+            variant="outline"
+            size="sm"
+            fullWidth
+            iconRight={<ArrowRightIcon className="w-3.5 h-3.5" />}
+          >
+            {isComplete ? "Manage Profile" : "Complete Profile"}
+          </Button>
         </Link>
       </div>
-    </div>
+    </Card>
   );
 }
 

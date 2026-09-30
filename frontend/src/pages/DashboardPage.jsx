@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { getDashboardSummary } from "../services/dashboardService.js";
 
@@ -11,14 +11,16 @@ import RecentActivity from "../components/dashboard/RecentActivity.jsx";
 import UpcomingTests from "../components/dashboard/UpcomingTests.jsx";
 import PreparationStreak from "../components/dashboard/PreparationStreak.jsx";
 import TargetCompanies from "../components/dashboard/TargetCompanies.jsx";
+import DashboardBottomCTA from "../components/dashboard/DashboardBottomCTA.jsx";
 
 // Feedback states
-import { SkeletonCard } from "../components/LoadingSkeleton.jsx";
-import ErrorState from "../components/ErrorState.jsx";
+import { SkeletonCard } from "../components/ui/Skeleton.jsx";
+import ErrorState from "../components/ui/ErrorState.jsx";
 
 /**
  * DashboardPage — Production student dashboard.
- * Purely data-driven with no fabricated statistics.
+ * Designed according to Apple + Linear + Premium University design direction.
+ * Purely data-driven with zero fabricated statistics or phantom numbers.
  */
 function DashboardPage() {
   const { user } = useAuth();
@@ -34,7 +36,7 @@ function DashboardPage() {
       setSummary(data);
     } catch (err) {
       console.error("Dashboard summary fetch failed:", err);
-      setError("We couldn't load your dashboard data. Please try again.");
+      setError("Unable to load your dashboard data. Please check your connection and try again.");
     } finally {
       setLoading(false);
     }
@@ -44,19 +46,37 @@ function DashboardPage() {
     fetchSummary();
   }, [fetchSummary]);
 
-  // Loading State
+  // Loading State with Skeletons matching exact grid layout
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="h-36 bg-white border border-[#D9E2EC] rounded-2xl animate-pulse" />
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <SkeletonCard />
-          <div className="lg:col-span-2">
+      <div className="max-w-[1240px] mx-auto space-y-6">
+        {/* Welcome skeleton */}
+        <div className="h-32 bg-white border border-slate-200 rounded-xl animate-pulse" />
+
+        {/* Top 12-col grid skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="lg:col-span-4">
             <SkeletonCard />
           </div>
+          <div className="lg:col-span-8">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 h-full">
+              <SkeletonCard />
+              <SkeletonCard />
+              <SkeletonCard />
+            </div>
+          </div>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+
+        {/* Actions skeleton */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
+
+        {/* Two-column grid skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <SkeletonCard />
           <SkeletonCard />
         </div>
@@ -67,7 +87,7 @@ function DashboardPage() {
   // Error State
   if (error) {
     return (
-      <div className="bg-white border border-[#D9E2EC] rounded-2xl p-12 my-8 shadow-xs">
+      <div className="max-w-[1240px] mx-auto py-8">
         <ErrorState message={error} onRetry={fetchSummary} />
       </div>
     );
@@ -77,34 +97,37 @@ function DashboardPage() {
   const activeUser = { ...user, ...(summary?.profile || {}) };
 
   return (
-    <div className="space-y-8 pb-12">
-      {/* 1. Welcome Banner */}
+    <div className="max-w-[1240px] mx-auto space-y-6 sm:space-y-7 pb-10">
+      {/* 1. Refined Welcome Header */}
       <WelcomeBanner firstName={activeUser.firstName} />
 
-      {/* 2. Top Row: Profile Completion & Preparation Overview */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
-        <div className="lg:col-span-1">
+      {/* 2. Top Row (12-col grid): Profile Completion (4 cols) & Preparation Overview (8 cols) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-stretch">
+        <div className="lg:col-span-4">
           <ProfileCompletionCard user={activeUser} />
         </div>
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-8">
           <PreparationOverview preparation={summary?.preparation} />
         </div>
       </div>
 
-      {/* 3. Quick Actions */}
+      {/* 3. Primary Preparation Actions: "Continue Preparing" */}
       <QuickActions />
 
-      {/* 4. Two-Column: Recent Activity & Upcoming Tests */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+      {/* 4. Two-Column Activity & Assessments Grid (6 cols / 6 cols) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6 items-stretch">
         <RecentActivity activities={summary?.recentActivity} />
         <UpcomingTests tests={summary?.upcomingTests} />
       </div>
 
-      {/* 5. Bottom Row: Streak & Target Companies */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+      {/* 5. Secondary Grid: Streak Tracker & Target Companies */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6 items-stretch">
         <PreparationStreak streakDays={0} />
         <TargetCompanies companies={activeUser.targetCompanies || []} />
       </div>
+
+      {/* 6. Restrained Bottom CTA */}
+      <DashboardBottomCTA />
     </div>
   );
 }

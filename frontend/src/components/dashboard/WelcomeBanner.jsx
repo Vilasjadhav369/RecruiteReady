@@ -1,40 +1,51 @@
-﻿import { Link } from "react-router-dom";
-import { ArrowRightIcon } from "./DashboardIcons.jsx";
+import React from "react";
+import { Link } from "react-router-dom";
+import { ArrowRightIcon, ProgressIcon } from "../ui/Icons.jsx";
+import { Button } from "../ui/Button.jsx";
 
 /**
- * WelcomeBanner — Top dashboard greeting with primary actions.
- * Uses real authenticated student first name.
+ * WelcomeBanner — Refined dashboard header greeting for authenticated students.
+ * Conforms to Apple + Linear design direction with clear typography hierarchy.
  */
 function WelcomeBanner({ firstName = "Student" }) {
   return (
-    <div className="bg-white border border-[#D9E2EC] rounded-2xl p-6 sm:p-8 shadow-xs">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-        <div className="max-w-xl">
-          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#E8F1FF] text-[#2563EB] mb-3">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#2563EB]" />
-            Placement Preparation Dashboard
+    <div className="bg-white border border-slate-200/90 rounded-xl p-6 sm:p-7 shadow-xs">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+        <div className="max-w-2xl space-y-1.5">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" aria-hidden="true" />
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+              Student Dashboard
+            </span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#172B4D] tracking-tight">
-            Good to see you, {firstName}.
+
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+            Welcome back, {firstName}
           </h1>
-          <p className="text-sm text-[#52606D] mt-1.5 leading-relaxed">
-            Keep building your preparation one step at a time. Practice questions, solve coding problems, and track your progress.
+
+          <p className="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-xl">
+            Stay consistent, track your progress, and prepare with purpose. Every practice session brings you closer to your dream placement.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 flex-shrink-0">
-          <Link
-            to="/aptitude"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-[#2563EB] hover:bg-[#1d4ed8] px-5 py-2.5 rounded-lg transition-colors no-underline shadow-xs cursor-pointer"
-          >
-            <span>Start Practicing</span>
-            <ArrowRightIcon className="w-4 h-4" />
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-start lg:self-center">
+          <Link to="/aptitude" className="no-underline">
+            <Button
+              variant="primary"
+              size="md"
+              iconRight={<ArrowRightIcon className="w-3.5 h-3.5" />}
+            >
+              Start Practicing
+            </Button>
           </Link>
-          <Link
-            to="/progress"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-[#172B4D] bg-[#F8FAFC] hover:bg-white border border-[#D9E2EC] hover:border-[#9FB3C8] px-5 py-2.5 rounded-lg transition-colors no-underline cursor-pointer"
-          >
-            <span>View Progress</span>
+          <Link to="/progress" className="no-underline">
+            <Button
+              variant="outline"
+              size="md"
+              iconLeft={<ProgressIcon className="w-4 h-4 text-slate-500" />}
+            >
+              View Progress
+            </Button>
           </Link>
         </div>
       </div>
