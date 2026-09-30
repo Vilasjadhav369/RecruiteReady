@@ -1,0 +1,101 @@
+/* Google Fonts must come FIRST before any other rules in Tailwind v4 */
+@import url("https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap");
+
+@import "tailwindcss";
+
+/* ============================================================
+   RecruitReady — Global Design System
+   Design language: Apple + Linear + Premium University
+   ============================================================ */
+
+/* ─── Design Tokens (Tailwind v4 theme) ──────────────────── */
+@theme {
+  --color-navy:        #102A43;
+  --color-royal:       #2563EB;
+  --color-light-blue:  #E8F1FF;
+  --color-bg:          #F8FAFC;
+  --color-white:       #FFFFFF;
+  --color-text:        #172B4D;
+  --color-text-muted:  #52606D;
+  --color-border:      #D9E2EC;
+  --color-gold:        #C9A227;
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* ─── Base Reset ─────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+  background-color: #F8FAFC;
+  /* Base text color — Tailwind utility classes on components take precedence */
+  color: #172B4D;
+}
+
+body {
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+/* ─── Focus Styles (Accessibility) ──────────────────────── */
+:focus-visible {
+  outline: 2px solid #2563EB;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ─── Typography Scale ───────────────────────────────────── */
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+/* Default heading color — Tailwind text-* classes override this */
+h1:not([class*="text-"]),
+h2:not([class*="text-"]),
+h3:not([class*="text-"]),
+h4:not([class*="text-"]) { color: #172B4D; }
+
+h1 { font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 800; }
+h2 { font-size: clamp(1.5rem, 3vw, 2.25rem); font-weight: 700; }
+h3 { font-size: clamp(1.125rem, 2vw, 1.5rem); font-weight: 600; }
+
+/* Only apply muted color to bare <p> tags without explicit text classes */
+p:not([class*="text-"]) {
+  color: #52606D;
+  line-height: 1.7;
+}
+
+/* Bare <a> links (prose links only) — NOT button-styled links with className */
+a:not([class]) {
+  color: #2563EB;
+  text-decoration: none;
+}
+
+/* Explicitly reset color on <a> elements that have a className.
+   This lets Tailwind text-white, text-[#...] etc. win cleanly. */
+a[class] {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Ensure <button> elements never have unexpected color inheritance */
+button {
+  color: inherit;
+}
+
+/* ─── Scrollbar ──────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #F8FAFC; }
+::-webkit-scrollbar-thumb { background: #D9E2EC; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #9FB3C8; }

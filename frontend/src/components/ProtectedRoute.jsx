@@ -1,0 +1,29 @@
+﻿import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { useAuth } from "../context/AuthContext.jsx";
+import LoadingSkeleton from "./LoadingSkeleton.jsx";
+
+/**
+ * ProtectedRoute — Ensures only authenticated users can access the route.
+ * Redirects to /login with state preserved for post-login redirect.
+ */
+function ProtectedRoute({ children }) {
+  const { isAuthenticated, loading } = useAuth();
+  const location = useLocation();
+
+  if (loading) {
+    return (
+      <div className="min-h-[70vh] flex flex-col items-center justify-center p-8">
+        <div className="w-10 h-10 border-3 border-[#2563EB]/20 border-t-[#2563EB] rounded-full animate-spin mb-4" />
+        <span className="text-sm text-[#52606D]">Verifying session...</span>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  return children ? children : <Outlet />;
+}
+
+export default ProtectedRoute;
