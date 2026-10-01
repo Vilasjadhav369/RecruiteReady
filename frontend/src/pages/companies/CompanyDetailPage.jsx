@@ -1,9 +1,33 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { getCompany } from '../../services/companyService.js';
+import {
+  PageHeader,
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  Badge,
+  Button,
+  LoadingState,
+  ErrorState,
+} from '../../components/ui/index.js';
+import {
+  ChevronLeftIcon,
+  ExternalLinkIcon,
+  AptitudeIcon,
+  CodingIcon,
+  DocumentIcon,
+  CheckCircleIcon,
+  ArrowRightIcon,
+  CompanyIcon,
+  ClockIcon,
+} from '../../components/ui/Icons.jsx';
 
 export default function CompanyDetailPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
+
   const [company, setCompany] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -12,11 +36,16 @@ export default function CompanyDetailPage() {
     const fetchCompany = async () => {
       try {
         setLoading(true);
+        setError(null);
         const data = await getCompany(id);
-        setCompany(data);
+        if (!data) {
+          setError('Company preparation profile could not be located.');
+        } else {
+          setCompany(data);
+        }
       } catch (err) {
-        console.error('Failed to load company:', err);
-        setError('Failed to load company preparation profile.');
+        console.error('Failed to load company details:', err);
+        setError(err.response?.data?.message || 'Failed to load company preparation profile.');
       } finally {
         setLoading(false);
       }
@@ -25,196 +54,450 @@ export default function CompanyDetailPage() {
   }, [id]);
 
   if (loading) {
-    return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center">
-        <div className="w-10 h-10 border-3 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mb-3"></div>
-        <p className="text-xs text-slate-500 font-medium">Loading company recruitment details...</p>
-      </div>
-    );
+    return <LoadingState message="Loading company recruitment details..." />;
   }
 
   if (error || !company) {
     return (
-      <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center max-w-md mx-auto">
-        <h3 className="text-base font-bold text-slate-900 mb-1">Company Not Found</h3>
-        <p className="text-xs text-slate-500 mb-4">{error || 'This hiring track is unavailable.'}</p>
-        <Link to="/companies" className="px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-xl">
-          Return to Companies
-        </Link>
+      <div className="max-w-md mx-auto p-6 space-y-4">
+        <ErrorState
+          title="Company Not Found"
+          message={error || 'This hiring track is currently unavailable.'}
+          onRetry={() => navigate('/companies')}
+        />
       </div>
     );
   }
 
+  const initial = company.name ? company.name.charAt(0).toUpperCase() : 'C';
+
+  const breadcrumbs = [
+    { label: 'Student Dashboard', href: '/dashboard' },
+    { label: 'Company Preparation', href: '/companies' },
+    { label: company.name },
+  ];
+
+  const headerActions = (
+    <div className="flex items-center gap-2.5 flex-wrap">
+      <Button
+        variant="outline"
+        size="sm"
+        iconLeft={<ChevronLeftIcon className="w-4 h-4" />}
+        onClick={() => navigate('/companies')}
+      >
+        All Companies
+      </Button>
+
+      {company.website && (
+        <a
+          href={company.website}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex"
+        >
+          <Button
+            variant="outline"
+            size="sm"
+            iconLeft={<ExternalLinkIcon className="w-3.5 h-3.5" />}
+          >
+            Visit Website
+          </Button>
+        </a>
+      )}
+
+      {company.careersUrl && (
+        <a
+          href={company.careersUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex"
+        >
+          <Button
+            variant="primary"
+            size="sm"
+            iconRight={<ExternalLinkIcon className="w-3.5 h-3.5" />}
+          >
+            Careers Portal
+          </Button>
+        </a>
+      )}
+    </div>
+  );
+
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
-      {/* Top Banner */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-8 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-800 font-bold text-xl shrink-0">
-            {company.name.charAt(0)}
-          </div>
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/60">
-                {company.industry}
-              </span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
-              {company.name}
-            </h1>
-          </div>
-        </div>
+    <div className="max-w-[1240px] mx-auto space-y-8">
+      {/* Top Banner / Page Header */}
+      <PageHeader
+        title={company.name}
+        description={company.description || 'Target enterprise recruitment syllabus, eligibility cutoffs, and company-specific rounds.'}
+        breadcrumbs={breadcrumbs}
+        badge={
+          <Badge variant="primary" dot>
+            {company.industry || 'Technology'}
+          </Badge>
+        }
+        actions={headerActions}
+      />
 
-        <div className="flex items-center gap-2.5">
-          {company.website && (
-            <a
-              href={company.website}
-              target="_blank"
-              rel="noreferrer"
-              className="px-4 py-2 border border-slate-200 text-slate-700 text-xs font-semibold rounded-xl hover:bg-slate-50 transition"
-            >
-              Official Website
-            </a>
-          )}
-          {company.careersUrl && (
-            <a
-              href={company.careersUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-xl shadow-xs transition"
-            >
-              Careers Portal
-            </a>
-          )}
-        </div>
-      </div>
-
+      {/* Main Two-Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        {/* Left Column: Overview & Rounds */}
+        {/* Left Column: Overview, Selection Process, Topics, Resources */}
         <div className="lg:col-span-2 space-y-6">
-          {/* About */}
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-7 shadow-xs space-y-3">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-              About the Company
-            </h2>
-            <p className="text-sm text-slate-700 leading-relaxed">
-              {company.description || 'No detailed description available.'}
-            </p>
-          </div>
-
-          {/* Selection Process */}
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-7 shadow-xs space-y-4">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-              Selection Process & Rounds
-            </h2>
-            <div className="space-y-3">
-              {(company.selectionProcess || []).map((round, idx) => (
-                <div
-                  key={idx}
-                  className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center gap-3 text-xs"
-                >
-                  <span className="w-6 h-6 rounded-lg bg-slate-900 text-white font-bold flex items-center justify-center shrink-0">
-                    {idx + 1}
-                  </span>
-                  <span className="font-semibold text-slate-800">{round}</span>
+          {/* About & Overview Card */}
+          <Card className="border-slate-200/80 shadow-xs">
+            <CardHeader className="pb-3 border-b border-slate-100 flex flex-row items-center gap-4">
+              {company.logoUrl ? (
+                <div className="w-12 h-12 rounded-xl bg-white border border-slate-200/80 p-1 flex items-center justify-center shrink-0 overflow-hidden shadow-2xs">
+                  <img
+                    src={company.logoUrl}
+                    alt={company.name}
+                    className="w-full h-full object-contain"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      if (e.target.nextSibling) {
+                        e.target.nextSibling.style.display = 'flex';
+                      }
+                    }}
+                  />
+                  <div
+                    style={{ display: 'none' }}
+                    className="w-full h-full rounded-lg bg-blue-50 text-blue-700 font-bold text-base items-center justify-center"
+                  >
+                    {initial}
+                  </div>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Preparation Topics */}
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-7 shadow-xs space-y-4">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-              Targeted Preparation Topics
-            </h2>
-
-            <div className="space-y-4 text-xs">
-              <div>
-                <span className="font-bold text-slate-800 block mb-1.5">Aptitude & Reasoning:</span>
-                <div className="flex flex-wrap gap-1.5">
-                  {(company.aptitudeTopics || []).map((t, idx) => (
-                    <span key={idx} className="px-2.5 py-1 bg-slate-100 rounded-lg text-slate-700 font-medium">
-                      {t}
-                    </span>
-                  ))}
+              ) : (
+                <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-200/60 text-blue-700 font-bold text-base flex items-center justify-center shrink-0 shadow-2xs">
+                  {initial}
                 </div>
-              </div>
+              )}
 
               <div>
-                <span className="font-bold text-slate-800 block mb-1.5">Coding & Algorithms:</span>
-                <div className="flex flex-wrap gap-1.5">
-                  {(company.codingTopics || []).map((t, idx) => (
-                    <span key={idx} className="px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-200/60 rounded-lg font-medium">
-                      {t}
-                    </span>
-                  ))}
+                <CardTitle className="text-lg">About {company.name}</CardTitle>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Industry: {company.industry || 'Enterprise'}
+                </p>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6">
+              <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">
+                {company.description || 'No detailed company description provided yet.'}
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Selection Process Stepper */}
+          <Card className="border-slate-200/80 shadow-xs">
+            <CardHeader className="pb-3 border-b border-slate-100">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base sm:text-lg">
+                  Selection Process & Interview Rounds
+                </CardTitle>
+                {company.selectionProcess && company.selectionProcess.length > 0 && (
+                  <Badge variant="default">
+                    {company.selectionProcess.length} {company.selectionProcess.length === 1 ? 'Stage' : 'Stages'}
+                  </Badge>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="p-6">
+              {company.selectionProcess && company.selectionProcess.length > 0 ? (
+                <div className="relative space-y-4">
+                  {company.selectionProcess.map((round, idx) => {
+                    const stepNumber = String(idx + 1).padStart(2, '0');
+                    return (
+                      <div
+                        key={idx}
+                        className="flex items-start gap-4 p-4 rounded-xl border border-slate-200/80 bg-slate-50/50 hover:bg-slate-50 transition-colors"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-slate-900 text-white font-mono font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
+                          {stepNumber}
+                        </div>
+                        <div className="pt-0.5">
+                          <h4 className="text-sm font-semibold text-slate-900">
+                            {round}
+                          </h4>
+                          <span className="text-xs text-slate-500 mt-0.5 block">
+                            Round {idx + 1} Assessment Stage
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
+              ) : (
+                <p className="text-xs text-slate-500 italic py-2">
+                  Not provided yet.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Targeted Preparation Topics */}
+          <Card className="border-slate-200/80 shadow-xs">
+            <CardHeader className="pb-3 border-b border-slate-100">
+              <CardTitle className="text-base sm:text-lg">
+                Targeted Preparation Syllabus
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 space-y-6">
+              {/* Aptitude Topics */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                      <AptitudeIcon className="w-4 h-4" />
+                    </div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                      Aptitude & Logical Reasoning
+                    </h4>
+                  </div>
+                  {company.aptitudeTopics && company.aptitudeTopics.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => navigate('/aptitude')}
+                      className="text-xs text-blue-600 hover:text-blue-700"
+                    >
+                      Practice Aptitude →
+                    </Button>
+                  )}
+                </div>
+
+                {company.aptitudeTopics && company.aptitudeTopics.length > 0 ? (
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {company.aptitudeTopics.map((topic, idx) => (
+                      <span
+                        key={idx}
+                        className="px-3 py-1 bg-slate-100 border border-slate-200/80 rounded-lg text-xs font-medium text-slate-700"
+                      >
+                        {topic}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-400 italic">
+                    No company-specific aptitude topics added yet.
+                  </p>
+                )}
               </div>
 
-              <div>
-                <span className="font-bold text-slate-800 block mb-1.5">Technical & Core CS:</span>
-                <div className="flex flex-wrap gap-1.5">
-                  {(company.interviewTopics || []).map((t, idx) => (
-                    <span key={idx} className="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200/60 rounded-lg font-medium">
-                      {t}
-                    </span>
+              {/* Coding Topics */}
+              <div className="space-y-3 pt-3 border-t border-slate-100">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                      <CodingIcon className="w-4 h-4" />
+                    </div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                      Coding & Algorithms
+                    </h4>
+                  </div>
+                  {company.codingTopics && company.codingTopics.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => navigate('/coding')}
+                      className="text-xs text-emerald-600 hover:text-emerald-700"
+                    >
+                      Practice Coding →
+                    </Button>
+                  )}
+                </div>
+
+                {company.codingTopics && company.codingTopics.length > 0 ? (
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {company.codingTopics.map((topic, idx) => (
+                      <span
+                        key={idx}
+                        className="px-3 py-1 bg-emerald-50 border border-emerald-200/80 rounded-lg text-xs font-medium text-emerald-800"
+                      >
+                        {topic}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-400 italic">
+                    No company-specific coding topics added yet.
+                  </p>
+                )}
+              </div>
+
+              {/* Technical / Interview Topics */}
+              <div className="space-y-3 pt-3 border-t border-slate-100">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center shrink-0">
+                    <DocumentIcon className="w-4 h-4" />
+                  </div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                    Technical & Core CS Concepts
+                  </h4>
+                </div>
+
+                {company.interviewTopics && company.interviewTopics.length > 0 ? (
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {company.interviewTopics.map((topic, idx) => (
+                      <span
+                        key={idx}
+                        className="px-3 py-1 bg-slate-50 border border-slate-200/80 rounded-lg text-xs font-medium text-slate-700"
+                      >
+                        {topic}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-400 italic">
+                    No company-specific interview topics added yet.
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Resources Section */}
+          <Card className="border-slate-200/80 shadow-xs">
+            <CardHeader className="pb-3 border-b border-slate-100">
+              <CardTitle className="text-base sm:text-lg">
+                Preparation Resources & Study Material
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              {company.resources && company.resources.length > 0 ? (
+                <div className="divide-y divide-slate-100">
+                  {company.resources.map((res, idx) => (
+                    <div
+                      key={idx}
+                      className="py-3 first:pt-0 last:pb-0 flex items-center justify-between gap-4"
+                    >
+                      <div className="flex items-center gap-3">
+                        <DocumentIcon className="w-4 h-4 text-slate-400 shrink-0" />
+                        <div>
+                          <h5 className="text-sm font-semibold text-slate-800">
+                            {res.title}
+                          </h5>
+                          {res.type && (
+                            <span className="text-[11px] text-slate-400 uppercase tracking-wider font-semibold">
+                              {res.type}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {res.url && (
+                        <a
+                          href={res.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="shrink-0"
+                        >
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            iconRight={<ExternalLinkIcon className="w-3.5 h-3.5" />}
+                          >
+                            Open
+                          </Button>
+                        </a>
+                      )}
+                    </div>
                   ))}
                 </div>
-              </div>
-            </div>
-          </div>
+              ) : (
+                <p className="text-xs text-slate-500 italic py-2">
+                  No company-specific resources added yet.
+                </p>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Right Column: Roles, Eligibility, Shortcuts */}
+        {/* Right Column: Roles, Eligibility, Quick Actions */}
         <div className="space-y-6">
-          {/* Eligibility Card */}
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-              Campus Eligibility
-            </h3>
-            <p className="text-xs text-slate-700 leading-relaxed font-medium">
-              {company.eligibility || 'Standard degree requirements apply.'}
-            </p>
-          </div>
-
-          {/* Hiring Roles */}
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-              Roles Offered
-            </h3>
-            <div className="space-y-1.5">
-              {(company.roles || []).map((role, idx) => (
-                <div
-                  key={idx}
-                  className="p-2 bg-slate-50 rounded-lg text-xs font-semibold text-slate-800 border border-slate-100"
-                >
-                  {role}
+          {/* Roles Offered */}
+          <Card className="border-slate-200/80 shadow-xs">
+            <CardHeader className="pb-3 border-b border-slate-100">
+              <CardTitle className="text-sm font-semibold text-slate-900">
+                Roles Offered
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-5">
+              {company.roles && company.roles.length > 0 ? (
+                <div className="space-y-2">
+                  {company.roles.map((role, idx) => (
+                    <div
+                      key={idx}
+                      className="p-3 bg-slate-50 border border-slate-200/80 rounded-xl text-xs font-medium text-slate-800 flex items-center gap-2.5"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0" />
+                      <span className="truncate">{role}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
+              ) : (
+                <p className="text-xs text-slate-500 italic">
+                  Not provided yet.
+                </p>
+              )}
+            </CardContent>
+          </Card>
 
-          {/* Action Callouts */}
-          <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-6 text-white space-y-4 shadow-sm">
-            <h3 className="text-sm font-bold">Ready to Practice for {company.name}?</h3>
-            <p className="text-xs text-slate-300 leading-relaxed">
-              Solve algorithmic challenges and timed tests aligned with this company's interview rounds.
-            </p>
-            <div className="flex flex-col gap-2 pt-1">
-              <Link
-                to="/aptitude"
-                className="w-full text-center py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs rounded-xl transition"
-              >
-                Practice Aptitude
-              </Link>
-              <Link
-                to="/coding"
-                className="w-full text-center py-2 bg-slate-700 hover:bg-slate-600 text-white font-semibold text-xs rounded-xl transition"
-              >
-                Practice Coding
-              </Link>
-            </div>
-          </div>
+          {/* Campus Eligibility */}
+          <Card className="border-slate-200/80 shadow-xs">
+            <CardHeader className="pb-3 border-b border-slate-100">
+              <CardTitle className="text-sm font-semibold text-slate-900">
+                Campus Eligibility Criteria
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-5">
+              <p className="text-xs text-slate-700 leading-relaxed font-medium">
+                {company.eligibility || 'Standard degree requirements apply.'}
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Quick Practice Actions */}
+          <Card className="bg-slate-900 border-slate-900 text-white shadow-sm overflow-hidden">
+            <CardContent className="p-6 space-y-4">
+              <div>
+                <h3 className="text-sm font-bold text-white">
+                  Ready to Practice for {company.name}?
+                </h3>
+                <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                  Solve aptitude tests, data structure problems, and mock assessments configured for campus placements.
+                </p>
+              </div>
+
+              <div className="space-y-2 pt-2">
+                <Button
+                  variant="primary"
+                  fullWidth
+                  size="sm"
+                  onClick={() => navigate('/aptitude')}
+                  className="justify-center"
+                >
+                  Practice Aptitude
+                </Button>
+                <Button
+                  variant="secondary"
+                  fullWidth
+                  size="sm"
+                  onClick={() => navigate('/coding')}
+                  className="justify-center bg-slate-800 hover:bg-slate-700 border-slate-700 text-white"
+                >
+                  Practice Coding
+                </Button>
+                <Button
+                  variant="outline"
+                  fullWidth
+                  size="sm"
+                  onClick={() => navigate('/mock-tests')}
+                  className="justify-center bg-transparent border-slate-700 text-slate-200 hover:bg-slate-800"
+                >
+                  Take Full Mock Test
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
