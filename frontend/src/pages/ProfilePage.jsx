@@ -1,15 +1,62 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { updateProfile } from "../services/authService.js";
-import { ArrowRightIcon } from "../components/dashboard/DashboardIcons.jsx";
-import { Link } from "react-router-dom";
+import {
+  PageHeader,
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+  Button,
+  Badge,
+  Input,
+  Avatar,
+  ProgressBar,
+  LoadingState,
+} from "../components/ui/index.js";
+import {
+  ProfileIcon,
+  AcademicCapIcon,
+  CompanyIcon,
+  ShieldCheckIcon,
+  CheckCircleIcon,
+  AlertCircleIcon,
+  CalendarIcon,
+  PlusIcon,
+  CloseIcon,
+  ArrowLeftIcon,
+  CheckIcon,
+} from "../components/ui/Icons.jsx";
+
+const SUGGESTED_COMPANIES = [
+  "Google",
+  "Microsoft",
+  "Amazon",
+  "TCS",
+  "Infosys",
+  "Wipro",
+  "Accenture",
+  "Cognizant",
+  "Deloitte",
+];
+
+const SUGGESTED_GOALS = [
+  "Master Dynamic Programming",
+  "Solve 100 Coding Problems",
+  "Score 85%+ in Mock Tests",
+  "Complete Quantitative Aptitude",
+  "Review System Design Fundamentals",
+];
 
 /**
- * ProfilePage — Authenticated student profile management.
- * Allows editing academic details, target companies, and preparation goals.
+ * ProfilePage — Student profile and academic placement settings.
+ * Direction: Apple + Linear + Premium University
  */
 function ProfilePage() {
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, loading: authLoading } = useAuth();
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -29,8 +76,68 @@ function ProfilePage() {
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
-  // Sync form with authenticated user state
+  // Sync form state when authenticated user data becomes available
   useEffect(() => {
+    if (user) {
+      setFormData({
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        college: user.college || "",
+        branch: user.branch || "",
+        graduationYear: user.graduationYear ? String(user.graduationYear) : "",
+      });
+      setTargetCompanies(Array.isArray(user.targetCompanies) ? user.targetCompanies : []);
+      setPreparationGoals(Array.isArray(user.preparationGoals) ? user.preparationGoals : []);
+    }
+  }, [user]);
+
+  // Check if form has unsaved modifications
+  const isDirty = useMemo(() => {
+    if (!user) return false;
+    const initialGrad = user.graduationYear ? String(user.graduationYear) : "";
+    const basicChanged =
+      formData.firstName !== (user.firstName || "") ||
+      formData.lastName !== (user.lastName || "") ||
+      formData.college !== (user.college || "") ||
+      formData.branch !== (user.branch || "") ||
+      formData.graduationYear !== initialGrad;
+
+    const initialCompanies = user.targetCompanies || [];
+    const companiesChanged =
+      targetCompanies.length !== initialCompanies.length ||
+      targetCompanies.some((c, i) => c !== initialCompanies[i]);
+
+    const initialGoals = user.preparationGoals || [];
+    const goalsChanged =
+      preparationGoals.length !== initialGoals.length ||
+      preparationGoals.some((g, i) => g !== initialGoals[i]);
+
+    return basicChanged || companiesChanged || goalsChanged;
+  }, [formData, targetCompanies, preparationGoals, user]);
+
+  // Calculate profile completion metrics
+  const completionDetails = useMemo(() => {
+    const checks = [
+      { label: "Personal Name", done: Boolean(formData.firstName.trim() && formData.lastName.trim()) },
+      { label: "Verified Email", done: Boolean(user?.email) },
+      { label: "College / University", done: Boolean(formData.college.trim()) },
+      { label: "Branch / Department", done: Boolean(formData.branch.trim()) },
+      { label: "Graduation Year", done: Boolean(formData.graduationYear) },
+      { label: "Target Companies", done: targetCompanies.length > 0 },
+      { label: "Preparation Goals", done: preparationGoals.length > 0 },
+    ];
+    const completedCount = checks.filter((c) => c.done).length;
+    const percentage = Math.round((completedCount / checks.length) * 100);
+
+    return { checks, completedCount, totalCount: checks.length, percentage };
+  }, [formData, targetCompanies, preparationGoals, user]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleReset = () => {
     if (user) {
       setFormData({
         firstName: user.firstName || "",
@@ -41,38 +148,33 @@ function ProfilePage() {
       });
       setTargetCompanies(user.targetCompanies || []);
       setPreparationGoals(user.preparationGoals || []);
+      setErrorMessage("");
+      setSuccessMessage("");
     }
-  }, [user]);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleAddCompany = (e) => {
-    e.preventDefault();
-    const trimmed = newCompany.trim();
-    if (trimmed && !targetCompanies.includes(trimmed)) {
-      setTargetCompanies([...targetCompanies, trimmed]);
+  const handleAddCompany = (companyToAdd) => {
+    const candidate = (companyToAdd || newCompany).trim();
+    if (candidate && !targetCompanies.includes(candidate)) {
+      setTargetCompanies((prev) => [...prev, candidate]);
       setNewCompany("");
     }
   };
 
   const handleRemoveCompany = (companyToRemove) => {
-    setTargetCompanies(targetCompanies.filter((c) => c !== companyToRemove));
+    setTargetCompanies((prev) => prev.filter((c) => c !== companyToRemove));
   };
 
-  const handleAddGoal = (e) => {
-    e.preventDefault();
-    const trimmed = newGoal.trim();
-    if (trimmed && !preparationGoals.includes(trimmed)) {
-      setPreparationGoals([...preparationGoals, trimmed]);
+  const handleAddGoal = (goalToAdd) => {
+    const candidate = (goalToAdd || newGoal).trim();
+    if (candidate && !preparationGoals.includes(candidate)) {
+      setPreparationGoals((prev) => [...prev, candidate]);
       setNewGoal("");
     }
   };
 
   const handleRemoveGoal = (goalToRemove) => {
-    setPreparationGoals(preparationGoals.filter((g) => g !== goalToRemove));
+    setPreparationGoals((prev) => prev.filter((g) => g !== goalToRemove));
   };
 
   const handleSubmit = async (e) => {
@@ -81,7 +183,7 @@ function ProfilePage() {
     setErrorMessage("");
 
     if (!formData.firstName.trim() || !formData.lastName.trim()) {
-      setErrorMessage("First name and last name cannot be empty.");
+      setErrorMessage("First name and last name are required.");
       return;
     }
 
@@ -107,11 +209,13 @@ function ProfilePage() {
       };
 
       const updatedUserData = await updateProfile(payload);
-      updateUser(updatedUserData);
-      setSuccessMessage("Profile updated successfully. Changes are now active across your dashboard.");
+      if (updatedUserData) {
+        updateUser(updatedUserData);
+      }
+      setSuccessMessage("Profile updated successfully. Your candidate record is now up to date.");
 
-      // Clear success banner after 4 seconds
-      setTimeout(() => setSuccessMessage(""), 4000);
+      // Clear success notification after 5 seconds
+      setTimeout(() => setSuccessMessage(""), 5000);
     } catch (err) {
       const msg = err.response?.data?.message || "Failed to update profile. Please try again.";
       setErrorMessage(msg);
@@ -120,316 +224,555 @@ function ProfilePage() {
     }
   };
 
-  return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-12">
-      {/* Top Breadcrumb & Heading */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 text-xs text-[#52606D] mb-1">
-            <Link to="/dashboard" className="text-[#2563EB] hover:underline no-underline">
-              Dashboard
-            </Link>
-            <span>/</span>
-            <span>Profile Settings</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#172B4D] tracking-tight">
-            Student Profile
-          </h1>
-          <p className="text-xs text-[#52606D] mt-1">
-            Manage your personal information, academic background, and target companies
-          </p>
-        </div>
+  // Remaining suggestions
+  const availableCompanySuggestions = useMemo(() => {
+    return SUGGESTED_COMPANIES.filter((c) => !targetCompanies.includes(c));
+  }, [targetCompanies]);
 
-        <Link
-          to="/dashboard"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#52606D] hover:text-[#172B4D] border border-[#D9E2EC] bg-white px-3.5 py-2 rounded-lg transition-colors no-underline w-fit"
-        >
-          <span>← Back to Dashboard</span>
-        </Link>
-      </div>
+  const availableGoalSuggestions = useMemo(() => {
+    return SUGGESTED_GOALS.filter((g) => !preparationGoals.includes(g));
+  }, [preparationGoals]);
+
+  if (authLoading && !user) {
+    return <LoadingState message="Loading student profile..." />;
+  }
+
+  const studentFullName = `${formData.firstName || user?.firstName || "Student"} ${formData.lastName || user?.lastName || ""}`.trim();
+  const registrationDate = user?.createdAt
+    ? new Date(user.createdAt).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : "Active Candidate";
+
+  return (
+    <div className="max-w-[1240px] mx-auto space-y-6 pb-16 px-4 sm:px-6">
+      {/* 1. Page Header */}
+      <PageHeader
+        title="Student Profile"
+        description="Manage your verified personal details, academic background, and recruitment targets."
+        breadcrumbs={[
+          { label: "Dashboard", href: "/dashboard" },
+          { label: "Student Profile" },
+        ]}
+        actions={
+          <Link to="/dashboard">
+            <Button
+              variant="outline"
+              size="sm"
+              iconLeft={<ArrowLeftIcon className="w-4 h-4" />}
+            >
+              Back to Dashboard
+            </Button>
+          </Link>
+        }
+      />
 
       {/* Notifications */}
       {successMessage && (
-        <div className="p-4 rounded-xl bg-green-50 border border-green-200 text-green-800 text-xs font-medium flex items-center gap-2.5">
-          <svg className="w-5 h-5 text-green-600 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-          </svg>
-          <span>{successMessage}</span>
+        <div
+          role="status"
+          className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs sm:text-sm font-medium flex items-center justify-between gap-3 shadow-xs animate-in fade-in duration-200"
+        >
+          <div className="flex items-center gap-2.5">
+            <CheckCircleIcon className="w-5 h-5 text-emerald-600 shrink-0" />
+            <span>{successMessage}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSuccessMessage("")}
+            className="text-emerald-700 hover:text-emerald-900 transition-colors cursor-pointer p-1"
+            aria-label="Dismiss notification"
+          >
+            <CloseIcon className="w-4 h-4" />
+          </button>
         </div>
       )}
 
       {errorMessage && (
-        <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs font-medium flex items-center gap-2.5">
-          <svg className="w-5 h-5 text-red-600 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-          </svg>
-          <span>{errorMessage}</span>
+        <div
+          role="alert"
+          className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs sm:text-sm font-medium flex items-center justify-between gap-3 shadow-xs animate-in fade-in duration-200"
+        >
+          <div className="flex items-center gap-2.5">
+            <AlertCircleIcon className="w-5 h-5 text-rose-600 shrink-0" />
+            <span>{errorMessage}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setErrorMessage("")}
+            className="text-rose-700 hover:text-rose-900 transition-colors cursor-pointer p-1"
+            aria-label="Dismiss error"
+          >
+            <CloseIcon className="w-4 h-4" />
+          </button>
         </div>
       )}
 
-      {/* Main Profile Form */}
+      {/* Main Grid: Left Overview Sidebar + Right Form Sections */}
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Card 1: Basic Information */}
-        <div className="bg-white border border-[#D9E2EC] rounded-2xl p-6 sm:p-8 shadow-xs">
-          <h2 className="text-base font-bold text-[#172B4D] mb-4 pb-2 border-b border-[#D9E2EC]">
-            Personal Information
-          </h2>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* ================= LEFT SIDEBAR (4 cols) ================= */}
+          <div className="lg:col-span-4 space-y-6">
+            {/* Overview Identity Card */}
+            <Card>
+              <CardContent className="p-6 text-center space-y-4">
+                <div className="flex justify-center">
+                  <Avatar
+                    size="xl"
+                    name={studentFullName}
+                    src={user?.profilePhoto || undefined}
+                    className="w-16 h-16 text-lg ring-4 ring-slate-100"
+                  />
+                </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-[#172B4D] mb-1.5" htmlFor="firstName">
-                First Name *
-              </label>
-              <input
-                id="firstName"
-                name="firstName"
-                type="text"
-                required
-                value={formData.firstName}
-                onChange={handleChange}
-                className="w-full px-3.5 py-2.5 bg-[#F8FAFC] border border-[#D9E2EC] rounded-lg text-sm text-[#172B4D] focus:bg-white focus:outline-none focus:border-[#2563EB] focus:ring-1 focus:ring-[#2563EB] transition-all"
-              />
-            </div>
+                <div className="space-y-1">
+                  <h2 className="text-lg font-bold text-slate-900 tracking-tight">
+                    {studentFullName}
+                  </h2>
+                  <p className="text-xs text-slate-500 font-medium">
+                    {user?.email || "student@recruiteready.edu"}
+                  </p>
+                </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-[#172B4D] mb-1.5" htmlFor="lastName">
-                Last Name *
-              </label>
-              <input
-                id="lastName"
-                name="lastName"
-                type="text"
-                required
-                value={formData.lastName}
-                onChange={handleChange}
-                className="w-full px-3.5 py-2.5 bg-[#F8FAFC] border border-[#D9E2EC] rounded-lg text-sm text-[#172B4D] focus:bg-white focus:outline-none focus:border-[#2563EB] focus:ring-1 focus:ring-[#2563EB] transition-all"
-              />
-            </div>
+                <div className="flex items-center justify-center gap-2 pt-1 flex-wrap">
+                  <Badge variant="primary">
+                    {user?.role === "admin" ? "Administrator" : "Candidate Profile"}
+                  </Badge>
+                  <Badge variant="success" dot>
+                    Active Account
+                  </Badge>
+                </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-[#172B4D] mb-1.5" htmlFor="email">
-                Email Address
-              </label>
-              <input
-                id="email"
-                type="email"
-                disabled
-                value={user?.email || ""}
-                className="w-full px-3.5 py-2.5 bg-[#F8FAFC]/70 border border-[#D9E2EC] rounded-lg text-sm text-[#52606D] cursor-not-allowed"
-              />
-              <span className="text-[11px] text-[#9FB3C8] mt-1 block">
-                Email cannot be modified directly. Contact support for email changes.
-              </span>
-            </div>
+                <div className="pt-4 border-t border-slate-100 text-left space-y-3 text-xs">
+                  <div className="flex items-center gap-2.5 text-slate-600">
+                    <AcademicCapIcon className="w-4 h-4 text-slate-400 shrink-0" />
+                    <span className="truncate">
+                      {formData.college || user?.college || "College not yet specified"}
+                    </span>
+                  </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-[#172B4D] mb-1.5">
-                Account Role
-              </label>
-              <div className="flex items-center gap-2 h-[42px]">
-                <span className="px-3 py-1.5 rounded-lg bg-[#E8F1FF] text-[#2563EB] font-semibold text-xs capitalize border border-[#2563EB]/20">
-                  {user?.role || "Student"}
+                  <div className="flex items-center gap-2.5 text-slate-600">
+                    <CompanyIcon className="w-4 h-4 text-slate-400 shrink-0" />
+                    <span className="truncate">
+                      {formData.branch || user?.branch || "Department not yet specified"}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2.5 text-slate-600">
+                    <CalendarIcon className="w-4 h-4 text-slate-400 shrink-0" />
+                    <span>
+                      {formData.graduationYear || user?.graduationYear
+                        ? `Class of ${formData.graduationYear || user?.graduationYear}`
+                        : "Graduation year not set"}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2.5 text-slate-400 pt-1 text-[11px]">
+                    <ShieldCheckIcon className="w-4 h-4 text-slate-400 shrink-0" />
+                    <span>Enrolled: {registrationDate}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Profile Completion Card */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm">Profile Completeness</CardTitle>
+                <span className="text-xs font-semibold text-slate-700 font-mono">
+                  {completionDetails.percentage}%
                 </span>
-                <span className="text-[11px] text-[#9FB3C8]">
-                  Server-verified authenticated status
-                </span>
-              </div>
-            </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <ProgressBar
+                  value={completionDetails.percentage}
+                  max={100}
+                  variant={completionDetails.percentage === 100 ? "success" : "primary"}
+                  size="md"
+                />
+
+                <div className="space-y-2 text-xs">
+                  {completionDetails.checks.map((chk) => (
+                    <div
+                      key={chk.label}
+                      className="flex items-center justify-between text-slate-600"
+                    >
+                      <span className="flex items-center gap-2">
+                        {chk.done ? (
+                          <span className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                            <CheckIcon className="w-2.5 h-2.5" />
+                          </span>
+                        ) : (
+                          <span className="w-4 h-4 rounded-full border border-slate-300 shrink-0" />
+                        )}
+                        <span className={chk.done ? "text-slate-800" : "text-slate-500"}>
+                          {chk.label}
+                        </span>
+                      </span>
+                      <span className="text-[11px] font-medium text-slate-400">
+                        {chk.done ? "Done" : "Pending"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="pt-2 border-t border-slate-100">
+                  <p className="text-[11px] text-slate-500 leading-relaxed">
+                    {completionDetails.percentage === 100
+                      ? "Your candidate profile is complete. Campus recruiters have full visibility into your preparation focus."
+                      : "Complete all fields to optimize recommendation algorithms for aptitude, coding, and mock assessments."}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Account Verification & Security Note */}
+            <Card className="bg-slate-50/50">
+              <CardContent className="p-4 space-y-2">
+                <div className="flex items-center gap-2 text-slate-900 font-semibold text-xs">
+                  <ShieldCheckIcon className="w-4 h-4 text-blue-600 shrink-0" />
+                  <span>Verified Credentials</span>
+                </div>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Your email address and account permissions are cryptographically verified by the server. Institutional credentials cannot be altered directly to maintain test integrity.
+                </p>
+              </CardContent>
+            </Card>
           </div>
-        </div>
 
-        {/* Card 2: Academic Details */}
-        <div className="bg-white border border-[#D9E2EC] rounded-2xl p-6 sm:p-8 shadow-xs">
-          <h2 className="text-base font-bold text-[#172B4D] mb-4 pb-2 border-b border-[#D9E2EC]">
-            Academic Background
-          </h2>
+          {/* ================= RIGHT MAIN FORM (8 cols) ================= */}
+          <div className="lg:col-span-8 space-y-6">
+            {/* 1. Personal Information */}
+            <Card>
+              <CardHeader>
+                <div>
+                  <CardTitle>Personal Information</CardTitle>
+                  <CardDescription>
+                    Official identification details for assessment scorecards and certificates.
+                  </CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Input
+                    label="First Name"
+                    id="firstName"
+                    name="firstName"
+                    type="text"
+                    required
+                    value={formData.firstName}
+                    onChange={handleChange}
+                    placeholder="e.g. Rahul"
+                  />
 
-          <div className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold text-[#172B4D] mb-1.5" htmlFor="college">
-                College / University
-              </label>
-              <input
-                id="college"
-                name="college"
-                type="text"
-                value={formData.college}
-                onChange={handleChange}
-                placeholder="e.g. Pune Institute of Computer Technology"
-                className="w-full px-3.5 py-2.5 bg-[#F8FAFC] border border-[#D9E2EC] rounded-lg text-sm text-[#172B4D] focus:bg-white focus:outline-none focus:border-[#2563EB] focus:ring-1 focus:ring-[#2563EB] transition-all"
-              />
-            </div>
+                  <Input
+                    label="Last Name"
+                    id="lastName"
+                    name="lastName"
+                    type="text"
+                    required
+                    value={formData.lastName}
+                    onChange={handleChange}
+                    placeholder="e.g. Sharma"
+                  />
+                </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-[#172B4D] mb-1.5" htmlFor="branch">
-                  Branch / Department
-                </label>
-                <input
-                  id="branch"
-                  name="branch"
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Input
+                    label="Email Address"
+                    id="email"
+                    name="email"
+                    type="email"
+                    disabled
+                    value={user?.email || ""}
+                    helperText="Institutional email is verified and strictly immutable."
+                  />
+
+                  <Input
+                    label="Account Role"
+                    id="role"
+                    name="role"
+                    type="text"
+                    disabled
+                    value={user?.role === "admin" ? "Platform Administrator" : "Student Candidate"}
+                    helperText="Designated candidate authorization tier."
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* 2. Academic Background */}
+            <Card>
+              <CardHeader>
+                <div>
+                  <CardTitle>Academic Background</CardTitle>
+                  <CardDescription>
+                    University and degree information used for company eligibility criteria.
+                  </CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Input
+                  label="College / University"
+                  id="college"
+                  name="college"
                   type="text"
-                  value={formData.branch}
+                  value={formData.college}
                   onChange={handleChange}
-                  placeholder="e.g. Computer Engineering"
-                  className="w-full px-3.5 py-2.5 bg-[#F8FAFC] border border-[#D9E2EC] rounded-lg text-sm text-[#172B4D] focus:bg-white focus:outline-none focus:border-[#2563EB] focus:ring-1 focus:ring-[#2563EB] transition-all"
+                  placeholder="e.g. Pune Institute of Computer Technology"
+                  helperText="Full institutional name without abbreviation."
                 />
-              </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-[#172B4D] mb-1.5" htmlFor="graduationYear">
-                  Graduation Year
-                </label>
-                <input
-                  id="graduationYear"
-                  name="graduationYear"
-                  type="number"
-                  min="2020"
-                  max="2035"
-                  value={formData.graduationYear}
-                  onChange={handleChange}
-                  placeholder="e.g. 2026"
-                  className="w-full px-3.5 py-2.5 bg-[#F8FAFC] border border-[#D9E2EC] rounded-lg text-sm text-[#172B4D] focus:bg-white focus:outline-none focus:border-[#2563EB] focus:ring-1 focus:ring-[#2563EB] transition-all"
-                />
-              </div>
-            </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Input
+                    label="Branch / Department"
+                    id="branch"
+                    name="branch"
+                    type="text"
+                    value={formData.branch}
+                    onChange={handleChange}
+                    placeholder="e.g. Computer Science & Engineering"
+                  />
+
+                  <Input
+                    label="Graduation Year"
+                    id="graduationYear"
+                    name="graduationYear"
+                    type="number"
+                    min="2000"
+                    max="2100"
+                    value={formData.graduationYear}
+                    onChange={handleChange}
+                    placeholder="e.g. 2026"
+                    helperText="Degree completion year (2000 – 2100)."
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* 3. Placement Preferences & Target Companies */}
+            <Card>
+              <CardHeader>
+                <div>
+                  <CardTitle>Target Companies</CardTitle>
+                  <CardDescription>
+                    Organizations whose placement syllabus and interview patterns you are actively targeting.
+                  </CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Active company badges */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 tracking-tight mb-2">
+                    Active Target Companies ({targetCompanies.length})
+                  </label>
+                  <div className="flex flex-wrap gap-2 min-h-[36px] p-2.5 rounded-lg bg-slate-50 border border-slate-200">
+                    {targetCompanies.map((company) => (
+                      <span
+                        key={company}
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-white border border-slate-200 text-xs font-medium text-slate-800 shadow-2xs"
+                      >
+                        <span>{company}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveCompany(company)}
+                          className="text-slate-400 hover:text-rose-600 transition-colors cursor-pointer p-0.5"
+                          aria-label={`Remove ${company}`}
+                        >
+                          <CloseIcon className="w-3.5 h-3.5" />
+                        </button>
+                      </span>
+                    ))}
+                    {targetCompanies.length === 0 && (
+                      <span className="text-xs text-slate-400 italic py-1">
+                        No target companies specified yet. Add organizations below.
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Add new company input */}
+                <div className="flex gap-2 max-w-md">
+                  <input
+                    type="text"
+                    value={newCompany}
+                    onChange={(e) => setNewCompany(e.target.value)}
+                    placeholder="Enter company name (e.g. Microsoft)..."
+                    className="flex-1 h-9 px-3 text-xs sm:text-sm rounded-lg border border-slate-200 bg-white placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddCompany();
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleAddCompany()}
+                    iconLeft={<PlusIcon className="w-4 h-4" />}
+                  >
+                    Add
+                  </Button>
+                </div>
+
+                {/* Suggestions pill list */}
+                {availableCompanySuggestions.length > 0 && (
+                  <div className="pt-2">
+                    <span className="text-[11px] font-medium text-slate-400 block mb-1.5">
+                      Suggested Organizations:
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {availableCompanySuggestions.map((suggested) => (
+                        <button
+                          key={suggested}
+                          type="button"
+                          onClick={() => handleAddCompany(suggested)}
+                          className="px-2.5 py-1 rounded-md bg-slate-100 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 border border-slate-200/80 text-[11px] font-medium text-slate-600 transition-colors cursor-pointer"
+                        >
+                          + {suggested}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* 4. Preparation Goals */}
+            <Card>
+              <CardHeader>
+                <div>
+                  <CardTitle>Preparation Milestones</CardTitle>
+                  <CardDescription>
+                    Custom readiness goals, topic focus areas, and practice targets.
+                  </CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Active goal tags */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 tracking-tight mb-2">
+                    Defined Milestones ({preparationGoals.length})
+                  </label>
+                  <div className="flex flex-wrap gap-2 min-h-[36px] p-2.5 rounded-lg bg-slate-50 border border-slate-200">
+                    {preparationGoals.map((goal) => (
+                      <span
+                        key={goal}
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-white border border-slate-200 text-xs font-medium text-slate-800 shadow-2xs"
+                      >
+                        <span>{goal}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveGoal(goal)}
+                          className="text-slate-400 hover:text-rose-600 transition-colors cursor-pointer p-0.5"
+                          aria-label={`Remove milestone ${goal}`}
+                        >
+                          <CloseIcon className="w-3.5 h-3.5" />
+                        </button>
+                      </span>
+                    ))}
+                    {preparationGoals.length === 0 && (
+                      <span className="text-xs text-slate-400 italic py-1">
+                        No preparation milestones added yet. Set your focus areas below.
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Add new goal input */}
+                <div className="flex gap-2 max-w-lg">
+                  <input
+                    type="text"
+                    value={newGoal}
+                    onChange={(e) => setNewGoal(e.target.value)}
+                    placeholder="e.g. Master Graph Algorithms, 80%+ Quantitative..."
+                    className="flex-1 h-9 px-3 text-xs sm:text-sm rounded-lg border border-slate-200 bg-white placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddGoal();
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleAddGoal()}
+                    iconLeft={<PlusIcon className="w-4 h-4" />}
+                  >
+                    Add
+                  </Button>
+                </div>
+
+                {/* Suggestions pill list */}
+                {availableGoalSuggestions.length > 0 && (
+                  <div className="pt-2">
+                    <span className="text-[11px] font-medium text-slate-400 block mb-1.5">
+                      Suggested Goals:
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {availableGoalSuggestions.map((suggested) => (
+                        <button
+                          key={suggested}
+                          type="button"
+                          onClick={() => handleAddGoal(suggested)}
+                          className="px-2.5 py-1 rounded-md bg-slate-100 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 border border-slate-200/80 text-[11px] font-medium text-slate-600 transition-colors cursor-pointer"
+                        >
+                          + {suggested}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Bottom Actions Card */}
+            <Card>
+              <CardFooter className="py-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="text-xs text-slate-500">
+                  {isDirty ? (
+                    <span className="flex items-center gap-1.5 text-amber-700 font-medium">
+                      <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                      Unsaved changes detected in form
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1.5 text-slate-400">
+                      <CheckIcon className="w-3.5 h-3.5 text-emerald-600" />
+                      All changes saved to your institutional record
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="md"
+                    onClick={handleReset}
+                    disabled={!isDirty || isSubmitting}
+                  >
+                    Reset
+                  </Button>
+
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    size="md"
+                    loading={isSubmitting}
+                    disabled={isSubmitting || !isDirty}
+                  >
+                    Save Changes
+                  </Button>
+                </div>
+              </CardFooter>
+            </Card>
           </div>
-        </div>
-
-        {/* Card 3: Target Companies */}
-        <div className="bg-white border border-[#D9E2EC] rounded-2xl p-6 sm:p-8 shadow-xs">
-          <h2 className="text-base font-bold text-[#172B4D] mb-1">
-            Target Companies
-          </h2>
-          <p className="text-xs text-[#52606D] mb-4">
-            Select the organizations whose placement patterns and interview processes you are targeting.
-          </p>
-
-          {/* Active tags */}
-          <div className="flex flex-wrap gap-2 mb-4">
-            {targetCompanies.map((company) => (
-              <span
-                key={company}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#E8F1FF] text-[#2563EB] text-xs font-semibold"
-              >
-                <span>{company}</span>
-                <button
-                  type="button"
-                  onClick={() => handleRemoveCompany(company)}
-                  className="hover:text-red-600 transition-colors cursor-pointer text-sm leading-none"
-                  aria-label={`Remove ${company}`}
-                >
-                  ×
-                </button>
-              </span>
-            ))}
-            {targetCompanies.length === 0 && (
-              <span className="text-xs text-[#9FB3C8] italic">No target companies added yet.</span>
-            )}
-          </div>
-
-          {/* Add tag form */}
-          <div className="flex gap-2 max-w-md">
-            <input
-              type="text"
-              value={newCompany}
-              onChange={(e) => setNewCompany(e.target.value)}
-              placeholder="e.g. Google, Microsoft, TCS"
-              className="flex-1 px-3 py-2 bg-[#F8FAFC] border border-[#D9E2EC] rounded-lg text-xs text-[#172B4D] focus:bg-white focus:outline-none focus:border-[#2563EB]"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  handleAddCompany(e);
-                }
-              }}
-            />
-            <button
-              type="button"
-              onClick={handleAddCompany}
-              className="px-4 py-2 bg-[#F8FAFC] border border-[#D9E2EC] hover:bg-[#E8F1FF] hover:border-[#2563EB]/40 text-[#2563EB] text-xs font-semibold rounded-lg transition-colors cursor-pointer"
-            >
-              Add
-            </button>
-          </div>
-        </div>
-
-        {/* Card 4: Preparation Goals */}
-        <div className="bg-white border border-[#D9E2EC] rounded-2xl p-6 sm:p-8 shadow-xs">
-          <h2 className="text-base font-bold text-[#172B4D] mb-1">
-            Preparation Goals
-          </h2>
-          <p className="text-xs text-[#52606D] mb-4">
-            Set custom milestones for topics, problem counts, or target mock test scores.
-          </p>
-
-          <div className="flex flex-wrap gap-2 mb-4">
-            {preparationGoals.map((goal) => (
-              <span
-                key={goal}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#F8FAFC] border border-[#D9E2EC] text-[#172B4D] text-xs font-medium"
-              >
-                <span>{goal}</span>
-                <button
-                  type="button"
-                  onClick={() => handleRemoveGoal(goal)}
-                  className="text-[#9FB3C8] hover:text-red-600 transition-colors cursor-pointer text-sm leading-none"
-                  aria-label={`Remove goal ${goal}`}
-                >
-                  ×
-                </button>
-              </span>
-            ))}
-            {preparationGoals.length === 0 && (
-              <span className="text-xs text-[#9FB3C8] italic">No preparation goals defined yet.</span>
-            )}
-          </div>
-
-          <div className="flex gap-2 max-w-md">
-            <input
-              type="text"
-              value={newGoal}
-              onChange={(e) => setNewGoal(e.target.value)}
-              placeholder="e.g. Master Binary Search, Solve 50 DP questions"
-              className="flex-1 px-3 py-2 bg-[#F8FAFC] border border-[#D9E2EC] rounded-lg text-xs text-[#172B4D] focus:bg-white focus:outline-none focus:border-[#2563EB]"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  handleAddGoal(e);
-                }
-              }}
-            />
-            <button
-              type="button"
-              onClick={handleAddGoal}
-              className="px-4 py-2 bg-[#F8FAFC] border border-[#D9E2EC] hover:bg-[#E8F1FF] hover:border-[#2563EB]/40 text-[#2563EB] text-xs font-semibold rounded-lg transition-colors cursor-pointer"
-            >
-              Add
-            </button>
-          </div>
-        </div>
-
-        {/* Submit Button */}
-        <div className="flex items-center justify-end gap-3 pt-2">
-          <Link
-            to="/dashboard"
-            className="px-5 py-2.5 rounded-lg border border-[#D9E2EC] text-xs font-semibold text-[#52606D] hover:text-[#172B4D] bg-white transition-colors no-underline"
-          >
-            Cancel
-          </Link>
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="inline-flex items-center justify-center gap-2 text-sm font-semibold text-white bg-[#2563EB] hover:bg-[#1d4ed8] active:bg-[#1e40af] disabled:opacity-60 px-6 py-2.5 rounded-lg transition-colors cursor-pointer shadow-xs"
-          >
-            {isSubmitting ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                <span>Saving Changes...</span>
-              </>
-            ) : (
-              <span>Save Changes</span>
-            )}
-          </button>
         </div>
       </form>
     </div>
