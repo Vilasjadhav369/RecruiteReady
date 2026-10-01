@@ -474,3 +474,12 @@ export function ChartBarIcon({ className = 'w-5 h-5' }) {
   );
 }
 
+export function BookOpenIcon({ className = 'w-5 h-5' }) {
+  return (
+    <svg className={className} {...defaultProps}>
+      <path d="M2 4.5A2.5 2.5 0 014.5 2H9a1 1 0 011 1v13a1 1 0 01-1 1H4.5A2.5 2.5 0 012 14.5v-10z" />
+      <path d="M18 4.5A2.5 2.5 0 0015.5 2H11a1 1 0 00-1 1v13a1 1 0 001 1h4.5A2.5 2.5 0 0018 14.5v-10z" />
+    </svg>
+  );
+}
+

@@ -30,6 +30,7 @@ import CompanyDetailPage from "../pages/companies/CompanyDetailPage.jsx";
 
 // Phase 10 — Study Materials
 import ResourceListPage from "../pages/resources/ResourceListPage.jsx";
+import ResourceDetailPage from "../pages/resources/ResourceDetailPage.jsx";
 
 // Phase 11 — Mock Tests
 import MockTestListPage from "../pages/mockTests/MockTestListPage.jsx";
@@ -101,6 +102,7 @@ function AppRoutes() {
 
         {/* Phase 10 — Study Materials */}
         <Route path="/resources" element={<ResourceListPage />} />
+        <Route path="/resources/:id" element={<ResourceDetailPage />} />
 
         {/* Phase 11 — Mock Tests */}
         <Route path="/mock-tests" element={<MockTestListPage />} />
