@@ -1,10 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { getMockHistory } from '../../services/mockTestService.js';
+import { 
+  PageHeader, 
+  Card, 
+  Badge, 
+  StatusBadge, 
+  Button, 
+  Table, 
+  TableHeader, 
+  TableBody, 
+  TableRow, 
+  TableHead, 
+  TableCell, 
+  LoadingState, 
+  ErrorState, 
+  EmptyState 
+} from '../../components/ui/index.js';
+import { ClockIcon, DocumentIcon, ChevronLeftIcon, ChevronRightIcon, EyeIcon } from '../../components/ui/Icons.jsx';
 
 export default function MockTestHistoryPage() {
+  const navigate = useNavigate();
   const [attempts, setAttempts] = useState([]);
   const [pagination, setPagination] = useState({ total: 0, page: 1, limit: 10, pages: 1 });
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -12,7 +31,7 @@ export default function MockTestHistoryPage() {
     const fetchHistory = async () => {
       try {
         setLoading(true);
-        const data = await getMockHistory({ page: pagination.page, limit: 10 });
+        const data = await getMockHistory({ page, limit: 10 });
         setAttempts(data?.attempts || []);
         setPagination(data?.pagination || { total: 0, page: 1, limit: 10, pages: 1 });
       } catch (err) {
@@ -23,122 +42,135 @@ export default function MockTestHistoryPage() {
       }
     };
     fetchHistory();
-  }, [pagination.page]);
+  }, [page]);
+
+  const handlePrevious = () => {
+    if (page > 1) setPage(p => p - 1);
+  };
+
+  const handleNext = () => {
+    if (page < pagination.pages) setPage(p => p + 1);
+  };
+
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
-      {/* Header */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-8 shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200/60">
-              Exam History
-            </span>
-            <span className="text-xs text-slate-500 font-medium">
-              {pagination.total} Completed Tests
-            </span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
-            Mock Assessment History
-          </h1>
-          <p className="mt-1 text-sm text-slate-600">
-            Review past scores, sectional metrics, and answer walkthroughs.
-          </p>
-        </div>
+    <div className="space-y-6 max-w-[1240px] mx-auto">
+      <PageHeader 
+        title="Assessment History" 
+        description="Review past scores, performance metrics, and answer walkthroughs."
+        breadcrumbs={[
+          { label: 'Dashboard', href: '/dashboard' },
+          { label: 'Mock Assessments', href: '/mock-tests' },
+          { label: 'History' }
+        ]}
+        badge={<Badge>{pagination.total} Attempts</Badge>}
+        actions={
+          <Button 
+            variant="outline"
+            iconLeft={<DocumentIcon className="w-4 h-4" />}
+            onClick={() => navigate('/mock-tests')}
+          >
+            All Assessments
+          </Button>
+        }
+      />
 
-        <Link
-          to="/mock-tests"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-xs transition"
-        >
-          All Mock Tests
-        </Link>
-      </div>
-
-      {/* Table */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden">
+      <Card>
         {loading ? (
-          <div className="p-12 text-center">
-            <div className="w-8 h-8 border-3 border-rose-200 border-t-rose-600 rounded-full animate-spin mx-auto mb-3"></div>
-            <p className="text-xs text-slate-500 font-medium">Loading test history...</p>
-          </div>
+          <LoadingState message="Loading test history..." />
         ) : error ? (
-          <div className="p-12 text-center text-xs text-rose-600">{error}</div>
-        ) : attempts.length === 0 ? (
-          <div className="p-12 text-center">
-            <div className="w-12 h-12 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-center mx-auto mb-3 text-slate-400">
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </svg>
-            </div>
-            <h3 className="text-sm font-bold text-slate-900 mb-1">No mock test attempts yet</h3>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto mb-4">
-              Take a timed placement simulator test to evaluate your readiness.
-            </p>
-            <Link
-              to="/mock-tests"
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-xl"
-            >
-              Take Mock Test
-            </Link>
+          <div className="p-6">
+            <ErrorState message={error} onRetry={() => setPage(1)} />
           </div>
+        ) : attempts.length === 0 ? (
+          <EmptyState 
+            icon={<DocumentIcon className="w-6 h-6" />} 
+            title="No mock test attempts yet" 
+            description="Take a timed placement simulator test to evaluate your readiness."
+            action={
+              <Button onClick={() => navigate('/mock-tests')}>
+                Take Mock Test
+              </Button>
+            }
+          />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="border-b border-slate-100 bg-slate-50/60 font-semibold text-slate-500 uppercase tracking-wider">
-                  <th className="py-3 px-6">Assessment Title</th>
-                  <th className="py-3 px-4">Date</th>
-                  <th className="py-3 px-4">Questions</th>
-                  <th className="py-3 px-4">Score</th>
-                  <th className="py-3 px-4">Percentage</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-6 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-700">
+          <div className="flex flex-col">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Assessment Title</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Questions</TableHead>
+                  <TableHead>Score</TableHead>
+                  <TableHead>Percentage</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {attempts.map((att) => (
-                  <tr key={att._id} className="hover:bg-slate-50/60 transition-colors">
-                    <td className="py-3.5 px-6 font-bold text-slate-900">
+                  <TableRow key={att._id}>
+                    <TableCell className="font-bold text-slate-900">
                       {att.mockTest?.title || 'Mock Test'}
-                    </td>
-                    <td className="py-3.5 px-4 text-slate-500 font-mono">
+                    </TableCell>
+                    <TableCell className="text-slate-500 font-mono">
                       {new Date(att.submittedAt || att.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="py-3.5 px-4">
+                    </TableCell>
+                    <TableCell>
                       {att.totalQuestions} Qs
-                    </td>
-                    <td className="py-3.5 px-4 font-bold text-slate-900">
+                    </TableCell>
+                    <TableCell className="font-bold text-slate-900">
                       {att.score || 0} pts
-                    </td>
-                    <td className="py-3.5 px-4 font-semibold text-blue-600">
+                    </TableCell>
+                    <TableCell className="font-semibold text-blue-600">
                       {att.percentage || 0}%
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                          att.status === 'submitted'
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                            : 'bg-amber-50 text-amber-700 border border-amber-200'
-                        }`}
-                      >
-                        {att.status}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-6 text-right whitespace-nowrap">
-                      <Link
-                        to={`/mock-tests/result/${att._id}`}
-                        className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold rounded-lg text-xs transition"
+                    </TableCell>
+                    <TableCell>
+                      <StatusBadge status={att.status || 'submitted'} />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        iconLeft={<EyeIcon className="w-3.5 h-3.5" />}
+                        onClick={() => navigate(`/mock-tests/result/${att._id}`)}
                       >
                         View Report
-                      </Link>
-                    </td>
-                  </tr>
+                      </Button>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
+            
+            <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200">
+              <span className="text-sm text-slate-500">
+                Page {pagination.page} of {pagination.pages}
+              </span>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  iconLeft={<ChevronLeftIcon className="w-3.5 h-3.5" />}
+                  onClick={handlePrevious} 
+                  disabled={page <= 1}
+                >
+                  Previous
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  iconRight={<ChevronRightIcon className="w-3.5 h-3.5" />}
+                  onClick={handleNext} 
+                  disabled={page >= pagination.pages}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
           </div>
         )}
-      </div>
+      </Card>
     </div>
   );
 }

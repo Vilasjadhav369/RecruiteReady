@@ -404,3 +404,73 @@ export function PlayIcon({ className = 'w-4 h-4' }) {
   );
 }
 
+export function DocumentIcon({ className = 'w-5 h-5' }) {
+  return (
+    <svg className={className} {...defaultProps}>
+      <path d="M4 3h8l4 4v10a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1z" />
+      <polyline points="12 3 12 7 16 7" />
+      <line x1="7" y1="11" x2="13" y2="11" />
+      <line x1="7" y1="14" x2="11" y2="14" />
+    </svg>
+  );
+}
+
+export function ShieldCheckIcon({ className = 'w-5 h-5' }) {
+  return (
+    <svg className={className} {...defaultProps}>
+      <path d="M10 2L3 5v6c0 5 7 7 7 7s7-2 7-7V5l-7-3z" />
+      <polyline points="7 10 9 12 13 8" />
+    </svg>
+  );
+}
+
+export function AcademicCapIcon({ className = 'w-5 h-5' }) {
+  return (
+    <svg className={className} {...defaultProps}>
+      <polygon points="10 3 2 7 10 11 18 7 10 3" />
+      <path d="M4.5 9.5v5c0 2 2.5 3.5 5.5 3.5s5.5-1.5 5.5-3.5v-5" />
+      <path d="M18 7v6" />
+    </svg>
+  );
+}
+
+export function ExclamationIcon({ className = 'w-5 h-5' }) {
+  return (
+    <svg className={className} {...defaultProps}>
+      <circle cx="10" cy="10" r="7" />
+      <line x1="10" y1="6" x2="10" y2="11" />
+      <circle cx="10" cy="14" r="0.5" fill="currentColor" />
+    </svg>
+  );
+}
+
+export function FlagIcon({ className = 'w-4 h-4' }) {
+  return (
+    <svg className={className} {...defaultProps}>
+      <path d="M4 17V3" />
+      <path d="M4 4h9a1 1 0 01.8 1.6L12 8l1.8 2.4A1 1 0 0113 12H4" />
+    </svg>
+  );
+}
+
+export function XCircleIcon({ className = 'w-5 h-5' }) {
+  return (
+    <svg className={className} {...defaultProps}>
+      <circle cx="10" cy="10" r="7" />
+      <line x1="12" y1="8" x2="8" y2="12" />
+      <line x1="8" y1="8" x2="12" y2="12" />
+    </svg>
+  );
+}
+
+export function ChartBarIcon({ className = 'w-5 h-5' }) {
+  return (
+    <svg className={className} {...defaultProps}>
+      <line x1="3" y1="17" x2="17" y2="17" />
+      <rect x="5" y="10" width="2.5" height="7" rx="0.5" />
+      <rect x="9.5" y="6" width="2.5" height="11" rx="0.5" />
+      <rect x="14" y="3" width="2.5" height="14" rx="0.5" />
+    </svg>
+  );
+}
+

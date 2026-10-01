@@ -33,6 +33,7 @@ import ResourceListPage from "../pages/resources/ResourceListPage.jsx";
 
 // Phase 11 — Mock Tests
 import MockTestListPage from "../pages/mockTests/MockTestListPage.jsx";
+import MockTestDetailPage from "../pages/mockTests/MockTestDetailPage.jsx";
 import MockTestSessionPage from "../pages/mockTests/MockTestSessionPage.jsx";
 import MockTestResultPage from "../pages/mockTests/MockTestResultPage.jsx";
 import MockTestHistoryPage from "../pages/mockTests/MockTestHistoryPage.jsx";
@@ -103,6 +104,7 @@ function AppRoutes() {
 
         {/* Phase 11 — Mock Tests */}
         <Route path="/mock-tests" element={<MockTestListPage />} />
+        <Route path="/mock-tests/:id" element={<MockTestDetailPage />} />
         <Route path="/mock-tests/session/:id" element={<MockTestSessionPage />} />
         <Route path="/mock-tests/result/:id" element={<MockTestResultPage />} />
         <Route path="/mock-tests/history" element={<MockTestHistoryPage />} />
