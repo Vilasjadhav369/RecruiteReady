@@ -483,3 +483,12 @@ export function BookOpenIcon({ className = 'w-5 h-5' }) {
   );
 }
 
+export function SparklesIcon({ className = 'w-5 h-5' }) {
+  return (
+    <svg className={className} {...defaultProps}>
+      <path d="M10 2l1.8 4.7L16.5 8.5l-4.7 1.8L10 15l-1.8-4.7L3.5 8.5l4.7-1.8L10 2z" />
+      <path d="M15 14l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2z" />
+    </svg>
+  );
+}
+
