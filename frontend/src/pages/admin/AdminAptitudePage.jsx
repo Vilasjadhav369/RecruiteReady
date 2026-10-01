@@ -1,16 +1,80 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   getAdminAptitudeQuestions,
   createAptitudeQuestion,
   updateAptitudeQuestion,
   updateAptitudeQuestionStatus,
 } from "../../services/adminService.js";
+import {
+  PageHeader,
+  Badge,
+  Button,
+  SearchInput,
+  Select,
+  Input,
+  Textarea,
+  Modal,
+  Toast,
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+  EmptyState,
+  ErrorState,
+  Skeleton,
+  SkeletonTableRow,
+  StatusBadge,
+} from "../../components/ui/index.js";
+import {
+  AptitudeIcon,
+  PlusIcon,
+  EditIcon,
+  EyeIcon,
+  DocumentIcon,
+  CheckCircleIcon,
+} from "../../components/ui/Icons.jsx";
 
+// ─── Constants ────────────────────────────────────────────────────────
 const CATEGORIES = [
   "Quantitative Aptitude",
   "Logical Reasoning",
   "Verbal Ability",
   "Data Interpretation",
+];
+
+const CATEGORY_OPTIONS = [
+  { value: "", label: "All Categories" },
+  ...CATEGORIES.map((c) => ({ value: c, label: c })),
+];
+
+const DIFFICULTY_OPTIONS = [
+  { value: "", label: "All Difficulties" },
+  { value: "easy", label: "Easy" },
+  { value: "medium", label: "Medium" },
+  { value: "hard", label: "Hard" },
+];
+
+const STATUS_OPTIONS = [
+  { value: "all", label: "All Statuses" },
+  { value: "active", label: "Active Only" },
+  { value: "inactive", label: "Inactive Only" },
+];
+
+const FORM_CATEGORY_OPTIONS = CATEGORIES.map((c) => ({ value: c, label: c }));
+
+const FORM_DIFFICULTY_OPTIONS = [
+  { value: "easy", label: "Easy" },
+  { value: "medium", label: "Medium" },
+  { value: "hard", label: "Hard" },
+];
+
+const CORRECT_OPTION_OPTIONS = [
+  { value: "A", label: "A" },
+  { value: "B", label: "B" },
+  { value: "C", label: "C" },
+  { value: "D", label: "D" },
 ];
 
 const INITIAL_FORM_STATE = {
@@ -29,7 +93,31 @@ const INITIAL_FORM_STATE = {
   isActive: true,
 };
 
+// ─── Helpers ──────────────────────────────────────────────────────────
+const safeNumber = (val) => {
+  if (val === null || val === undefined) return 0;
+  if (typeof val === "object") return Number(val.total ?? val.count ?? 0) || 0;
+  return Number(val) || 0;
+};
+
+const getDifficultyVariant = (d) => {
+  if (d === "easy") return "success";
+  if (d === "medium") return "warning";
+  if (d === "hard") return "danger";
+  return "default";
+};
+
+const capitalize = (s) =>
+  typeof s === "string" ? s.charAt(0).toUpperCase() + s.slice(1) : "—";
+
+const truncateText = (text, maxLen = 80) => {
+  if (!text) return "—";
+  return text.length > maxLen ? text.slice(0, maxLen) + "…" : text;
+};
+
+// ─── Component ────────────────────────────────────────────────────────
 export default function AdminAptitudePage() {
+  // ── Data State ──
   const [questions, setQuestions] = useState([]);
   const [pagination, setPagination] = useState({
     total: 0,
@@ -40,29 +128,59 @@ export default function AdminAptitudePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Filters
+  // ── Filters ──
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [difficultyFilter, setDifficultyFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const searchTimerRef = useRef(null);
 
-  // Modal State
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // ── Create / Edit Modal ──
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState(null);
   const [formData, setFormData] = useState(INITIAL_FORM_STATE);
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [formError, setFormError] = useState(null);
-  const [successToast, setSuccessToast] = useState(null);
 
-  // Action status loading tracker (questionId -> bool)
+  // ── View Detail Modal ──
+  const [viewQuestion, setViewQuestion] = useState(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+
+  // ── Status Toggle Confirmation ──
+  const [toggleTarget, setToggleTarget] = useState(null);
+  const [isToggleModalOpen, setIsToggleModalOpen] = useState(false);
   const [togglingId, setTogglingId] = useState(null);
 
+  // ── Toast ──
+  const [toast, setToast] = useState(null);
+  const toastTimerRef = useRef(null);
+
+  const showToast = (variant, title, message) => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    setToast({ variant, title, message });
+    toastTimerRef.current = setTimeout(() => setToast(null), 4000);
+  };
+
+  // ── Debounced Search ──
+  useEffect(() => {
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPagination((p) => ({ ...p, page: 1 }));
+    }, 350);
+    return () => {
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    };
+  }, [search]);
+
+  // ── Fetch Questions ──
   const fetchQuestions = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       const data = await getAdminAptitudeQuestions({
-        search,
+        search: debouncedSearch,
         category: categoryFilter,
         difficulty: difficultyFilter,
         status: statusFilter,
@@ -83,7 +201,7 @@ export default function AdminAptitudePage() {
       setLoading(false);
     }
   }, [
-    search,
+    debouncedSearch,
     categoryFilter,
     difficultyFilter,
     statusFilter,
@@ -95,25 +213,47 @@ export default function AdminAptitudePage() {
     fetchQuestions();
   }, [fetchQuestions]);
 
-  const showSuccess = (msg) => {
-    setSuccessToast(msg);
-    setTimeout(() => setSuccessToast(null), 3500);
+  // ── Filter Handlers (reset to page 1) ──
+  const handleCategoryChange = (e) => {
+    setCategoryFilter(e.target.value);
+    setPagination((p) => ({ ...p, page: 1 }));
+  };
+  const handleDifficultyChange = (e) => {
+    setDifficultyFilter(e.target.value);
+    setPagination((p) => ({ ...p, page: 1 }));
+  };
+  const handleStatusChange = (e) => {
+    setStatusFilter(e.target.value);
+    setPagination((p) => ({ ...p, page: 1 }));
   };
 
+  const hasActiveFilters =
+    debouncedSearch || categoryFilter || difficultyFilter || statusFilter !== "all";
+
+  const clearAllFilters = () => {
+    setSearch("");
+    setDebouncedSearch("");
+    setCategoryFilter("");
+    setDifficultyFilter("");
+    setStatusFilter("all");
+    setPagination((p) => ({ ...p, page: 1 }));
+  };
+
+  // ── Create Modal ──
   const handleOpenCreateModal = () => {
     setEditingQuestion(null);
     setFormData(INITIAL_FORM_STATE);
     setFormError(null);
-    setIsModalOpen(true);
+    setIsFormModalOpen(true);
   };
 
+  // ── Edit Modal ──
   const handleOpenEditModal = (q) => {
     setEditingQuestion(q);
     const optMap = {};
     (q.options || []).forEach((opt) => {
       optMap[`option${opt.key}`] = opt.text;
     });
-
     setFormData({
       question: q.question || "",
       category: q.category || "Quantitative Aptitude",
@@ -130,21 +270,27 @@ export default function AdminAptitudePage() {
       isActive: q.isActive !== undefined ? q.isActive : true,
     });
     setFormError(null);
-    setIsModalOpen(true);
+    setIsFormModalOpen(true);
   };
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
+  const handleCloseFormModal = () => {
+    setIsFormModalOpen(false);
     setEditingQuestion(null);
     setFormData(INITIAL_FORM_STATE);
     setFormError(null);
   };
 
+  // ── View Modal ──
+  const handleOpenViewModal = (q) => {
+    setViewQuestion(q);
+    setIsViewModalOpen(true);
+  };
+
+  // ── Form Submit ──
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     setFormError(null);
 
-    // Basic Validation
     if (!formData.question.trim()) {
       setFormError("Question text is required.");
       return;
@@ -198,12 +344,12 @@ export default function AdminAptitudePage() {
       setFormSubmitting(true);
       if (editingQuestion) {
         await updateAptitudeQuestion(editingQuestion._id, payload);
-        showSuccess("Question updated successfully.");
+        showToast("success", "Question Updated", "Changes saved successfully.");
       } else {
         await createAptitudeQuestion(payload);
-        showSuccess("New question added to bank.");
+        showToast("success", "Question Created", "New question added to the bank.");
       }
-      handleCloseModal();
+      handleCloseFormModal();
       fetchQuestions();
     } catch (err) {
       console.error("Error saving question:", err);
@@ -215,9 +361,18 @@ export default function AdminAptitudePage() {
     }
   };
 
-  const handleToggleStatus = async (q) => {
+  // ── Status Toggle ──
+  const handleRequestToggle = (q) => {
+    setToggleTarget(q);
+    setIsToggleModalOpen(true);
+  };
+
+  const handleConfirmToggle = async () => {
+    if (!toggleTarget) return;
+    const q = toggleTarget;
     try {
       setTogglingId(q._id);
+      setIsToggleModalOpen(false);
       const newStatus = !q.isActive;
       await updateAptitudeQuestionStatus(q._id, newStatus);
       setQuestions((prev) =>
@@ -225,583 +380,799 @@ export default function AdminAptitudePage() {
           item._id === q._id ? { ...item, isActive: newStatus } : item
         )
       );
-      showSuccess(
+      showToast(
+        "success",
+        "Status Updated",
         `Question marked as ${newStatus ? "Active" : "Inactive"}.`
       );
     } catch (err) {
       console.error("Failed to toggle question status:", err);
-      showSuccess("Failed to update status. Please try again.");
+      showToast("error", "Update Failed", "Could not update status. Please try again.");
     } finally {
       setTogglingId(null);
+      setToggleTarget(null);
     }
   };
 
-  const getDifficultyBadge = (difficulty) => {
-    switch (difficulty) {
-      case "easy":
-        return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
-            Easy
-          </span>
-        );
-      case "medium":
-        return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/80">
-            Medium
-          </span>
-        );
-      case "hard":
-        return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200/80">
-            Hard
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
-            {difficulty}
-          </span>
-        );
-    }
-  };
+  // ── Form Field Updater ──
+  const updateField = (field, value) =>
+    setFormData((prev) => ({ ...prev, [field]: value }));
 
+  // ── Pagination ──
+  const paginationStart = (pagination.page - 1) * pagination.limit + 1;
+  const paginationEnd = Math.min(
+    pagination.page * pagination.limit,
+    safeNumber(pagination.total)
+  );
+
+  // ── Render ──────────────────────────────────────────────────────────
   return (
     <div className="space-y-6">
-      {/* Toast Alert */}
-      {successToast && (
-        <div className="fixed top-20 right-6 z-50 flex items-center gap-3 px-4 py-3 bg-emerald-900 text-white rounded-xl shadow-xl border border-emerald-700 animate-in fade-in slide-in-from-top-4">
-          <svg className="w-5 h-5 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-          <span className="text-sm font-medium">{successToast}</span>
+      {/* ── Toast ── */}
+      {toast && (
+        <div className="fixed top-6 right-6 z-[60] w-80 animate-in fade-in slide-in-from-top-2 duration-200">
+          <Toast
+            variant={toast.variant}
+            title={toast.title}
+            message={toast.message}
+            onClose={() => setToast(null)}
+          />
         </div>
       )}
 
-      {/* Header Banner */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-8 shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200/60">
-              Module Bank
-            </span>
-            <span className="text-xs text-slate-600 font-medium">
-              {pagination.total} Total Questions
-            </span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
-            Aptitude Question Bank
-          </h1>
-          <p className="mt-1 text-sm text-slate-600">
-            Author, categorize, and configure aptitude practice questions for upcoming student modules.
-          </p>
-        </div>
+      {/* ── Page Header ── */}
+      <PageHeader
+        title="Aptitude Question Bank"
+        description="Author, categorize, and manage aptitude practice questions for student modules."
+        badge={
+          !loading && (
+            <Badge variant="primary" size="sm">
+              {safeNumber(pagination.total)} Questions
+            </Badge>
+          )
+        }
+        actions={
+          <Button
+            variant="primary"
+            size="md"
+            iconLeft={<PlusIcon className="w-4 h-4" />}
+            onClick={handleOpenCreateModal}
+          >
+            Add Question
+          </Button>
+        }
+      />
 
-        <button
-          type="button"
-          onClick={handleOpenCreateModal}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium rounded-xl shadow-xs transition-colors shrink-0"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          Add Question
-        </button>
+      {/* ── Filters ── */}
+      <div className="bg-white border border-slate-200/80 rounded-xl p-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <SearchInput
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onClear={() => setSearch("")}
+            placeholder="Search question, topic, tags…"
+          />
+          <Select
+            value={categoryFilter}
+            onChange={handleCategoryChange}
+            options={CATEGORY_OPTIONS}
+          />
+          <Select
+            value={difficultyFilter}
+            onChange={handleDifficultyChange}
+            options={DIFFICULTY_OPTIONS}
+          />
+          <Select
+            value={statusFilter}
+            onChange={handleStatusChange}
+            options={STATUS_OPTIONS}
+          />
+        </div>
+        {hasActiveFilters && (
+          <div className="mt-3 flex items-center justify-between">
+            <p className="text-xs text-slate-500">
+              Filters active — showing matching results
+            </p>
+            <button
+              type="button"
+              onClick={clearAllFilters}
+              className="text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors"
+            >
+              Clear all filters
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {/* Search */}
-          <div className="relative">
-            <svg
-              className="w-4 h-4 text-slate-600 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+      {/* ── Main Content ── */}
+      {loading ? (
+        <div className="bg-white border border-slate-200/80 rounded-xl overflow-hidden">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Question</TableHead>
+                  <TableHead>Category / Topic</TableHead>
+                  <TableHead>Difficulty</TableHead>
+                  <TableHead>Marks</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <SkeletonTableRow key={i} cols={6} />
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+      ) : error ? (
+        <ErrorState
+          title="Failed to Load Questions"
+          message={error}
+          onRetry={fetchQuestions}
+        />
+      ) : questions.length === 0 ? (
+        <EmptyState
+          icon={<DocumentIcon className="w-8 h-8" />}
+          title={
+            hasActiveFilters
+              ? "No questions match your filters"
+              : "No aptitude questions yet"
+          }
+          description={
+            hasActiveFilters
+              ? "Try adjusting your search or filter criteria, or add a new question."
+              : "The question bank is empty. Add the first question to get started."
+          }
+          action={
+            hasActiveFilters ? (
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={clearAllFilters}>
+                  Clear Filters
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  iconLeft={<PlusIcon className="w-3.5 h-3.5" />}
+                  onClick={handleOpenCreateModal}
+                >
+                  Add Question
+                </Button>
+              </div>
+            ) : (
+              <Button
+                variant="primary"
+                size="sm"
+                iconLeft={<PlusIcon className="w-3.5 h-3.5" />}
+                onClick={handleOpenCreateModal}
+              >
+                Add First Question
+              </Button>
+            )
+          }
+        />
+      ) : (
+        <>
+          {/* ── Desktop Table ── */}
+          <div className="hidden md:block bg-white border border-slate-200/80 rounded-xl overflow-hidden">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="min-w-[280px]">Question</TableHead>
+                    <TableHead className="min-w-[160px]">Category / Topic</TableHead>
+                    <TableHead>Difficulty</TableHead>
+                    <TableHead>Marks</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {questions.map((q) => (
+                    <TableRow key={q._id}>
+                      {/* Question */}
+                      <TableCell>
+                        <div className="max-w-sm">
+                          <p className="text-sm font-medium text-slate-900 line-clamp-2 leading-snug">
+                            {q.question || "—"}
+                          </p>
+                          {q.tags && q.tags.length > 0 && (
+                            <div className="mt-1.5 flex flex-wrap gap-1">
+                              {q.tags.slice(0, 3).map((tag, idx) => (
+                                <Badge key={idx} variant="default" size="sm">
+                                  {tag}
+                                </Badge>
+                              ))}
+                              {q.tags.length > 3 && (
+                                <span className="text-[11px] text-slate-400 self-center">
+                                  +{q.tags.length - 3}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+
+                      {/* Category / Topic */}
+                      <TableCell>
+                        <p className="text-xs font-semibold text-slate-900">
+                          {q.category || "—"}
+                        </p>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          {q.topic || "—"}
+                        </p>
+                      </TableCell>
+
+                      {/* Difficulty */}
+                      <TableCell>
+                        <Badge variant={getDifficultyVariant(q.difficulty)} size="sm">
+                          {capitalize(q.difficulty)}
+                        </Badge>
+                      </TableCell>
+
+                      {/* Marks */}
+                      <TableCell>
+                        <span className="text-sm font-medium text-slate-700">
+                          {safeNumber(q.marks) || 1}
+                        </span>
+                      </TableCell>
+
+                      {/* Status */}
+                      <TableCell>
+                        <StatusBadge status={q.isActive ? "active" : "inactive"} />
+                      </TableCell>
+
+                      {/* Actions */}
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleOpenViewModal(q)}
+                            title="View details"
+                          >
+                            <EyeIcon className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleOpenEditModal(q)}
+                            title="Edit question"
+                          >
+                            <EditIcon className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button
+                            variant={q.isActive ? "ghost" : "ghost"}
+                            size="sm"
+                            loading={togglingId === q._id}
+                            onClick={() => handleRequestToggle(q)}
+                            className={
+                              q.isActive
+                                ? "text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                                : "text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                            }
+                          >
+                            {q.isActive ? "Deactivate" : "Activate"}
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Pagination */}
+            <div className="px-6 py-3 border-t border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <p className="text-xs text-slate-500">
+                Showing{" "}
+                <span className="font-semibold text-slate-700">
+                  {paginationStart}
+                </span>{" "}
+                to{" "}
+                <span className="font-semibold text-slate-700">
+                  {paginationEnd}
+                </span>{" "}
+                of{" "}
+                <span className="font-semibold text-slate-700">
+                  {safeNumber(pagination.total)}
+                </span>{" "}
+                questions
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={pagination.page <= 1}
+                  onClick={() =>
+                    setPagination((p) => ({ ...p, page: p.page - 1 }))
+                  }
+                >
+                  Previous
+                </Button>
+                <span className="text-xs text-slate-600 font-medium px-2">
+                  Page {pagination.page} of {pagination.pages || 1}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={pagination.page >= (pagination.pages || 1)}
+                  onClick={() =>
+                    setPagination((p) => ({ ...p, page: p.page + 1 }))
+                  }
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Mobile Cards ── */}
+          <div className="md:hidden space-y-3">
+            {questions.map((q) => {
+              const correctOpt = (q.options || []).find(
+                (o) => o.key === q.correctOption
+              );
+              return (
+                <div
+                  key={q._id}
+                  className="bg-white border border-slate-200/80 rounded-xl p-4 space-y-3"
+                >
+                  {/* Top row: badges */}
+                  <div className="flex items-center justify-between gap-2">
+                    <Badge variant={getDifficultyVariant(q.difficulty)} size="sm">
+                      {capitalize(q.difficulty)}
+                    </Badge>
+                    <StatusBadge status={q.isActive ? "active" : "inactive"} />
+                  </div>
+
+                  {/* Question text */}
+                  <p className="text-sm font-medium text-slate-900 leading-snug line-clamp-3">
+                    {q.question || "—"}
+                  </p>
+
+                  {/* Meta row */}
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
+                    <span>{q.category || "—"}</span>
+                    <span>•</span>
+                    <span>{q.topic || "—"}</span>
+                    <span>•</span>
+                    <span>{safeNumber(q.marks) || 1} mark{(safeNumber(q.marks) || 1) > 1 ? "s" : ""}</span>
+                  </div>
+
+                  {/* Correct answer preview */}
+                  <div className="flex items-center gap-2 p-2 bg-emerald-50/60 border border-emerald-100 rounded-lg">
+                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold shrink-0">
+                      {q.correctOption || "—"}
+                    </span>
+                    <span className="text-xs text-emerald-800 truncate">
+                      {correctOpt ? correctOpt.text : "—"}
+                    </span>
+                  </div>
+
+                  {/* Tags */}
+                  {q.tags && q.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {q.tags.slice(0, 4).map((tag, idx) => (
+                        <Badge key={idx} variant="default" size="sm">
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-2 pt-1 border-t border-slate-100">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => handleOpenViewModal(q)}
+                    >
+                      View
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => handleOpenEditModal(q)}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className={`flex-1 ${
+                        q.isActive
+                          ? "text-amber-600 border-amber-200 hover:bg-amber-50"
+                          : "text-emerald-600 border-emerald-200 hover:bg-emerald-50"
+                      }`}
+                      loading={togglingId === q._id}
+                      onClick={() => handleRequestToggle(q)}
+                    >
+                      {q.isActive ? "Deactivate" : "Activate"}
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Mobile Pagination */}
+            <div className="flex items-center justify-between py-2">
+              <p className="text-xs text-slate-500">
+                Page {pagination.page} of {pagination.pages || 1}
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={pagination.page <= 1}
+                  onClick={() =>
+                    setPagination((p) => ({ ...p, page: p.page - 1 }))
+                  }
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={pagination.page >= (pagination.pages || 1)}
+                  onClick={() =>
+                    setPagination((p) => ({ ...p, page: p.page + 1 }))
+                  }
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ─── Create / Edit Question Modal ─────────────────────────── */}
+      <Modal
+        isOpen={isFormModalOpen}
+        onClose={handleCloseFormModal}
+        title={editingQuestion ? "Edit Aptitude Question" : "Create New Question"}
+        description="Configure question text, answer options, metadata, and explanation."
+        maxWidth="max-w-2xl"
+        footer={
+          <>
+            <Button variant="outline" size="sm" onClick={handleCloseFormModal}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              loading={formSubmitting}
+              onClick={handleFormSubmit}
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPagination((p) => ({ ...p, page: 1 }));
-              }}
-              placeholder="Search question, topic, tags..."
-              className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition"
+              {editingQuestion ? "Update Question" : "Create Question"}
+            </Button>
+          </>
+        }
+      >
+        <form onSubmit={handleFormSubmit} className="space-y-4">
+          {/* Form Error */}
+          {formError && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 font-medium">
+              {formError}
+            </div>
+          )}
+
+          {/* Question Text */}
+          <Textarea
+            label="Question Text"
+            required
+            rows={3}
+            value={formData.question}
+            onChange={(e) => updateField("question", e.target.value)}
+            placeholder="e.g. If 20% of A is equal to 30% of B, what is the ratio of A to B?"
+          />
+
+          {/* Category, Topic, Difficulty */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <Select
+              label="Category"
+              required
+              value={formData.category}
+              onChange={(e) => updateField("category", e.target.value)}
+              options={FORM_CATEGORY_OPTIONS}
+            />
+            <Input
+              label="Topic"
+              required
+              value={formData.topic}
+              onChange={(e) => updateField("topic", e.target.value)}
+              placeholder="e.g. Ratios & Proportions"
+            />
+            <Select
+              label="Difficulty"
+              value={formData.difficulty}
+              onChange={(e) => updateField("difficulty", e.target.value)}
+              options={FORM_DIFFICULTY_OPTIONS}
             />
           </div>
 
-          {/* Category Filter */}
-          <div>
-            <select
-              value={categoryFilter}
-              onChange={(e) => {
-                setCategoryFilter(e.target.value);
-                setPagination((p) => ({ ...p, page: 1 }));
-              }}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition"
-            >
-              <option value="">All Categories</option>
-              {CATEGORIES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Difficulty Filter */}
-          <div>
-            <select
-              value={difficultyFilter}
-              onChange={(e) => {
-                setDifficultyFilter(e.target.value);
-                setPagination((p) => ({ ...p, page: 1 }));
-              }}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition"
-            >
-              <option value="">All Difficulties</option>
-              <option value="easy">Easy</option>
-              <option value="medium">Medium</option>
-              <option value="hard">Hard</option>
-            </select>
-          </div>
-
-          {/* Status Filter */}
-          <div>
-            <select
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value);
-                setPagination((p) => ({ ...p, page: 1 }));
-              }}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition"
-            >
-              <option value="all">All Statuses</option>
-              <option value="active">Active Only</option>
-              <option value="inactive">Inactive Only</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Table Content */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden">
-        {loading ? (
-          <div className="p-12 text-center">
-            <div className="inline-block w-8 h-8 border-3 border-slate-300 border-t-slate-900 rounded-full animate-spin mb-3"></div>
-            <p className="text-sm text-slate-600">Loading aptitude question bank...</p>
-          </div>
-        ) : error ? (
-          <div className="p-8 text-center">
-            <div className="w-12 h-12 mx-auto rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mb-3">
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-            </div>
-            <p className="text-sm font-semibold text-slate-900">{error}</p>
-            <button
-              onClick={fetchQuestions}
-              className="mt-3 text-xs font-semibold text-slate-700 hover:text-slate-900 underline"
-            >
-              Try again
-            </button>
-          </div>
-        ) : questions.length === 0 ? (
-          <div className="p-12 text-center">
-            <div className="w-14 h-14 mx-auto rounded-2xl bg-indigo-50/60 border border-indigo-100 text-indigo-600 flex items-center justify-center mb-4">
-              <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </div>
-            <h3 className="text-base font-bold text-slate-900">No aptitude questions found</h3>
-            <p className="mt-1 text-sm text-slate-600 max-w-md mx-auto">
-              {search || categoryFilter || difficultyFilter || statusFilter !== "all"
-                ? "No questions match your filter criteria. Try resetting the filters or add a new question."
-                : "No questions currently exist in the database. Add the first question using the button below."}
-            </p>
-            <button
-              onClick={handleOpenCreateModal}
-              className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-xl transition"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              Add First Question
-            </button>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-slate-200/80 bg-slate-50/60 text-[11px] font-semibold tracking-wider text-slate-600 uppercase">
-                  <th className="py-3.5 px-6">Question & Details</th>
-                  <th className="py-3.5 px-4">Category / Topic</th>
-                  <th className="py-3.5 px-4">Difficulty</th>
-                  <th className="py-3.5 px-4">Correct Answer</th>
-                  <th className="py-3.5 px-4">Status</th>
-                  <th className="py-3.5 px-6 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-sm text-slate-700">
-                {questions.map((q) => {
-                  const correctOptObj = (q.options || []).find((o) => o.key === q.correctOption);
-                  return (
-                    <tr key={q._id} className="hover:bg-slate-50/70 transition-colors">
-                      {/* Question */}
-                      <td className="py-4 px-6 max-w-md">
-                        <div className="font-medium text-slate-900 line-clamp-2">
-                          {q.question}
-                        </div>
-                        <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                          {q.tags && q.tags.map((t, idx) => (
-                            <span
-                              key={idx}
-                              className="inline-block px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-medium rounded-md"
-                            >
-                              #{t}
-                            </span>
-                          ))}
-                          <span className="text-[11px] text-slate-600">
-                            • {q.marks || 1} mark{q.marks > 1 ? "s" : ""}
-                          </span>
-                        </div>
-                      </td>
-
-                      {/* Category / Topic */}
-                      <td className="py-4 px-4 whitespace-nowrap">
-                        <div className="font-medium text-slate-900 text-xs">{q.category}</div>
-                        <div className="text-xs text-slate-600">{q.topic}</div>
-                      </td>
-
-                      {/* Difficulty */}
-                      <td className="py-4 px-4 whitespace-nowrap">
-                        {getDifficultyBadge(q.difficulty)}
-                      </td>
-
-                      {/* Correct Answer */}
-                      <td className="py-4 px-4 max-w-xs">
-                        <div className="flex items-center gap-2">
-                          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold shrink-0">
-                            {q.correctOption}
-                          </span>
-                          <span className="text-xs text-slate-700 truncate font-mono">
-                            {correctOptObj ? correctOptObj.text : "N/A"}
-                          </span>
-                        </div>
-                      </td>
-
-                      {/* Status */}
-                      <td className="py-4 px-4 whitespace-nowrap">
-                        {q.isActive ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                            Active
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200">
-                            <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-                            Inactive
-                          </span>
-                        )}
-                      </td>
-
-                      {/* Actions */}
-                      <td className="py-4 px-6 text-right whitespace-nowrap">
-                        <div className="flex items-center justify-end gap-2">
-                          {/* Edit Button */}
-                          <button
-                            type="button"
-                            onClick={() => handleOpenEditModal(q)}
-                            className="px-2.5 py-1 text-xs font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
-                          >
-                            Edit
-                          </button>
-
-                          {/* Status Toggle Button */}
-                          <button
-                            type="button"
-                            disabled={togglingId === q._id}
-                            onClick={() => handleToggleStatus(q)}
-                            className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition ${
-                              q.isActive
-                                ? "text-amber-700 hover:bg-amber-50"
-                                : "text-emerald-700 hover:bg-emerald-50"
-                            } ${togglingId === q._id ? "opacity-50 cursor-wait" : ""}`}
-                          >
-                            {togglingId === q._id
-                              ? "Updating..."
-                              : q.isActive
-                              ? "Deactivate"
-                              : "Activate"}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* Pagination Bar */}
-        {!loading && questions.length > 0 && (
-          <div className="py-3.5 px-6 border-t border-slate-200/80 bg-slate-50/40 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600">
-            <div>
-              Showing{" "}
-              <span className="font-semibold text-slate-900">
-                {(pagination.page - 1) * pagination.limit + 1}
-              </span>{" "}
-              to{" "}
-              <span className="font-semibold text-slate-900">
-                {Math.min(pagination.page * pagination.limit, pagination.total)}
-              </span>{" "}
-              of <span className="font-semibold text-slate-900">{pagination.total}</span> questions
-            </div>
-            <div className="flex items-center gap-1.5">
-              <button
-                disabled={pagination.page <= 1}
-                onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
-                className="px-3 py-1.5 border border-slate-200 rounded-lg text-slate-700 font-medium hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed transition"
-              >
-                Previous
-              </button>
-              <span className="px-2 text-slate-600 font-semibold">
-                Page {pagination.page} of {pagination.pages || 1}
+          {/* Answer Options */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-slate-700">
+                Answer Options <span className="text-red-500">*</span>
+              </label>
+              <span className="text-[11px] text-slate-400">
+                Select the correct answer
               </span>
-              <button
-                disabled={pagination.page >= pagination.pages}
-                onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
-                className="px-3 py-1.5 border border-slate-200 rounded-lg text-slate-700 font-medium hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed transition"
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Add / Edit Question Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
-            {/* Modal Header */}
-            <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-bold text-slate-900">
-                  {editingQuestion ? "Edit Aptitude Question" : "Create New Aptitude Question"}
-                </h3>
-                <p className="text-xs text-slate-600 mt-0.5">
-                  Configure question text, multiple choice options, explanation, and metadata.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={handleCloseModal}
-                className="p-1.5 rounded-lg text-slate-600 hover:text-slate-700 hover:bg-slate-100 transition"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
             </div>
 
-            {/* Modal Body / Form */}
-            <form onSubmit={handleFormSubmit} className="flex-1 overflow-y-auto p-6 space-y-4">
-              {formError && (
-                <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700">
-                  {formError}
-                </div>
-              )}
-
-              {/* Question Text */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Question Text <span className="text-rose-500">*</span>
-                </label>
-                <textarea
-                  required
-                  rows={3}
-                  value={formData.question}
-                  onChange={(e) => setFormData({ ...formData, question: e.target.value })}
-                  placeholder="e.g. If 20% of A is equal to 30% of B, what is the ratio of A to B?"
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition"
-                />
-              </div>
-
-              {/* Category, Topic, Difficulty Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Category <span className="text-rose-500">*</span>
-                  </label>
-                  <select
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+            {["A", "B", "C", "D"].map((key) => {
+              const fieldName = `option${key}`;
+              const isCorrect = formData.correctOption === key;
+              return (
+                <div
+                  key={key}
+                  className={`flex items-center gap-2.5 p-2.5 rounded-lg border transition-colors ${
+                    isCorrect
+                      ? "border-emerald-300 bg-emerald-50/50"
+                      : "border-slate-200 bg-slate-50/40"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    id={`radio-opt-${key}`}
+                    name="correctOption"
+                    checked={isCorrect}
+                    onChange={() => updateField("correctOption", key)}
+                    className="w-4 h-4 text-emerald-600 focus:ring-emerald-500 border-slate-300"
+                  />
+                  <label
+                    htmlFor={`radio-opt-${key}`}
+                    className="text-xs font-bold text-slate-700 w-5 text-center cursor-pointer select-none"
                   >
-                    {CATEGORIES.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Topic <span className="text-rose-500">*</span>
+                    {key}
                   </label>
                   <input
                     type="text"
                     required
-                    value={formData.topic}
-                    onChange={(e) => setFormData({ ...formData, topic: e.target.value })}
-                    placeholder="e.g. Ratios & Proportions"
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+                    value={formData[fieldName]}
+                    onChange={(e) => updateField(fieldName, e.target.value)}
+                    placeholder={`Option ${key} text`}
+                    className="flex-1 h-8 px-3 text-sm bg-white border border-slate-200 rounded-md text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                   />
                 </div>
+              );
+            })}
+          </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Difficulty
-                  </label>
-                  <select
-                    value={formData.difficulty}
-                    onChange={(e) => setFormData({ ...formData, difficulty: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
-                  >
-                    <option value="easy">Easy</option>
-                    <option value="medium">Medium</option>
-                    <option value="hard">Hard</option>
-                  </select>
-                </div>
-              </div>
+          {/* Explanation */}
+          <Textarea
+            label="Detailed Explanation / Solution"
+            required
+            rows={3}
+            value={formData.explanation}
+            onChange={(e) => updateField("explanation", e.target.value)}
+            placeholder="Explain step-by-step how the correct answer is derived…"
+          />
 
-              {/* 4 Multiple Choice Options */}
-              <div className="space-y-2.5 pt-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-slate-700">
-                    Four Answer Options <span className="text-rose-500">*</span>
-                  </label>
-                  <span className="text-[11px] text-slate-600">Select which option is correct</span>
-                </div>
+          {/* Marks, Tags, Status */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <Input
+              label="Marks"
+              type="number"
+              value={formData.marks}
+              onChange={(e) => updateField("marks", e.target.value)}
+              placeholder="1"
+            />
+            <div className="sm:col-span-2">
+              <Input
+                label="Tags (comma separated)"
+                value={formData.tags}
+                onChange={(e) => updateField("tags", e.target.value)}
+                placeholder="e.g. tcs, infosys, formulas"
+                helperText="Optional. Helps with search and categorization."
+              />
+            </div>
+          </div>
 
-                {["A", "B", "C", "D"].map((key) => {
-                  const fieldName = `option${key}`;
-                  const isChecked = formData.correctOption === key;
+          {/* Active Toggle */}
+          <div className="flex items-center gap-2.5 pt-1">
+            <input
+              type="checkbox"
+              id="form-active-toggle"
+              checked={formData.isActive}
+              onChange={(e) => updateField("isActive", e.target.checked)}
+              className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300"
+            />
+            <label
+              htmlFor="form-active-toggle"
+              className="text-xs font-medium text-slate-700 cursor-pointer select-none"
+            >
+              Active — visible to the question engine
+            </label>
+          </div>
+        </form>
+      </Modal>
+
+      {/* ─── View Question Detail Modal ───────────────────────────── */}
+      <Modal
+        isOpen={isViewModalOpen}
+        onClose={() => setIsViewModalOpen(false)}
+        title="Question Details"
+        description={viewQuestion ? `${viewQuestion.category} • ${viewQuestion.topic}` : ""}
+        maxWidth="max-w-2xl"
+        footer={
+          <>
+            <Button variant="outline" size="sm" onClick={() => setIsViewModalOpen(false)}>
+              Close
+            </Button>
+            {viewQuestion && (
+              <Button
+                variant="primary"
+                size="sm"
+                iconLeft={<EditIcon className="w-3.5 h-3.5" />}
+                onClick={() => {
+                  setIsViewModalOpen(false);
+                  handleOpenEditModal(viewQuestion);
+                }}
+              >
+                Edit Question
+              </Button>
+            )}
+          </>
+        }
+      >
+        {viewQuestion && (
+          <div className="space-y-5">
+            {/* Question Text */}
+            <div>
+              <h4 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                Question
+              </h4>
+              <p className="text-sm text-slate-900 leading-relaxed">
+                {viewQuestion.question}
+              </p>
+            </div>
+
+            {/* Meta Badges */}
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant={getDifficultyVariant(viewQuestion.difficulty)} size="sm">
+                {capitalize(viewQuestion.difficulty)}
+              </Badge>
+              <Badge variant="default" size="sm">
+                {safeNumber(viewQuestion.marks) || 1} Mark{(safeNumber(viewQuestion.marks) || 1) > 1 ? "s" : ""}
+              </Badge>
+              <StatusBadge status={viewQuestion.isActive ? "active" : "inactive"} />
+            </div>
+
+            {/* Options */}
+            <div>
+              <h4 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                Answer Options
+              </h4>
+              <div className="space-y-2">
+                {(viewQuestion.options || []).map((opt) => {
+                  const isCorrect = opt.key === viewQuestion.correctOption;
                   return (
                     <div
-                      key={key}
-                      className={`flex items-center gap-2.5 p-2 rounded-xl border transition ${
-                        isChecked
-                          ? "border-emerald-300 bg-emerald-50/40"
-                          : "border-slate-200 bg-slate-50/60"
+                      key={opt.key}
+                      className={`flex items-center gap-3 p-3 rounded-lg border ${
+                        isCorrect
+                          ? "bg-emerald-50/60 border-emerald-200"
+                          : "bg-slate-50/40 border-slate-200"
                       }`}
                     >
-                      <input
-                        type="radio"
-                        id={`radio-opt-${key}`}
-                        name="correctOption"
-                        checked={isChecked}
-                        onChange={() => setFormData({ ...formData, correctOption: key })}
-                        className="w-4 h-4 text-emerald-600 focus:ring-emerald-500 border-slate-300"
-                      />
-                      <label
-                        htmlFor={`radio-opt-${key}`}
-                        className="text-xs font-bold text-slate-700 w-5 text-center cursor-pointer"
+                      <span
+                        className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold shrink-0 ${
+                          isCorrect
+                            ? "bg-emerald-100 text-emerald-800"
+                            : "bg-slate-100 text-slate-600"
+                        }`}
                       >
-                        {key}
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={formData[fieldName]}
-                        onChange={(e) =>
-                          setFormData({ ...formData, [fieldName]: e.target.value })
-                        }
-                        placeholder={`Option ${key} text`}
-                        className="flex-1 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-400"
-                      />
+                        {opt.key}
+                      </span>
+                      <span className="text-sm text-slate-800 flex-1">
+                        {opt.text}
+                      </span>
+                      {isCorrect && (
+                        <CheckCircleIcon className="w-4 h-4 text-emerald-600 shrink-0" />
+                      )}
                     </div>
                   );
                 })}
               </div>
+            </div>
 
-              {/* Explanation */}
-              <div className="pt-2">
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Detailed Explanation / Solution <span className="text-rose-500">*</span>
-                </label>
-                <textarea
-                  required
-                  rows={2}
-                  value={formData.explanation}
-                  onChange={(e) => setFormData({ ...formData, explanation: e.target.value })}
-                  placeholder="Explain step-by-step how the correct answer is derived..."
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition"
-                />
-              </div>
-
-              {/* Tags & Active Status */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Tags (Comma separated)
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.tags}
-                    onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-                    placeholder="e.g. tcs, infosys, formulas"
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
-                  />
-                </div>
-
-                <div className="flex items-center gap-3 pt-5">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={formData.isActive}
-                      onChange={(e) =>
-                        setFormData({ ...formData, isActive: e.target.checked })
-                      }
-                      className="w-4 h-4 rounded text-slate-900 focus:ring-slate-500 border-slate-300"
-                    />
-                    <span className="text-xs font-semibold text-slate-700">
-                      Active (Visible to questions engine)
-                    </span>
-                  </label>
+            {/* Explanation */}
+            {viewQuestion.explanation && (
+              <div>
+                <h4 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  Explanation
+                </h4>
+                <div className="p-3 bg-blue-50/50 border border-blue-100 rounded-lg">
+                  <p className="text-xs text-blue-900 leading-relaxed">
+                    {viewQuestion.explanation}
+                  </p>
                 </div>
               </div>
+            )}
 
-              {/* Footer Actions */}
-              <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2.5">
-                <button
-                  type="button"
-                  onClick={handleCloseModal}
-                  className="px-4 py-2 border border-slate-200 text-slate-700 text-xs font-semibold rounded-xl hover:bg-slate-50 transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={formSubmitting}
-                  className="inline-flex items-center gap-2 px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-xl shadow-xs disabled:opacity-50 transition"
-                >
-                  {formSubmitting && (
-                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  )}
-                  {editingQuestion ? "Update Question" : "Create Question"}
-                </button>
+            {/* Tags */}
+            {viewQuestion.tags && viewQuestion.tags.length > 0 && (
+              <div>
+                <h4 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  Tags
+                </h4>
+                <div className="flex flex-wrap gap-1.5">
+                  {viewQuestion.tags.map((tag, idx) => (
+                    <Badge key={idx} variant="default" size="sm">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
               </div>
-            </form>
+            )}
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
+
+      {/* ─── Status Toggle Confirmation Modal ─────────────────────── */}
+      <Modal
+        isOpen={isToggleModalOpen}
+        onClose={() => {
+          setIsToggleModalOpen(false);
+          setToggleTarget(null);
+        }}
+        title={
+          toggleTarget?.isActive
+            ? "Deactivate Question?"
+            : "Activate Question?"
+        }
+        description={
+          toggleTarget?.isActive
+            ? "This question will be hidden from student practice sessions."
+            : "This question will become visible in student practice sessions."
+        }
+        maxWidth="max-w-md"
+        footer={
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setIsToggleModalOpen(false);
+                setToggleTarget(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant={toggleTarget?.isActive ? "danger" : "success"}
+              size="sm"
+              onClick={handleConfirmToggle}
+            >
+              {toggleTarget?.isActive ? "Deactivate" : "Activate"}
+            </Button>
+          </>
+        }
+      >
+        {toggleTarget && (
+          <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
+            <p className="text-sm text-slate-800 line-clamp-3">
+              {truncateText(toggleTarget.question, 200)}
+            </p>
+            <div className="flex items-center gap-2 mt-2">
+              <Badge variant={getDifficultyVariant(toggleTarget.difficulty)} size="sm">
+                {capitalize(toggleTarget.difficulty)}
+              </Badge>
+              <span className="text-xs text-slate-500">
+                {toggleTarget.category} • {toggleTarget.topic}
+              </span>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
