@@ -1,8 +1,68 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { getReviews, submitReview } from '../services/reviewService.js';
+import {
+  PageHeader,
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  Badge,
+  Button,
+  SkeletonCard,
+  ErrorState,
+  EmptyState,
+} from '../components/ui/index.js';
+import {
+  StarIcon,
+  CheckCircleIcon,
+  AlertCircleIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  SparklesIcon,
+} from '../components/ui/Icons.jsx';
+
+/**
+ * Accessible Star Rating Selector
+ * Supports mouse hover, keyboard selection, and screen readers.
+ */
+function RatingSelector({ value = 5, onChange, disabled = false }) {
+  const [hovered, setHovered] = useState(0);
+
+  return (
+    <div className="flex items-center gap-1.5" role="radiogroup" aria-label="Review rating">
+      {[1, 2, 3, 4, 5].map((star) => {
+        const isFilled = (hovered || value) >= star;
+        return (
+          <button
+            type="button"
+            key={star}
+            disabled={disabled}
+            onClick={() => onChange(star)}
+            onMouseEnter={() => setHovered(star)}
+            onMouseLeave={() => setHovered(0)}
+            aria-label={`${star} of 5 stars`}
+            aria-checked={value === star}
+            role="radio"
+            className="p-1 rounded-md text-amber-400 hover:text-amber-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-transform active:scale-95 disabled:opacity-50 cursor-pointer"
+          >
+            <StarIcon
+              className="w-6 h-6 text-amber-400"
+              filled={isFilled}
+            />
+          </button>
+        );
+      })}
+      <span className="text-xs font-semibold text-slate-700 ml-2 font-mono">
+        {hovered || value} / 5
+      </span>
+    </div>
+  );
+}
 
 export default function ReviewsPage() {
   const [reviews, setReviews] = useState([]);
+  const [pagination, setPagination] = useState({ total: 0, page: 1, limit: 10, pages: 1 });
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -14,14 +74,18 @@ export default function ReviewsPage() {
   const [submitMessage, setSubmitMessage] = useState(null);
   const [formError, setFormError] = useState(null);
 
+  const formRef = useRef(null);
+
   const fetchApprovedReviews = async () => {
     try {
       setLoading(true);
-      const data = await getReviews();
+      setError(null);
+      const data = await getReviews({ page, limit: 10 });
       setReviews(data?.reviews || []);
+      setPagination(data?.pagination || { total: 0, page: 1, limit: 10, pages: 1 });
     } catch (err) {
-      console.error('Failed to load reviews:', err);
-      setError('Could not load reviews.');
+      console.error('Failed to load student reviews:', err);
+      setError('Unable to load student reviews. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }
@@ -29,7 +93,7 @@ export default function ReviewsPage() {
 
   useEffect(() => {
     fetchApprovedReviews();
-  }, []);
+  }, [page]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -37,196 +101,276 @@ export default function ReviewsPage() {
     setSubmitMessage(null);
 
     if (!comment.trim()) {
-      setFormError('Please provide your review feedback.');
+      setFormError('Please enter your feedback comments before submitting.');
       return;
     }
 
     try {
       setSubmitting(true);
-      const res = await submitReview({ rating, title, comment });
-      setSubmitMessage(res.message || 'Your review has been submitted for moderation.');
+      const res = await submitReview({
+        rating,
+        title: title.trim(),
+        comment: comment.trim(),
+      });
+      setSubmitMessage(
+        res.message || 'Your review has been submitted and is awaiting moderation.'
+      );
       setTitle('');
       setComment('');
       setRating(5);
     } catch (err) {
       console.error('Submit review error:', err);
-      setFormError(err.response?.data?.message || 'Failed to submit review.');
+      setFormError(err.response?.data?.message || 'Failed to submit review. Please try again.');
     } finally {
       setSubmitting(false);
     }
   };
 
+  const handleScrollToForm = () => {
+    if (formRef.current) {
+      formRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const commentInput = formRef.current.querySelector('textarea');
+      if (commentInput) {
+        commentInput.focus();
+      }
+    }
+  };
+
+  const breadcrumbs = [
+    { label: 'Student Dashboard', href: '/dashboard' },
+    { label: 'Reviews' },
+  ];
+
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
-      {/* Header Banner */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-8 shadow-xs">
-        <div className="flex items-center gap-2 mb-1.5">
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/60">
-            Student Feedback
-          </span>
-          <span className="text-xs text-slate-500 font-medium">
-            Community Insights
-          </span>
-        </div>
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
-          Placement Reviews & Feedback
-        </h1>
-        <p className="mt-1 text-sm text-slate-600">
-          Share your preparation experience and read verified insights from fellow candidates.
-        </p>
-      </div>
+    <div className="max-w-[1240px] mx-auto space-y-8">
+      {/* Page Header */}
+      <PageHeader
+        title="Student Reviews"
+        description="Share your experience and help us improve RecruiteReady."
+        breadcrumbs={breadcrumbs}
+        badge={
+          pagination.total > 0 ? (
+            <Badge variant="default">
+              {pagination.total} {pagination.total === 1 ? 'Approved Review' : 'Approved Reviews'}
+            </Badge>
+          ) : null
+        }
+        actions={
+          <Button variant="primary" size="sm" onClick={handleScrollToForm}>
+            Share Your Experience
+          </Button>
+        }
+      />
 
+      {/* Main Two-Column Layout: Form (Left) & Community Reviews (Right) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        {/* Left Column: Submit Review Form */}
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-7 shadow-xs space-y-4">
-          <h2 className="text-sm font-bold text-slate-900">Leave Your Feedback</h2>
-          <p className="text-xs text-slate-500">
-            All reviews undergo moderator approval before appearing publicly.
-          </p>
+        {/* Left Column: Review Submission Form */}
+        <div ref={formRef} className="lg:col-span-1">
+          <Card className="border-slate-200/80 shadow-xs sticky lg:top-24">
+            <CardHeader className="pb-3 border-b border-slate-100">
+              <CardTitle className="text-base">Share Your Experience</CardTitle>
+              <p className="text-xs text-slate-500 mt-0.5">
+                All reviews undergo moderator review before appearing publicly.
+              </p>
+            </CardHeader>
+            <CardContent className="p-5 sm:p-6 space-y-4">
+              {submitMessage && (
+                <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 flex items-start gap-2.5">
+                  <CheckCircleIcon className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <span className="leading-relaxed">{submitMessage}</span>
+                </div>
+              )}
 
-          {submitMessage && (
-            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 animate-in fade-in">
-              {submitMessage}
-            </div>
-          )}
+              {formError && (
+                <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 flex items-start gap-2.5">
+                  <AlertCircleIcon className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                  <span className="leading-relaxed">{formError}</span>
+                </div>
+              )}
 
-          {formError && (
-            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 animate-in fade-in">
-              {formError}
-            </div>
-          )}
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Rating Input */}
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-semibold text-slate-700">
+                    Overall Rating <span className="text-rose-500">*</span>
+                  </label>
+                  <RatingSelector
+                    value={rating}
+                    onChange={(r) => setRating(r)}
+                    disabled={submitting}
+                  />
+                </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Rating */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Rating
-              </label>
-              <div className="flex items-center gap-1.5">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    type="button"
-                    key={star}
-                    onClick={() => setRating(star)}
-                    className="p-1 text-amber-400 hover:scale-110 transition-transform"
-                  >
-                    <svg
-                      className={`w-6 h-6 ${star <= rating ? 'fill-amber-400' : 'fill-slate-200'}`}
-                      viewBox="0 0 20 20"
-                    >
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                  </button>
-                ))}
-                <span className="text-xs font-bold text-slate-700 ml-2">{rating} / 5</span>
-              </div>
-            </div>
+                {/* Title Input */}
+                <div className="space-y-1.5">
+                  <label htmlFor="review-title" className="block text-xs font-semibold text-slate-700">
+                    Headline (Optional)
+                  </label>
+                  <input
+                    id="review-title"
+                    type="text"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    disabled={submitting}
+                    placeholder="e.g. Great preparation for TCS NQT"
+                    className="w-full h-9 px-3 text-sm bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all disabled:opacity-50"
+                  />
+                </div>
 
-            {/* Title */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Headline / Subject
-              </label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. Great aptitude practice questions!"
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
-              />
-            </div>
+                {/* Comment Textarea */}
+                <div className="space-y-1.5">
+                  <label htmlFor="review-comment" className="block text-xs font-semibold text-slate-700">
+                    Your Feedback & Advice <span className="text-rose-500">*</span>
+                  </label>
+                  <textarea
+                    id="review-comment"
+                    required
+                    rows={4}
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    disabled={submitting}
+                    placeholder="Share your interview preparation experience or recommendations for fellow students..."
+                    className="w-full p-3 text-sm bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all disabled:opacity-50 resize-y min-h-[90px]"
+                  />
+                </div>
 
-            {/* Comment */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Your Experience & Advice <span className="text-rose-500">*</span>
-              </label>
-              <textarea
-                required
-                rows={4}
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                placeholder="Share your interview preparation tips or thoughts on the platform..."
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-xl shadow-xs transition disabled:opacity-50"
-            >
-              {submitting ? 'Submitting...' : 'Submit Review'}
-            </button>
-          </form>
+                {/* Submit Action */}
+                <Button
+                  type="submit"
+                  variant="primary"
+                  fullWidth
+                  loading={submitting}
+                  disabled={submitting}
+                  className="mt-2"
+                >
+                  {submitting ? 'Submitting Review...' : 'Submit Review'}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Right Column: Public Approved Reviews */}
+        {/* Right Column: Public Approved Community Reviews */}
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between pb-2 border-b border-slate-200">
             <h2 className="text-sm font-bold text-slate-900">
-              Community Reviews ({reviews.length})
+              Community Reviews
             </h2>
-            <span className="text-xs text-slate-400">Verified Placement Candidates</span>
+            <span className="text-xs text-slate-400">
+              Verified Candidate Feedback
+            </span>
           </div>
 
           {loading ? (
-            <div className="p-12 text-center bg-white rounded-2xl border border-slate-200">
-              <div className="w-8 h-8 border-3 border-amber-200 border-t-amber-600 rounded-full animate-spin mx-auto mb-3"></div>
-              <p className="text-xs text-slate-500">Loading student reviews...</p>
+            <div className="space-y-4">
+              {Array.from({ length: 3 }).map((_, idx) => (
+                <SkeletonCard key={idx} className="h-40" />
+              ))}
             </div>
           ) : error ? (
-            <div className="p-8 text-center text-xs text-rose-600 bg-white rounded-2xl border border-slate-200">{error}</div>
-          ) : reviews.length === 0 ? (
-            <div className="p-12 text-center bg-white rounded-2xl border border-slate-200">
-              <div className="w-12 h-12 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-center mx-auto mb-3 text-slate-400">
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
-              </div>
-              <h3 className="text-sm font-bold text-slate-900 mb-1">No student reviews yet</h3>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                Be the first candidate to leave feedback on your placement preparation experience!
-              </p>
+            <div className="p-6">
+              <ErrorState
+                title="Unable to load student reviews."
+                message={error}
+                onRetry={fetchApprovedReviews}
+              />
             </div>
+          ) : reviews.length === 0 ? (
+            <EmptyState
+              icon={<StarIcon className="w-8 h-8 text-amber-400" />}
+              title="No student reviews yet."
+              description="Be one of the first students to share your experience."
+              action={
+                <Button variant="primary" onClick={handleScrollToForm}>
+                  Share Your Experience
+                </Button>
+              }
+            />
           ) : (
             <div className="space-y-4">
-              {reviews.map((r) => (
-                <div
-                  key={r._id}
-                  className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs space-y-3"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="flex text-amber-400">
-                        {[...Array(5)].map((_, i) => (
-                          <svg
-                            key={i}
-                            className={`w-4 h-4 ${i < r.rating ? 'fill-amber-400' : 'fill-slate-200'}`}
-                            viewBox="0 0 20 20"
-                          >
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                          </svg>
-                        ))}
+              {reviews.map((r) => {
+                const authorInitial = r.author ? r.author.charAt(0).toUpperCase() : 'S';
+
+                return (
+                  <Card key={r._id} className="border-slate-200/80 shadow-xs">
+                    <CardContent className="p-5 sm:p-6 space-y-3.5">
+                      {/* Review Header: Author Info, Rating, Date */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-blue-50 border border-blue-200/60 text-blue-700 font-bold text-xs flex items-center justify-center shrink-0">
+                            {authorInitial}
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-bold text-slate-900">
+                              {r.author || 'Student'}
+                            </h4>
+                            <p className="text-[11px] text-slate-500 truncate max-w-xs">
+                              {r.college || 'Engineering College'}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          {/* 5-Star Visualizer */}
+                          <div className="flex items-center text-amber-400" aria-label={`Rating: ${r.rating} of 5 stars`}>
+                            {[1, 2, 3, 4, 5].map((s) => (
+                              <StarIcon
+                                key={s}
+                                className="w-4 h-4 text-amber-400"
+                                filled={s <= r.rating}
+                              />
+                            ))}
+                          </div>
+                          <span className="text-[11px] text-slate-400 font-mono">
+                            {new Date(r.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
                       </div>
-                      <span className="text-xs font-bold text-slate-800">{r.title}</span>
-                    </div>
 
-                    <span className="text-[11px] text-slate-400">
-                      {new Date(r.createdAt).toLocaleDateString()}
-                    </span>
-                  </div>
+                      {/* Optional Review Title */}
+                      {r.title && (
+                        <h5 className="text-sm font-semibold text-slate-900 pt-0.5">
+                          {r.title}
+                        </h5>
+                      )}
 
-                  <p className="text-xs text-slate-600 leading-relaxed">
-                    {r.comment}
-                  </p>
+                      {/* Comment */}
+                      <p className="text-xs sm:text-sm text-slate-600 leading-relaxed whitespace-pre-line">
+                        {r.comment}
+                      </p>
+                    </CardContent>
+                  </Card>
+                );
+              })}
 
-                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-                    <span className="font-semibold text-slate-800">{r.author}</span>
-                    <span>{r.college}</span>
+              {/* Pagination */}
+              {pagination.pages > 1 && (
+                <div className="flex items-center justify-between px-2 py-4 border-t border-slate-200">
+                  <span className="text-xs text-slate-500 font-medium">
+                    Page {pagination.page} of {pagination.pages} ({pagination.total} total)
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={page <= 1}
+                      iconLeft={<ChevronLeftIcon className="w-3.5 h-3.5" />}
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    >
+                      Previous
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={page >= pagination.pages}
+                      iconRight={<ChevronRightIcon className="w-3.5 h-3.5" />}
+                      onClick={() => setPage((p) => p + 1)}
+                    >
+                      Next
+                    </Button>
                   </div>
                 </div>
-              ))}
+              )}
             </div>
           )}
         </div>
