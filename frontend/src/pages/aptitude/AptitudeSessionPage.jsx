@@ -5,6 +5,23 @@ import {
   saveAptitudeAnswer,
   submitAptitudeSession,
 } from '../../services/aptitudeService.js';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardFooter,
+  Badge,
+  Button,
+  Modal,
+  Skeleton,
+  ErrorState,
+  ClockIcon,
+  ArrowLeftIcon,
+  ArrowRightIcon,
+  CheckCircleIcon,
+  CheckIcon,
+} from '../../components/ui/index.js';
 
 export default function AptitudeSessionPage() {
   const { id } = useParams();
@@ -133,29 +150,45 @@ export default function AptitudeSessionPage() {
 
   if (loading) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center">
-        <div className="w-10 h-10 border-3 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-3"></div>
-        <p className="text-xs text-slate-500 font-medium">Preparing assessment session...</p>
+      <div className="max-w-[1240px] mx-auto space-y-6">
+        <Card className="p-4 sm:p-5">
+          <div className="flex items-center justify-between">
+            <Skeleton className="h-5 w-48" />
+            <Skeleton className="h-8 w-24 rounded-lg" />
+          </div>
+        </Card>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Card className="lg:col-span-2 p-6 sm:p-8 space-y-6">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-16 w-full" />
+            <div className="space-y-3 pt-4">
+              <Skeleton className="h-12 w-full rounded-xl" />
+              <Skeleton className="h-12 w-full rounded-xl" />
+              <Skeleton className="h-12 w-full rounded-xl" />
+              <Skeleton className="h-12 w-full rounded-xl" />
+            </div>
+          </Card>
+          <Card className="p-6 space-y-4">
+            <Skeleton className="h-4 w-28" />
+            <div className="grid grid-cols-5 gap-2">
+              {Array.from({ length: 10 }).map((_, i) => (
+                <Skeleton key={i} className="aspect-square rounded-lg" />
+              ))}
+            </div>
+          </Card>
+        </div>
       </div>
     );
   }
 
   if (error || questions.length === 0) {
     return (
-      <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center max-w-md mx-auto">
-        <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-3">
-          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
-        </div>
-        <h3 className="text-sm font-bold text-slate-900 mb-1">Session Unavailable</h3>
-        <p className="text-xs text-slate-500 mb-4">{error || 'No questions found for this session.'}</p>
-        <button
-          onClick={() => navigate('/aptitude')}
-          className="px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-xl"
-        >
-          Return to Practice
-        </button>
+      <div className="max-w-md mx-auto pt-8">
+        <ErrorState
+          title="Session Unavailable"
+          message={error || 'No active questions found for this session.'}
+          onRetry={() => navigate('/aptitude')}
+        />
       </div>
     );
   }
@@ -165,203 +198,235 @@ export default function AptitudeSessionPage() {
   const isTimeCritical = remainingSeconds < 120;
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
-      {/* Top Bar: Progress & Timer */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs flex items-center justify-between gap-4">
-        <div>
-          <div className="text-xs text-slate-500 font-medium">
-            Question {currentIndex + 1} of {questions.length}
+    <div className="max-w-[1240px] mx-auto space-y-6">
+      {/* ── Active Header: Session Info, Live Timer, Submit ── */}
+      <Card className="p-4 sm:p-5">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <Badge variant="primary" size="sm">
+                Question {currentIndex + 1} of {questions.length}
+              </Badge>
+              <span className="text-xs text-slate-400">·</span>
+              <span className="text-xs text-slate-500 font-medium">
+                {answeredCount} answered
+              </span>
+            </div>
+            <div className="text-base font-bold text-slate-900 tracking-tight mt-1">
+              {attempt?.category}
+              {currentQ?.topic && <span className="text-slate-400 font-normal"> — {currentQ.topic}</span>}
+            </div>
           </div>
-          <div className="text-sm font-bold text-slate-900 mt-0.5">
-            {attempt?.category} • {currentQ?.topic}
+
+          <div className="flex items-center gap-3 self-end sm:self-auto">
+            {/* Countdown Timer Display */}
+            <div
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg border text-xs font-mono font-bold tracking-tight transition-colors ${
+                isTimeCritical
+                  ? 'bg-red-50 border-red-200 text-red-700 animate-pulse'
+                  : 'bg-slate-50 border-slate-200 text-slate-800'
+              }`}
+            >
+              <ClockIcon className={`w-4 h-4 ${isTimeCritical ? 'text-red-600' : 'text-slate-500'}`} />
+              <span>{formatTimer(remainingSeconds)}</span>
+            </div>
+
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              onClick={() => setShowConfirmModal(true)}
+              loading={submitting}
+            >
+              Submit Test
+            </Button>
           </div>
         </div>
+      </Card>
 
-        <div className="flex items-center gap-3">
-          {/* Timer Display */}
-          <div
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl border text-xs font-mono font-bold transition-colors ${
-              isTimeCritical
-                ? 'bg-rose-50 border-rose-200 text-rose-700 animate-pulse'
-                : 'bg-slate-50 border-slate-200 text-slate-700'
-            }`}
-          >
-            <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            {formatTimer(remainingSeconds)}
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setShowConfirmModal(true)}
-            className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl transition shadow-2xs"
-          >
-            Submit Test
-          </button>
-        </div>
-      </div>
-
+      {/* ── Main Workspace ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        {/* Main Question Panel */}
-        <div className="lg:col-span-2 bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-8 shadow-xs space-y-6">
-          <div className="flex items-center justify-between">
-            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-600">
-              {currentQ.difficulty.toUpperCase()} • {currentQ.marks || 1} Mark
+        {/* Left Column: Question & Options Panel */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Badge variant="default" size="sm">
+                {(currentQ.difficulty || 'medium').toUpperCase()}
+              </Badge>
+              <span className="text-xs text-slate-400">·</span>
+              <span className="text-xs text-slate-500 font-medium">
+                {currentQ.marks || 1} {currentQ.marks === 1 ? 'Mark' : 'Marks'}
+              </span>
+            </div>
+            <span className="text-xs text-slate-400">
+              Single Choice Selection
             </span>
-            <span className="text-[11px] text-slate-400">
-              Select one option below
-            </span>
-          </div>
+          </CardHeader>
 
-          {/* Question Text */}
-          <div className="text-base sm:text-lg font-medium text-slate-900 leading-relaxed whitespace-pre-line">
-            {currentQ.question}
-          </div>
+          <CardContent className="space-y-6">
+            {/* Question Text */}
+            <div className="text-base sm:text-lg font-medium text-slate-900 leading-relaxed whitespace-pre-line">
+              {currentQ.question}
+            </div>
 
-          {/* Options */}
-          <div className="space-y-3 pt-2">
-            {(currentQ.options || []).map((opt) => {
-              const isSelected = selectedAnswers[currentQ._id] === opt.key;
-              return (
-                <button
-                  type="button"
-                  key={opt.key}
-                  onClick={() => handleSelectOption(opt.key)}
-                  className={`w-full text-left p-4 rounded-xl border transition-all flex items-start gap-3.5 ${
-                    isSelected
-                      ? 'border-blue-600 bg-blue-50/50 ring-2 ring-blue-600/10'
-                      : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/50 bg-white'
-                  }`}
-                >
-                  <span
-                    className={`inline-flex items-center justify-center w-6 h-6 rounded-lg text-xs font-bold shrink-0 transition-colors ${
+            {/* Answer Options */}
+            <div className="space-y-2.5 pt-2">
+              {(currentQ.options || []).map((opt) => {
+                const isSelected = selectedAnswers[currentQ._id] === opt.key;
+                return (
+                  <button
+                    type="button"
+                    key={opt.key}
+                    onClick={() => handleSelectOption(opt.key)}
+                    className={`w-full text-left p-4 rounded-xl border transition-all duration-150 flex items-start gap-3.5 cursor-pointer ${
                       isSelected
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-slate-100 text-slate-600'
+                        ? 'border-blue-600 bg-blue-50/50 ring-2 ring-blue-600/10'
+                        : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/50 bg-white'
                     }`}
                   >
-                    {opt.key}
-                  </span>
-                  <span className="text-sm text-slate-800 pt-0.5 leading-snug">
-                    {opt.text}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+                    <span
+                      className={`inline-flex items-center justify-center w-6 h-6 rounded-md text-xs font-bold shrink-0 transition-colors ${
+                        isSelected
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-slate-100 text-slate-600'
+                      }`}
+                    >
+                      {opt.key}
+                    </span>
+                    <span className="text-sm text-slate-800 pt-0.5 leading-snug">
+                      {opt.text}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </CardContent>
 
-          {/* Navigation Controls */}
-          <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
-            <button
-              type="button"
+          {/* Stepper Footer Controls */}
+          <CardFooter>
+            <Button
+              variant="outline"
+              size="sm"
               disabled={currentIndex === 0}
               onClick={() => setCurrentIndex((prev) => prev - 1)}
-              className="px-4 py-2 border border-slate-200 text-slate-700 text-xs font-semibold rounded-xl hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition"
+              iconLeft={<ArrowLeftIcon className="w-3.5 h-3.5" />}
             >
               Previous
-            </button>
+            </Button>
 
-            <button
-              type="button"
+            <span className="text-xs text-slate-400 font-medium">
+              {currentIndex + 1} of {questions.length}
+            </span>
+
+            <Button
+              variant={currentIndex === questions.length - 1 ? 'outline' : 'secondary'}
+              size="sm"
               disabled={currentIndex === questions.length - 1}
               onClick={() => setCurrentIndex((prev) => prev + 1)}
-              className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-xl disabled:opacity-30 disabled:cursor-not-allowed transition"
+              iconRight={<ArrowRightIcon className="w-3.5 h-3.5" />}
             >
               Next
-            </button>
-          </div>
-        </div>
+            </Button>
+          </CardFooter>
+        </Card>
 
-        {/* Question Palette Sidebar */}
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+        {/* Right Column: Question Palette Sidebar */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-xs uppercase tracking-wider text-slate-600">
               Question Palette
-            </h3>
-            <span className="text-xs font-medium text-slate-500">
-              {answeredCount}/{questions.length} Answered
+            </CardTitle>
+            <span className="text-xs font-semibold text-slate-700">
+              {answeredCount}/{questions.length}
             </span>
-          </div>
+          </CardHeader>
 
-          {/* Palette Grid */}
-          <div className="grid grid-cols-5 gap-2">
-            {questions.map((q, idx) => {
-              const isCurrent = idx === currentIndex;
-              const isAnswered = Boolean(selectedAnswers[q._id]);
-              return (
-                <button
-                  type="button"
-                  key={q._id}
-                  onClick={() => setCurrentIndex(idx)}
-                  className={`w-full aspect-square rounded-xl text-xs font-bold transition-all flex items-center justify-center ${
-                    isCurrent
-                      ? 'border-2 border-slate-900 bg-slate-900 text-white shadow-xs'
-                      : isAnswered
-                      ? 'bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100/60'
-                      : 'bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100'
-                  }`}
-                >
-                  {idx + 1}
-                </button>
-              );
-            })}
-          </div>
+          <CardContent className="space-y-5">
+            {/* Palette Grid */}
+            <div className="grid grid-cols-5 gap-2">
+              {questions.map((q, idx) => {
+                const isCurrent = idx === currentIndex;
+                const isAnswered = Boolean(selectedAnswers[q._id]);
+                return (
+                  <button
+                    type="button"
+                    key={q._id}
+                    onClick={() => setCurrentIndex(idx)}
+                    className={`w-full aspect-square rounded-lg text-xs font-semibold transition-all flex items-center justify-center cursor-pointer ${
+                      isCurrent
+                        ? 'bg-slate-900 text-white shadow-xs'
+                        : isAnswered
+                        ? 'bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100/60'
+                        : 'bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    {idx + 1}
+                  </button>
+                );
+              })}
+            </div>
 
-          {/* Legend */}
-          <div className="pt-3 border-t border-slate-100 space-y-1.5 text-[11px] text-slate-500">
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-md bg-blue-50 border border-blue-200 shrink-0"></span>
-              <span>Answered</span>
+            {/* Legend */}
+            <div className="pt-4 border-t border-slate-100 space-y-2 text-xs text-slate-500">
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-md bg-blue-50 border border-blue-200 shrink-0" />
+                <span>Answered ({answeredCount})</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-md bg-slate-50 border border-slate-200 shrink-0" />
+                <span>Unanswered ({questions.length - answeredCount})</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-md bg-slate-900 shrink-0" />
+                <span>Current Question</span>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-md bg-slate-50 border border-slate-200 shrink-0"></span>
-              <span>Unanswered</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-md bg-slate-900 shrink-0"></span>
-              <span>Current</span>
-            </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Confirmation Modal */}
-      {showConfirmModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-sm w-full p-6 text-center animate-in zoom-in-95">
-            <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-3">
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <h3 className="text-base font-bold text-slate-900 mb-1">Submit Assessment?</h3>
-            <p className="text-xs text-slate-500 mb-6">
-              You have answered <span className="font-semibold text-slate-900">{answeredCount}</span> of{' '}
-              <span className="font-semibold text-slate-900">{questions.length}</span> questions.
-              Are you sure you want to finish now?
-            </p>
-
-            <div className="flex items-center gap-2.5">
-              <button
-                type="button"
-                onClick={() => setShowConfirmModal(false)}
-                className="flex-1 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50"
-              >
-                Continue Test
-              </button>
-              <button
-                type="button"
-                disabled={submitting}
-                onClick={handleManualSubmit}
-                className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-xs transition"
-              >
-                {submitting ? 'Submitting...' : 'Yes, Submit'}
-              </button>
-            </div>
+      {/* ── Submission Confirmation Modal ── */}
+      <Modal
+        isOpen={showConfirmModal}
+        onClose={() => setShowConfirmModal(false)}
+        title="Submit Assessment?"
+        size="sm"
+        footer={
+          <div className="flex items-center justify-end gap-2.5 w-full">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowConfirmModal(false)}
+            >
+              Continue Test
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              loading={submitting}
+              onClick={handleManualSubmit}
+            >
+              Confirm Submission
+            </Button>
           </div>
+        }
+      >
+        <div className="space-y-3">
+          <p className="text-sm text-slate-600 leading-relaxed">
+            You have answered <strong className="text-slate-900">{answeredCount}</strong> of{' '}
+            <strong className="text-slate-900">{questions.length}</strong> questions.
+          </p>
+          {questions.length - answeredCount > 0 && (
+            <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3">
+              You still have {questions.length - answeredCount} unanswered{' '}
+              {questions.length - answeredCount === 1 ? 'question' : 'questions'}. Unanswered questions receive 0 marks.
+            </p>
+          )}
+          <p className="text-xs text-slate-500">
+            Once submitted, your responses will be evaluated immediately and detailed solutions will be shown.
+          </p>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }

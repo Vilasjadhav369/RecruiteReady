@@ -1,6 +1,37 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getCodingProblems } from '../../services/codingService.js';
+import {
+  PageHeader,
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+  Badge,
+  Button,
+  Select,
+  SearchInput,
+  StatCard,
+  EmptyState,
+  ErrorState,
+  Skeleton,
+  CodingIcon,
+  ClockIcon,
+  ArrowRightIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  CompanyIcon,
+  CheckCircleIcon,
+} from '../../components/ui/index.js';
+
+const DIFFICULTY_OPTIONS = [
+  { value: 'all', label: 'All Difficulties' },
+  { value: 'easy', label: 'Easy' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'hard', label: 'Hard' },
+];
 
 export default function CodingListPage() {
   const [problems, setProblems] = useState([]);
@@ -12,184 +43,298 @@ export default function CodingListPage() {
   const [search, setSearch] = useState('');
   const [difficulty, setDifficulty] = useState('all');
 
+  const fetchList = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await getCodingProblems({
+        search,
+        difficulty: difficulty === 'all' ? undefined : difficulty,
+        page: pagination.page,
+        limit: 12,
+      });
+      setProblems(data?.problems || []);
+      setPagination(data?.pagination || { total: 0, page: 1, limit: 12, pages: 1 });
+    } catch (err) {
+      console.error('Failed to load coding problems:', err);
+      setError('Failed to load coding problems. Please check server connection.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchList = async () => {
-      try {
-        setLoading(true);
-        const data = await getCodingProblems({
-          search,
-          difficulty: difficulty === 'all' ? undefined : difficulty,
-          page: pagination.page,
-          limit: 12,
-        });
-        setProblems(data?.problems || []);
-        setPagination(data?.pagination || { total: 0, page: 1, limit: 12, pages: 1 });
-      } catch (err) {
-        console.error('Failed to load coding problems:', err);
-        setError('Failed to load coding problems.');
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchList();
   }, [search, difficulty, pagination.page]);
 
   const getDifficultyBadge = (diff) => {
     switch (diff?.toLowerCase()) {
       case 'easy':
-        return <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">Easy</span>;
+        return (
+          <Badge variant="success" size="sm" dot>
+            Easy
+          </Badge>
+        );
       case 'medium':
-        return <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">Medium</span>;
+        return (
+          <Badge variant="warning" size="sm" dot>
+            Medium
+          </Badge>
+        );
       case 'hard':
-        return <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">Hard</span>;
+        return (
+          <Badge variant="danger" size="sm" dot>
+            Hard
+          </Badge>
+        );
       default:
-        return <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-700">{diff}</span>;
+        return (
+          <Badge variant="default" size="sm">
+            {diff || 'Standard'}
+          </Badge>
+        );
     }
   };
 
+  // Derive unique topics and companies from the loaded problems
+  const uniqueCompanies = Array.from(
+    new Set(problems.flatMap((p) => p.companies || []))
+  ).slice(0, 8);
+
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
-      {/* Header Banner */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-8 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200/60">
-              Technical Arena
-            </span>
-            <span className="text-xs text-slate-500 font-medium">
-              {pagination.total} Algorithms & Challenges
-            </span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
-            Coding Practice
-          </h1>
-          <p className="mt-1 text-sm text-slate-600">
-            Master algorithmic problem solving, core data structures, and company hiring tracks.
-          </p>
-        </div>
+    <div className="max-w-[1240px] mx-auto space-y-6">
+      {/* ── Page Header ── */}
+      <PageHeader
+        title="Coding Practice"
+        description="Master algorithmic problem solving, core data structures, and top company interview patterns."
+        breadcrumbs={[
+          { label: 'Student Dashboard', to: '/dashboard' },
+          { label: 'Coding Practice' },
+        ]}
+        badge={
+          <Badge variant="primary" size="sm">
+            {pagination.total} Challenges
+          </Badge>
+        }
+        actions={
+          <Link to="/coding/history">
+            <Button
+              variant="outline"
+              size="sm"
+              iconLeft={<ClockIcon className="w-3.5 h-3.5" />}
+            >
+              Submissions History
+            </Button>
+          </Link>
+        }
+      />
 
-        <Link
-          to="/coding/history"
-          className="inline-flex items-center gap-2 px-4 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-xl shadow-2xs transition"
-        >
-          <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-          </svg>
-          Submissions History
-        </Link>
+      {/* ── Error Banner ── */}
+      {error && (
+        <ErrorState
+          title="Problems Unavailable"
+          message={error}
+          onRetry={fetchList}
+        />
+      )}
+
+      {/* ── Overview Metrics ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          label="Total Challenges"
+          value={pagination.total}
+          subtext="Placement coding problems"
+          icon={<CodingIcon className="w-4 h-4 text-blue-600" />}
+        />
+        <StatCard
+          label="Difficulty Tracks"
+          value="3 Levels"
+          subtext="Easy, Medium, Hard"
+          icon={<CheckCircleIcon className="w-4 h-4 text-emerald-600" />}
+        />
+        <StatCard
+          label="Target Companies"
+          value={uniqueCompanies.length > 0 ? `${uniqueCompanies.length}+` : 'Top Tech'}
+          subtext="FAANG & Tier-1 hiring patterns"
+          icon={<CompanyIcon className="w-4 h-4 text-indigo-600" />}
+        />
+        <StatCard
+          label="Supported Runtimes"
+          value="JS / Py / C++"
+          subtext="Multi-language test runner"
+          icon={<ClockIcon className="w-4 h-4 text-amber-600" />}
+        />
       </div>
 
-      {/* Filter Bar */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <svg
-            className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search problems by title, topic..."
-            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
-          />
-        </div>
-
-        <div className="w-full sm:w-44">
-          <select
-            value={difficulty}
-            onChange={(e) => setDifficulty(e.target.value)}
-            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
-          >
-            <option value="all">All Difficulties</option>
-            <option value="easy">Easy</option>
-            <option value="medium">Medium</option>
-            <option value="hard">Hard</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Problems List */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden">
-        {loading ? (
-          <div className="p-12 text-center">
-            <div className="w-8 h-8 border-3 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-3"></div>
-            <p className="text-xs text-slate-500 font-medium">Loading problems library...</p>
+      {/* ── Filter Bar ── */}
+      <Card className="p-4">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex-1">
+            <SearchInput
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search problems by title, topic, or keyword..."
+            />
           </div>
-        ) : error ? (
-          <div className="p-12 text-center text-xs text-rose-600">{error}</div>
-        ) : problems.length === 0 ? (
-          <div className="p-12 text-center">
-            <div className="w-12 h-12 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-center mx-auto mb-3 text-slate-400">
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-              </svg>
+
+          <div className="w-full sm:w-52">
+            <Select
+              value={difficulty}
+              onChange={(e) => setDifficulty(e.target.value)}
+              options={DIFFICULTY_OPTIONS}
+            />
+          </div>
+        </div>
+      </Card>
+
+      {/* ── Problems List ── */}
+      <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>Problem Library</CardTitle>
+            <CardDescription>
+              Browse algorithmic challenges curated for placement technical rounds.
+            </CardDescription>
+          </div>
+          <span className="text-xs font-semibold text-slate-500">
+            Page {pagination.page} of {pagination.pages}
+          </span>
+        </CardHeader>
+
+        <CardContent className="p-0">
+          {loading ? (
+            <div className="divide-y divide-slate-100">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="p-5 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-5 w-16 rounded-full" />
+                    <Skeleton className="h-4 w-28" />
+                  </div>
+                  <Skeleton className="h-5 w-1/3" />
+                  <div className="flex gap-2 pt-1">
+                    <Skeleton className="h-5 w-14 rounded-md" />
+                    <Skeleton className="h-5 w-14 rounded-md" />
+                  </div>
+                </div>
+              ))}
             </div>
-            <h3 className="text-sm font-bold text-slate-900 mb-1">No coding problems found</h3>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto">
-              Try adjusting your search query or difficulty filter.
-            </p>
-          </div>
-        ) : (
-          <div className="divide-y divide-slate-100">
-            {problems.map((p) => (
-              <div
-                key={p._id}
-                className="p-5 hover:bg-slate-50/70 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-              >
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    {getDifficultyBadge(p.difficulty)}
-                    <span className="text-[11px] text-slate-400 font-medium">
-                      {p.category || 'Algorithms'}
-                    </span>
-                  </div>
-                  <Link
-                    to={`/coding/problem/${p.slug || p._id}`}
-                    className="text-sm font-bold text-slate-900 hover:text-blue-600 transition-colors"
-                  >
-                    {p.title}
-                  </Link>
-                  <div className="flex flex-wrap items-center gap-1.5 mt-2">
-                    {(p.topics || []).map((t, idx) => (
-                      <span
-                        key={idx}
-                        className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[10px] font-medium"
-                      >
-                        {t}
-                      </span>
-                    ))}
-                    {(p.companies || []).map((c, idx) => (
-                      <span
-                        key={`c-${idx}`}
-                        className="px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 text-[10px] font-medium border border-blue-200/50"
-                      >
-                        {c}
-                      </span>
-                    ))}
-                  </div>
-                </div>
+          ) : problems.length === 0 ? (
+            <div className="p-12 text-center">
+              <EmptyState
+                title="No coding problems match your filters"
+                description="Try clearing your search query or switching to All Difficulties to see more problems."
+                action={
+                  search || difficulty !== 'all' ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSearch('');
+                        setDifficulty('all');
+                      }}
+                    >
+                      Reset Filters
+                    </Button>
+                  ) : null
+                }
+              />
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-100">
+              {problems.map((p) => {
+                const problemLink = `/coding/problem/${p.slug || p._id}`;
 
-                <div className="shrink-0">
-                  <Link
-                    to={`/coding/problem/${p.slug || p._id}`}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-xl shadow-2xs transition"
+                return (
+                  <div
+                    key={p._id}
+                    className="p-5 hover:bg-slate-50/70 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                   >
-                    Solve Challenge
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </Link>
-                </div>
-              </div>
-            ))}
-          </div>
+                    <div className="space-y-1.5 min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {getDifficultyBadge(p.difficulty)}
+                        <span className="text-xs text-slate-400 font-medium">·</span>
+                        <span className="text-xs text-slate-500 font-medium">
+                          {p.category || 'Algorithms'}
+                        </span>
+                      </div>
+
+                      <div>
+                        <Link
+                          to={problemLink}
+                          className="text-base font-semibold text-slate-900 hover:text-blue-600 transition-colors tracking-tight line-clamp-1"
+                        >
+                          {p.title}
+                        </Link>
+                      </div>
+
+                      {/* Topics & Company Badges */}
+                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                        {(p.topics || []).map((t, idx) => (
+                          <Badge key={idx} variant="default" size="sm">
+                            {t}
+                          </Badge>
+                        ))}
+                        {(p.companies || []).map((c, idx) => (
+                          <Badge
+                            key={`c-${idx}`}
+                            variant="primary"
+                            size="sm"
+                          >
+                            {c}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="shrink-0 self-start sm:self-center">
+                      <Link to={problemLink}>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          iconRight={<ArrowRightIcon className="w-3.5 h-3.5" />}
+                        >
+                          Solve Challenge
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+
+        {/* ── Pagination Footer ── */}
+        {problems.length > 0 && pagination.pages > 1 && (
+          <CardFooter>
+            <span className="text-xs text-slate-500">
+              Showing {(pagination.page - 1) * pagination.limit + 1}–
+              {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
+              {pagination.total} problems
+            </span>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={pagination.page <= 1}
+                onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
+                iconLeft={<ChevronLeftIcon className="w-3.5 h-3.5" />}
+              >
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={pagination.page >= pagination.pages}
+                onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
+                iconRight={<ChevronRightIcon className="w-3.5 h-3.5" />}
+              >
+                Next
+              </Button>
+            </div>
+          </CardFooter>
         )}
-      </div>
+      </Card>
     </div>
   );
 }

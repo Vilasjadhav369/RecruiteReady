@@ -1,6 +1,35 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { getCodingSubmissions } from '../../services/codingService.js';
+import {
+  PageHeader,
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+  Badge,
+  StatusBadge,
+  Button,
+  StatCard,
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+  EmptyState,
+  ErrorState,
+  SkeletonTableRow,
+  CodingIcon,
+  ClockIcon,
+  CalendarIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  CheckCircleIcon,
+  ArrowLeftIcon,
+} from '../../components/ui/index.js';
 
 export default function CodingHistoryPage() {
   const [searchParams] = useSearchParams();
@@ -11,135 +40,255 @@ export default function CodingHistoryPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const fetchSubmissions = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await getCodingSubmissions({
+        problemId: problemId || undefined,
+        page: pagination.page,
+        limit: 10,
+      });
+      setSubmissions(data?.submissions || []);
+      setPagination(data?.pagination || { total: 0, page: 1, limit: 10, pages: 1 });
+    } catch (err) {
+      console.error('Failed to load coding submissions:', err);
+      setError('Failed to load past submissions. Please check server connection.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchSubmissions = async () => {
-      try {
-        setLoading(true);
-        const data = await getCodingSubmissions({
-          problemId: problemId || undefined,
-          page: pagination.page,
-          limit: 10,
-        });
-        setSubmissions(data?.submissions || []);
-        setPagination(data?.pagination || { total: 0, page: 1, limit: 10, pages: 1 });
-      } catch (err) {
-        console.error('Failed to load coding submissions:', err);
-        setError('Failed to load past submissions.');
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchSubmissions();
   }, [problemId, pagination.page]);
 
+  // Derived metrics from loaded page submissions
+  const acceptedCount = submissions.filter((s) => s.status === 'accepted').length;
+  const distinctLangs = Array.from(new Set(submissions.map((s) => s.language))).filter(Boolean);
+
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
-      {/* Header */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-8 shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200/60">
-              Submissions
-            </span>
-            <span className="text-xs text-slate-500 font-medium">
-              {pagination.total} Past Records
-            </span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
-            Coding Submissions
-          </h1>
-          <p className="mt-1 text-sm text-slate-600">
-            Audit your past code executions, algorithmic solutions, and runtime status.
-          </p>
-        </div>
-
-        <Link
-          to="/coding"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-xl shadow-xs transition"
-        >
-          Coding Arena
-        </Link>
-      </div>
-
-      {/* Table */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden">
-        {loading ? (
-          <div className="p-12 text-center">
-            <div className="w-8 h-8 border-3 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-3"></div>
-            <p className="text-xs text-slate-500 font-medium">Loading submissions...</p>
-          </div>
-        ) : error ? (
-          <div className="p-12 text-center text-xs text-rose-600">{error}</div>
-        ) : submissions.length === 0 ? (
-          <div className="p-12 text-center">
-            <div className="w-12 h-12 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-center mx-auto mb-3 text-slate-400">
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-              </svg>
-            </div>
-            <h3 className="text-sm font-bold text-slate-900 mb-1">No coding submissions yet</h3>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto mb-4">
-              Select a coding challenge and submit your solution to start tracking results.
-            </p>
-            <Link
-              to="/coding"
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-xl"
+    <div className="max-w-[1240px] mx-auto space-y-6">
+      {/* ── Page Header ── */}
+      <PageHeader
+        title="Coding Submissions"
+        description="Audit your past code executions, algorithmic solutions, and runtime status."
+        breadcrumbs={[
+          { label: 'Student Dashboard', to: '/dashboard' },
+          { label: 'Coding Practice', to: '/coding' },
+          { label: 'History' },
+        ]}
+        badge={
+          <Badge variant="primary" size="sm">
+            {pagination.total} Past Records
+          </Badge>
+        }
+        actions={
+          <Link to="/coding">
+            <Button
+              variant="primary"
+              size="sm"
+              iconLeft={<ArrowLeftIcon className="w-3.5 h-3.5" />}
             >
-              Solve a Problem
-            </Link>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="border-b border-slate-100 bg-slate-50/60 font-semibold text-slate-500 uppercase tracking-wider">
-                  <th className="py-3 px-6">Problem</th>
-                  <th className="py-3 px-4">Language</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4">Date</th>
-                  <th className="py-3 px-6 text-right">Details</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-700">
-                {submissions.map((sub) => (
-                  <tr key={sub._id} className="hover:bg-slate-50/60 transition-colors">
-                    <td className="py-3.5 px-6 font-bold text-slate-900">
-                      <Link to={`/coding/problem/${sub.problem?._id || ''}`} className="hover:text-blue-600">
-                        {sub.problem?.title || 'Problem'}
-                      </Link>
-                    </td>
-                    <td className="py-3.5 px-4 uppercase text-[10px] font-mono font-bold text-slate-600">
-                      {sub.language}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase ${
-                          sub.status === 'accepted'
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                            : 'bg-amber-50 text-amber-700 border border-amber-200'
-                        }`}
-                      >
-                        {sub.status.replace(/_/g, ' ')}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-4 text-slate-500 font-mono">
-                      {new Date(sub.submittedAt).toLocaleString()}
-                    </td>
-                    <td className="py-3.5 px-6 text-right">
-                      <Link
-                        to={`/coding/submission/${sub._id}`}
-                        className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold rounded-lg text-xs transition"
-                      >
-                        View Code
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+              Coding Arena
+            </Button>
+          </Link>
+        }
+      />
+
+      {/* ── Error Banner ── */}
+      {error && (
+        <ErrorState
+          title="Unable to load submissions"
+          message={error}
+          onRetry={fetchSubmissions}
+        />
+      )}
+
+      {/* ── Summary Metrics ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          label="Total Submissions"
+          value={pagination.total}
+          subtext="Code evaluations recorded"
+          icon={<CodingIcon className="w-4 h-4 text-blue-600" />}
+        />
+        <StatCard
+          label="Accepted (Page)"
+          value={acceptedCount}
+          subtext="Passed all test cases"
+          icon={<CheckCircleIcon className="w-4 h-4 text-emerald-600" />}
+        />
+        <StatCard
+          label="Languages Used"
+          value={distinctLangs.length > 0 ? distinctLangs.join(', ').toUpperCase() : '—'}
+          subtext="Runtimes evaluated"
+          icon={<ClockIcon className="w-4 h-4 text-slate-700" />}
+        />
+        <StatCard
+          label="Filtered Scope"
+          value={problemId ? 'Specific Problem' : 'All Problems'}
+          subtext={problemId ? 'Single problem filter active' : 'Complete platform history'}
+          icon={<CalendarIcon className="w-4 h-4 text-amber-600" />}
+        />
       </div>
+
+      {/* ── Submissions Table Card ── */}
+      <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>Execution Log</CardTitle>
+            <CardDescription>
+              Detailed record of each test execution and evaluation verdict.
+            </CardDescription>
+          </div>
+          {problemId && (
+            <Link to="/coding/history">
+              <Button variant="ghost" size="sm">
+                Clear Problem Filter
+              </Button>
+            </Link>
+          )}
+        </CardHeader>
+
+        <CardContent className="p-0">
+          {loading ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Problem</TableHead>
+                  <TableHead>Language</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Tests Passed</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <SkeletonTableRow columns={6} />
+                <SkeletonTableRow columns={6} />
+                <SkeletonTableRow columns={6} />
+                <SkeletonTableRow columns={6} />
+              </TableBody>
+            </Table>
+          ) : submissions.length === 0 ? (
+            <div className="p-12 text-center">
+              <EmptyState
+                title="No coding submissions recorded"
+                description="Select a coding challenge and submit your solution to track evaluations."
+                action={
+                  <Link to="/coding">
+                    <Button variant="primary" size="sm">
+                      Solve a Problem
+                    </Button>
+                  </Link>
+                }
+              />
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Problem</TableHead>
+                  <TableHead>Language</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Tests Passed</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {submissions.map((sub) => {
+                  const dateStr = sub.submittedAt
+                    ? new Date(sub.submittedAt).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })
+                    : '—';
+
+                  const problemTitle = sub.problem?.title || 'Coding Challenge';
+                  const problemSlug = sub.problem?.slug || sub.problem?._id;
+
+                  return (
+                    <TableRow key={sub._id}>
+                      <TableCell className="font-semibold text-slate-900 text-xs">
+                        {problemSlug ? (
+                          <Link
+                            to={`/coding/problem/${problemSlug}`}
+                            className="hover:text-blue-600 transition-colors"
+                          >
+                            {problemTitle}
+                          </Link>
+                        ) : (
+                          <span>{problemTitle}</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-xs uppercase font-mono font-semibold text-slate-600">
+                        <Badge variant="default" size="sm">
+                          {sub.language}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge status={sub.status} />
+                      </TableCell>
+                      <TableCell className="text-xs font-mono text-slate-600">
+                        {sub.passedTests !== undefined && sub.totalTests !== undefined
+                          ? `${sub.passedTests} / ${sub.totalTests}`
+                          : '—'}
+                      </TableCell>
+                      <TableCell className="text-slate-500 text-xs font-mono">
+                        <div className="flex items-center gap-1.5">
+                          <CalendarIcon className="w-3.5 h-3.5 text-slate-400" />
+                          <span>{dateStr}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Link to={`/coding/submission/${sub._id}`}>
+                          <Button variant="ghost" size="sm">
+                            View Code
+                          </Button>
+                        </Link>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+
+        {/* ── Pagination Footer ── */}
+        {submissions.length > 0 && pagination.pages > 1 && (
+          <CardFooter>
+            <span className="text-xs text-slate-500">
+              Page {pagination.page} of {pagination.pages} ({pagination.total} total submissions)
+            </span>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={pagination.page <= 1}
+                onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
+                iconLeft={<ChevronLeftIcon className="w-3.5 h-3.5" />}
+              >
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={pagination.page >= pagination.pages}
+                onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
+                iconRight={<ChevronRightIcon className="w-3.5 h-3.5" />}
+              >
+                Next
+              </Button>
+            </div>
+          </CardFooter>
+        )}
+      </Card>
     </div>
   );
 }

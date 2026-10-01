@@ -1,6 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getAptitudeResult } from '../../services/aptitudeService.js';
+import {
+  PageHeader,
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  Badge,
+  Button,
+  StatCard,
+  Skeleton,
+  SkeletonCard,
+  ErrorState,
+  CheckCircleIcon,
+  CloseIcon,
+  InfoIcon,
+  TrophyIcon,
+  ClockIcon,
+  PlusIcon,
+} from '../../components/ui/index.js';
 
 export default function AptitudeResultPage() {
   const { id } = useParams();
@@ -8,242 +28,257 @@ export default function AptitudeResultPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const fetchResult = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await getAptitudeResult(id);
+      setResult(data);
+    } catch (err) {
+      console.error('Failed to load result:', err);
+      setError(err.response?.data?.message || 'Failed to load test results.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchResult = async () => {
-      try {
-        setLoading(true);
-        const data = await getAptitudeResult(id);
-        setResult(data);
-      } catch (err) {
-        console.error('Failed to load result:', err);
-        setError(err.response?.data?.message || 'Failed to load test results.');
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchResult();
   }, [id]);
 
   if (loading) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center">
-        <div className="w-10 h-10 border-3 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-3"></div>
-        <p className="text-xs text-slate-500 font-medium">Computing your assessment performance...</p>
+      <div className="max-w-[1240px] mx-auto space-y-6">
+        <Card className="p-6">
+          <Skeleton className="h-6 w-48 mb-2" />
+          <Skeleton className="h-4 w-72" />
+        </Card>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </div>
+        <Card className="p-6 space-y-4">
+          <Skeleton className="h-5 w-40" />
+          <Skeleton className="h-24 w-full" />
+        </Card>
       </div>
     );
   }
 
   if (error || !result) {
     return (
-      <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center max-w-md mx-auto">
-        <h3 className="text-base font-bold text-slate-900 mb-1">Result Not Found</h3>
-        <p className="text-xs text-slate-500 mb-4">{error || 'Unable to retrieve test score summary.'}</p>
-        <Link
-          to="/aptitude"
-          className="inline-flex items-center px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-xl"
-        >
-          Return to Aptitude
-        </Link>
+      <div className="max-w-md mx-auto pt-8">
+        <ErrorState
+          title="Result Not Found"
+          message={error || 'Unable to retrieve test score summary.'}
+          onRetry={fetchResult}
+        />
       </div>
     );
   }
 
   const { summary, review } = result;
-  const isPassed = summary.percentage >= 60;
+  const isPassed = (summary.percentage || 0) >= 60;
+  const submittedDate = summary.submittedAt
+    ? new Date(summary.submittedAt).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    : 'Recently';
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
-      {/* Header Banner */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-8 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1.5">
-            <span
-              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                isPassed
-                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/80'
-                  : 'bg-amber-50 text-amber-700 border border-amber-200/80'
-              }`}
-            >
-              {isPassed ? 'Ready / Passing' : 'Needs Practice'}
-            </span>
-            <span className="text-xs text-slate-500 font-medium">
-              Completed on {new Date(summary.submittedAt).toLocaleDateString()}
-            </span>
+    <div className="max-w-[1240px] mx-auto space-y-6">
+      {/* ── Page Header ── */}
+      <PageHeader
+        title="Assessment Results"
+        description={`${summary.category} — ${summary.topic} (${summary.difficulty || 'mixed'} difficulty)`}
+        breadcrumbs={[
+          { label: 'Student Dashboard', to: '/dashboard' },
+          { label: 'Aptitude', to: '/aptitude' },
+          { label: 'History', to: '/aptitude/history' },
+          { label: 'Result' },
+        ]}
+        badge={
+          <Badge
+            variant={isPassed ? 'success' : 'warning'}
+            size="sm"
+            dot
+          >
+            {isPassed ? 'Ready / Passing' : 'Needs Practice'}
+          </Badge>
+        }
+        actions={
+          <div className="flex items-center gap-2">
+            <Link to="/aptitude">
+              <Button
+                variant="primary"
+                size="sm"
+                iconLeft={<PlusIcon className="w-3.5 h-3.5" />}
+              >
+                New Session
+              </Button>
+            </Link>
+            <Link to="/aptitude/history">
+              <Button
+                variant="outline"
+                size="sm"
+                iconLeft={<ClockIcon className="w-3.5 h-3.5" />}
+              >
+                All History
+              </Button>
+            </Link>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
-            Assessment Results
-          </h1>
-          <p className="mt-1 text-sm text-slate-600">
-            {summary.category} • {summary.topic} ({summary.difficulty})
-          </p>
-        </div>
+        }
+      />
 
-        <div className="flex items-center gap-2.5">
-          <Link
-            to="/aptitude"
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-xs transition"
-          >
-            Start Another Session
-          </Link>
-          <Link
-            to="/aptitude/history"
-            className="px-4 py-2 border border-slate-200 text-slate-700 text-xs font-semibold rounded-xl hover:bg-slate-50 transition"
-          >
-            All History
-          </Link>
-        </div>
-      </div>
-
-      {/* Score Summary Metrics */}
+      {/* ── Score Summary Metrics Grid ── */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs text-center">
-          <div className="text-xs text-slate-500 font-medium">Score</div>
-          <div className="text-2xl font-bold text-slate-900 mt-1">{summary.score}</div>
-          <div className="text-[11px] text-slate-400 mt-0.5">Points</div>
-        </div>
-
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs text-center">
-          <div className="text-xs text-slate-500 font-medium">Accuracy</div>
-          <div className="text-2xl font-bold text-blue-600 mt-1">{summary.percentage}%</div>
-          <div className="text-[11px] text-slate-400 mt-0.5">Percentage</div>
-        </div>
-
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs text-center">
-          <div className="text-xs text-slate-500 font-medium">Questions</div>
-          <div className="text-2xl font-bold text-slate-900 mt-1">{summary.totalQuestions}</div>
-          <div className="text-[11px] text-slate-400 mt-0.5">Total</div>
-        </div>
-
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs text-center">
-          <div className="text-xs text-slate-500 font-medium">Correct</div>
-          <div className="text-2xl font-bold text-emerald-600 mt-1">{summary.correctAnswers}</div>
-          <div className="text-[11px] text-slate-400 mt-0.5">Answers</div>
-        </div>
-
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs text-center">
-          <div className="text-xs text-slate-500 font-medium">Incorrect</div>
-          <div className="text-2xl font-bold text-rose-600 mt-1">{summary.wrongAnswers}</div>
-          <div className="text-[11px] text-slate-400 mt-0.5">Answers</div>
-        </div>
-
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs text-center">
-          <div className="text-xs text-slate-500 font-medium">Unanswered</div>
-          <div className="text-2xl font-bold text-slate-500 mt-1">{summary.unanswered}</div>
-          <div className="text-[11px] text-slate-400 mt-0.5">Skipped</div>
-        </div>
+        <StatCard
+          label="Score"
+          value={summary.score || 0}
+          subtext="Points scored"
+          icon={<TrophyIcon className="w-4 h-4 text-blue-600" />}
+        />
+        <StatCard
+          label="Accuracy"
+          value={`${summary.percentage || 0}%`}
+          subtext="Percentage"
+          icon={<CheckCircleIcon className="w-4 h-4 text-emerald-600" />}
+        />
+        <StatCard
+          label="Total Questions"
+          value={summary.totalQuestions || 0}
+          subtext="In this test"
+        />
+        <StatCard
+          label="Correct"
+          value={summary.correctAnswers || 0}
+          subtext="Correct answers"
+          icon={<CheckCircleIcon className="w-4 h-4 text-emerald-600" />}
+        />
+        <StatCard
+          label="Incorrect"
+          value={summary.wrongAnswers || 0}
+          subtext="Incorrect answers"
+          icon={<CloseIcon className="w-4 h-4 text-red-600" />}
+        />
+        <StatCard
+          label="Skipped"
+          value={summary.unanswered || 0}
+          subtext="Unanswered"
+        />
       </div>
 
-      {/* Detailed Question Review */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-8 shadow-xs space-y-6">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+      {/* ── Detailed Question Review ── */}
+      <Card>
+        <CardHeader>
           <div>
-            <h2 className="text-base font-bold text-slate-900">Detailed Answer Review</h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Review your answers alongside official solutions and step-by-step explanations.
-            </p>
+            <CardTitle>Detailed Answer Review</CardTitle>
+            <CardDescription>
+              Step-by-step solutions and verified explanations for each question in this session.
+            </CardDescription>
           </div>
           <span className="text-xs font-semibold text-slate-500">
-            {review.length} Questions
+            {review?.length || 0} Questions Evaluated
           </span>
-        </div>
+        </CardHeader>
 
-        <div className="divide-y divide-slate-100 space-y-6">
-          {review.map((item, idx) => {
+        <CardContent className="divide-y divide-slate-100 p-0">
+          {(review || []).map((item, idx) => {
             const isAnswered = Boolean(item.selectedOption);
             const isCorrect = item.isCorrect;
 
             return (
-              <div key={item.questionId} className={idx > 0 ? 'pt-6' : ''}>
-                <div className="flex items-start justify-between gap-4 mb-2">
+              <div key={item.questionId} className="p-6 space-y-4">
+                {/* Question Metadata Header */}
+                <div className="flex items-start justify-between gap-4">
                   <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-slate-100 text-slate-800 text-xs font-bold">
+                    <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-slate-100 text-slate-800 text-xs font-bold font-mono">
                       {idx + 1}
                     </span>
                     <span className="text-xs font-medium text-slate-500">
-                      {item.topic} • {item.difficulty}
+                      {item.topic} · <span className="capitalize">{item.difficulty}</span>
                     </span>
                   </div>
 
                   <div>
                     {!isAnswered ? (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600">
+                      <Badge variant="default" size="sm">
                         Unanswered
-                      </span>
+                      </Badge>
                     ) : isCorrect ? (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        Correct (+{item.marks} mark)
-                      </span>
+                      <Badge variant="success" size="sm" dot>
+                        Correct (+{item.marks} {item.marks === 1 ? 'mark' : 'marks'})
+                      </Badge>
                     ) : (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
+                      <Badge variant="danger" size="sm" dot>
                         Incorrect (0 marks)
-                      </span>
+                      </Badge>
                     )}
                   </div>
                 </div>
 
-                {/* Question */}
-                <div className="text-sm font-semibold text-slate-900 mb-3 whitespace-pre-line">
+                {/* Question Text */}
+                <div className="text-sm font-semibold text-slate-900 leading-relaxed whitespace-pre-line">
                   {item.question}
                 </div>
 
-                {/* Options list */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+                {/* Options List */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
                   {(item.options || []).map((opt) => {
                     const isUserPick = item.selectedOption === opt.key;
                     const isRightAnswer = item.correctOption === opt.key;
 
-                    let badgeClass = 'border-slate-200 bg-white text-slate-700';
+                    let optionBorder = 'border-slate-200 bg-white text-slate-700';
                     if (isRightAnswer) {
-                      badgeClass = 'border-emerald-300 bg-emerald-50/60 text-emerald-900 font-semibold';
+                      optionBorder = 'border-emerald-300 bg-emerald-50/70 text-emerald-950 font-medium';
                     } else if (isUserPick && !isRightAnswer) {
-                      badgeClass = 'border-rose-300 bg-rose-50/60 text-rose-900 font-semibold';
+                      optionBorder = 'border-red-300 bg-red-50/70 text-red-950 font-medium';
                     }
 
                     return (
                       <div
                         key={opt.key}
-                        className={`p-2.5 rounded-xl border text-xs flex items-start gap-2.5 ${badgeClass}`}
+                        className={`p-3 rounded-xl border text-xs flex items-start gap-3 transition-colors ${optionBorder}`}
                       >
-                        <span className="font-bold shrink-0">{opt.key}.</span>
-                        <span className="flex-1">{opt.text}</span>
+                        <span className="font-bold font-mono shrink-0 pt-0.5">{opt.key}.</span>
+                        <span className="flex-1 leading-snug">{opt.text}</span>
                         {isRightAnswer && (
-                          <span className="text-[10px] uppercase font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">
+                          <Badge variant="success" size="sm">
                             Correct
-                          </span>
+                          </Badge>
                         )}
                         {isUserPick && !isRightAnswer && (
-                          <span className="text-[10px] uppercase font-bold text-rose-700 bg-rose-100 px-1.5 py-0.5 rounded">
+                          <Badge variant="danger" size="sm">
                             Your Choice
-                          </span>
+                          </Badge>
                         )}
                       </div>
                     );
                   })}
                 </div>
 
-                {/* Explanation */}
-                <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-1">
-                  <div className="font-bold text-slate-800 flex items-center gap-1.5">
-                    <svg className="w-3.5 h-3.5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Explanation & Solution:
+                {/* Solution Explanation Box */}
+                {item.explanation && (
+                  <div className="p-4 bg-slate-50 border border-slate-200/80 rounded-xl text-xs space-y-1.5">
+                    <div className="font-semibold text-slate-900 flex items-center gap-1.5">
+                      <InfoIcon className="w-4 h-4 text-blue-600" />
+                      <span>Explanation & Solution:</span>
+                    </div>
+                    <div className="text-slate-600 leading-relaxed pl-5.5">
+                      {item.explanation}
+                    </div>
                   </div>
-                  <div className="text-slate-600 leading-relaxed pl-5">
-                    {item.explanation}
-                  </div>
-                </div>
+                )}
               </div>
             );
           })}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

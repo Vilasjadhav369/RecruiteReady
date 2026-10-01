@@ -395,3 +395,12 @@ export function SpinnerIcon({ className = 'w-5 h-5' }) {
     </svg>
   );
 }
+
+export function PlayIcon({ className = 'w-4 h-4' }) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+      <polygon points="6 4 16 10 6 16" />
+    </svg>
+  );
+}
+
