@@ -1,120 +1,306 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   getAdminCompanies,
   createCompany,
+  getAdminCompanyById,
   updateCompany,
   updateCompanyStatus,
-} from '../../services/adminService.js';
+} from "../../services/adminService.js";
+import {
+  PageHeader,
+  Badge,
+  StatusBadge,
+  Button,
+  SearchInput,
+  Select,
+  Input,
+  Textarea,
+  Modal,
+  Toast,
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+  EmptyState,
+  ErrorState,
+  SkeletonTableRow,
+} from "../../components/ui/index.js";
+import {
+  CompanyIcon,
+  PlusIcon,
+  EditIcon,
+  EyeIcon,
+  ExternalLinkIcon,
+  DocumentIcon,
+  CheckCircleIcon,
+} from "../../components/ui/Icons.jsx";
 
-const INITIAL_FORM = {
-  name: '',
-  slug: '',
-  logoUrl: '',
-  industry: 'Technology',
-  description: '',
-  website: '',
-  careersUrl: '',
-  roles: 'Software Development Engineer, Systems Engineer',
-  eligibility: 'B.E. / B.Tech / MCA with minimum 65% aggregate.',
-  selectionProcess: 'Online Assessment\nTechnical Round 1\nTechnical Round 2\nHR Round',
-  aptitudeTopics: 'Quantitative Aptitude, Logical Reasoning',
-  codingTopics: 'Data Structures, Dynamic Programming',
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const STATUS_FILTER_OPTIONS = [
+  { value: "all", label: "All Statuses" },
+  { value: "active", label: "Active Only" },
+  { value: "inactive", label: "Hidden / Inactive" },
+];
+
+const INITIAL_FORM_STATE = {
+  name: "",
+  slug: "",
+  logoUrl: "",
+  industry: "Technology",
+  description: "",
+  website: "",
+  careersUrl: "",
+  roles: "",
+  eligibility: "",
+  selectionProcess: "",
+  aptitudeTopics: "",
+  codingTopics: "",
+  interviewTopics: "",
   isActive: true,
 };
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const safeNumber = (val) => {
+  if (val === null || val === undefined) return 0;
+  if (typeof val === "object") return Number(val.total ?? val.count ?? 0) || 0;
+  return Number(val) || 0;
+};
+
+const getInitials = (name) => {
+  if (!name || typeof name !== "string") return "CO";
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+  return name.slice(0, 2).toUpperCase();
+};
+
+const sanitizeUrl = (url) => {
+  if (!url || typeof url !== "string") return null;
+  const trimmed = url.trim();
+  if (!trimmed) return null;
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+};
+
+const formatDate = (dateStr) => {
+  if (!dateStr) return "—";
+  try {
+    return new Date(dateStr).toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  } catch {
+    return "—";
+  }
+};
+
+// ─── Company Logo Component ───────────────────────────────────────────────────
+
+function CompanyLogo({ src, name, size = "md" }) {
+  const [imageFailed, setImageFailed] = useState(false);
+
+  // Reset error state if src changes
+  useEffect(() => {
+    setImageFailed(false);
+  }, [src]);
+
+  const sizeClasses = {
+    sm: "w-8 h-8 text-xs",
+    md: "w-10 h-10 text-xs font-semibold",
+    lg: "w-12 h-12 text-sm font-semibold",
+  };
+
+  const currentSize = sizeClasses[size] || sizeClasses.md;
+
+  if (src && !imageFailed) {
+    return (
+      <img
+        src={src}
+        alt={name || "Company logo"}
+        onError={() => setImageFailed(true)}
+        className={`${currentSize} rounded-lg object-contain bg-slate-50 border border-slate-200/80 p-1 shrink-0`}
+      />
+    );
+  }
+
+  return (
+    <div
+      className={`${currentSize} rounded-lg bg-slate-900 text-white flex items-center justify-center shrink-0 tracking-wider shadow-xs select-none`}
+      aria-label={name}
+    >
+      {getInitials(name)}
+    </div>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+
 export default function AdminCompaniesPage() {
+  // ── Data State ──
   const [companies, setCompanies] = useState([]);
+  const [pagination, setPagination] = useState({
+    total: 0,
+    page: 1,
+    limit: 10,
+    pages: 1,
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  // ── Filters ──
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const searchTimerRef = useRef(null);
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // ── Create / Edit Modal ──
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState(null);
-  const [formData, setFormData] = useState(INITIAL_FORM);
-  const [submitting, setSubmitting] = useState(false);
+  const [formData, setFormData] = useState(INITIAL_FORM_STATE);
+  const [formSubmitting, setFormSubmitting] = useState(false);
   const [formError, setFormError] = useState(null);
-  const [successToast, setSuccessToast] = useState(null);
+
+  // ── View Detail Modal ──
+  const [viewCompany, setViewCompany] = useState(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+
+  // ── Status Toggle Confirmation ──
+  const [toggleTarget, setToggleTarget] = useState(null);
+  const [isToggleModalOpen, setIsToggleModalOpen] = useState(false);
   const [togglingId, setTogglingId] = useState(null);
 
+  // ── Toast ──
+  const [toast, setToast] = useState(null);
+  const toastTimerRef = useRef(null);
+
+  const showToast = (variant, title, message) => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    setToast({ variant, title, message });
+    toastTimerRef.current = setTimeout(() => setToast(null), 4000);
+  };
+
+  // ── Debounced Search ──
+  useEffect(() => {
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPagination((p) => ({ ...p, page: 1 }));
+    }, 350);
+    return () => {
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    };
+  }, [search]);
+
+  // ── Fetch Companies ──
   const fetchCompanies = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const params = {};
-      if (search) params.search = search;
-      if (statusFilter !== 'all') params.status = statusFilter;
+      const params = { page: pagination.page, limit: pagination.limit };
+      if (debouncedSearch) params.search = debouncedSearch;
+      if (statusFilter !== "all") params.status = statusFilter;
 
       const data = await getAdminCompanies(params);
       setCompanies(data?.companies || []);
+      setPagination(
+        data?.pagination || { total: 0, page: 1, limit: 10, pages: 1 }
+      );
     } catch (err) {
-      console.error('Fetch companies error:', err);
-      setError('Failed to load companies.');
+      console.error("Fetch companies error:", err);
+      setError(
+        err.response?.data?.message || "Failed to load company profiles."
+      );
     } finally {
       setLoading(false);
     }
-  }, [search, statusFilter]);
+  }, [debouncedSearch, statusFilter, pagination.page, pagination.limit]);
 
   useEffect(() => {
     fetchCompanies();
   }, [fetchCompanies]);
 
-  const showSuccess = (msg) => {
-    setSuccessToast(msg);
-    setTimeout(() => setSuccessToast(null), 3500);
+  // ── Filter Handlers ──
+  const handleStatusChange = (e) => {
+    setStatusFilter(e.target.value);
+    setPagination((p) => ({ ...p, page: 1 }));
   };
 
-  const handleOpenAdd = () => {
+  const hasActiveFilters = debouncedSearch || statusFilter !== "all";
+
+  const clearAllFilters = () => {
+    setSearch("");
+    setDebouncedSearch("");
+    setStatusFilter("all");
+    setPagination((p) => ({ ...p, page: 1 }));
+  };
+
+  // ── Form Field Updater ──
+  const updateField = (field, value) =>
+    setFormData((prev) => ({ ...prev, [field]: value }));
+
+  // ── Create Modal ──
+  const handleOpenCreateModal = () => {
     setEditingCompany(null);
-    setFormData(INITIAL_FORM);
+    setFormData(INITIAL_FORM_STATE);
     setFormError(null);
-    setIsModalOpen(true);
+    setIsFormModalOpen(true);
   };
 
-  const handleOpenEdit = (c) => {
+  // ── Edit Modal ──
+  const handleOpenEditModal = (c) => {
     setEditingCompany(c);
     setFormData({
-      name: c.name || '',
-      slug: c.slug || '',
-      logoUrl: c.logoUrl || '',
-      industry: c.industry || 'Technology',
-      description: c.description || '',
-      website: c.website || '',
-      careersUrl: c.careersUrl || '',
-      roles: (c.roles || []).join(', '),
-      eligibility: c.eligibility || '',
-      selectionProcess: (c.selectionProcess || []).join('\n'),
-      aptitudeTopics: (c.aptitudeTopics || []).join(', '),
-      codingTopics: (c.codingTopics || []).join(', '),
+      name: c.name || "",
+      slug: c.slug || "",
+      logoUrl: c.logoUrl || "",
+      industry: c.industry || "Technology",
+      description: c.description || "",
+      website: c.website || "",
+      careersUrl: c.careersUrl || "",
+      roles: (c.roles || []).join(", "),
+      eligibility: c.eligibility || "",
+      selectionProcess: (c.selectionProcess || []).join("\n"),
+      aptitudeTopics: (c.aptitudeTopics || []).join(", "),
+      codingTopics: (c.codingTopics || []).join(", "),
+      interviewTopics: (c.interviewTopics || []).join(", "),
       isActive: c.isActive ?? true,
     });
     setFormError(null);
-    setIsModalOpen(true);
+    setIsFormModalOpen(true);
   };
 
-  const handleToggle = async (c) => {
+  const handleCloseFormModal = () => {
+    setIsFormModalOpen(false);
+    setEditingCompany(null);
+    setFormData(INITIAL_FORM_STATE);
+    setFormError(null);
+  };
+
+  // ── View Detail Modal ──
+  const handleOpenViewModal = async (company) => {
+    setIsViewModalOpen(true);
+    setViewCompany(company); // Render immediately
     try {
-      setTogglingId(c._id);
-      const updated = await updateCompanyStatus(c._id, !c.isActive);
-      setCompanies((prev) =>
-        prev.map((item) => (item._id === c._id ? { ...item, isActive: updated.isActive } : item))
-      );
-      showSuccess(`"${c.name}" is now ${updated.isActive ? 'Active' : 'Hidden'}.`);
+      const full = await getAdminCompanyById(company._id);
+      if (full) setViewCompany(full);
     } catch (err) {
-      console.error('Toggle status error:', err);
-      alert('Failed to update company status.');
-    } finally {
-      setTogglingId(null);
+      console.error("Failed to load company detail:", err);
     }
   };
 
-  const handleSubmit = async (e) => {
+  // ── Form Submit ──
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
     setFormError(null);
 
     if (!formData.name.trim()) {
-      setFormError('Company name is required.');
+      setFormError("Company name is required.");
       return;
     }
 
@@ -124,294 +310,1042 @@ export default function AdminCompaniesPage() {
         formData.slug.trim() ||
         formData.name
           .toLowerCase()
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/(^-|-$)/g, ''),
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/(^-|-$)/g, ""),
       logoUrl: formData.logoUrl.trim(),
-      industry: formData.industry.trim(),
+      industry: formData.industry.trim() || "Technology",
       description: formData.description.trim(),
       website: formData.website.trim(),
       careersUrl: formData.careersUrl.trim(),
-      roles: formData.roles.split(',').map((r) => r.trim()).filter(Boolean),
+      roles: formData.roles
+        .split(",")
+        .map((r) => r.trim())
+        .filter(Boolean),
       eligibility: formData.eligibility.trim(),
-      selectionProcess: formData.selectionProcess.split('\n').map((p) => p.trim()).filter(Boolean),
-      aptitudeTopics: formData.aptitudeTopics.split(',').map((t) => t.trim()).filter(Boolean),
-      codingTopics: formData.codingTopics.split(',').map((t) => t.trim()).filter(Boolean),
+      selectionProcess: formData.selectionProcess
+        .split("\n")
+        .map((p) => p.trim())
+        .filter(Boolean),
+      aptitudeTopics: formData.aptitudeTopics
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean),
+      codingTopics: formData.codingTopics
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean),
+      interviewTopics: formData.interviewTopics
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean),
       isActive: formData.isActive,
     };
 
     try {
-      setSubmitting(true);
+      setFormSubmitting(true);
       if (editingCompany) {
         await updateCompany(editingCompany._id, payload);
-        showSuccess('Company updated successfully.');
+        showToast("success", "Company Updated", "Company profile saved successfully.");
       } else {
         await createCompany(payload);
-        showSuccess('Company created successfully.');
+        showToast("success", "Company Added", "New company profile created successfully.");
       }
-      setIsModalOpen(false);
+      handleCloseFormModal();
       fetchCompanies();
     } catch (err) {
-      console.error('Save company error:', err);
-      setFormError(err.response?.data?.message || 'Failed to save company.');
+      console.error("Save company error:", err);
+      setFormError(
+        err.response?.data?.message || "Failed to save company profile. Please check fields."
+      );
     } finally {
-      setSubmitting(false);
+      setFormSubmitting(false);
     }
   };
 
+  // ── Status Toggle ──
+  const handleRequestToggle = (company) => {
+    setToggleTarget(company);
+    setIsToggleModalOpen(true);
+  };
+
+  const handleConfirmToggle = async () => {
+    if (!toggleTarget) return;
+    const c = toggleTarget;
+    try {
+      setTogglingId(c._id);
+      setIsToggleModalOpen(false);
+      const newStatus = !c.isActive;
+      const updated = await updateCompanyStatus(c._id, newStatus);
+      setCompanies((prev) =>
+        prev.map((item) =>
+          item._id === c._id
+            ? { ...item, isActive: updated?.isActive ?? newStatus }
+            : item
+        )
+      );
+      showToast(
+        "success",
+        "Status Updated",
+        `"${c.name}" is now ${newStatus ? "Active" : "Hidden"}.`
+      );
+    } catch (err) {
+      console.error("Toggle status error:", err);
+      showToast(
+        "error",
+        "Update Failed",
+        "Failed to update company visibility. Please try again."
+      );
+    } finally {
+      setTogglingId(null);
+      setToggleTarget(null);
+    }
+  };
+
+  // ── Pagination ──
+  const paginationStart =
+    safeNumber(pagination.total) > 0
+      ? (pagination.page - 1) * pagination.limit + 1
+      : 0;
+  const paginationEnd = Math.min(
+    pagination.page * pagination.limit,
+    safeNumber(pagination.total)
+  );
+
+  // ─── Render ─────────────────────────────────────────────────────────────────
+
   return (
     <div className="space-y-6">
-      {successToast && (
-        <div className="fixed top-4 right-4 z-50 bg-emerald-600 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 text-sm">
-          <span>✓</span>
-          <span>{successToast}</span>
+      {/* ── Toast ── */}
+      {toast && (
+        <div className="fixed top-6 right-6 z-[60] w-80 animate-in fade-in slide-in-from-top-2 duration-200">
+          <Toast
+            variant={toast.variant}
+            title={toast.title}
+            message={toast.message}
+            onClose={() => setToast(null)}
+          />
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Company Track Management</h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Curate company recruitment patterns, rounds, eligibility criteria, and syllabus.
-          </p>
+      {/* ── Page Header ── */}
+      <PageHeader
+        title="Companies"
+        description="Manage company information and placement preparation resources."
+        badge={
+          !loading && (
+            <Badge variant="primary" size="sm">
+              {safeNumber(pagination.total)} Companies
+            </Badge>
+          )
+        }
+        actions={
+          <Button
+            variant="primary"
+            size="md"
+            iconLeft={<PlusIcon className="w-4 h-4" />}
+            onClick={handleOpenCreateModal}
+          >
+            Add Company
+          </Button>
+        }
+      />
+
+      {/* ── Filters ── */}
+      <div className="bg-white border border-slate-200/80 rounded-xl p-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="sm:col-span-2">
+            <SearchInput
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onClear={() => setSearch("")}
+              placeholder="Search companies by name or industry…"
+            />
+          </div>
+          <div>
+            <Select
+              value={statusFilter}
+              onChange={handleStatusChange}
+              options={STATUS_FILTER_OPTIONS}
+            />
+          </div>
         </div>
-        <button
-          onClick={handleOpenAdd}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm rounded-lg shadow-sm transition"
-        >
-          <span>+</span> Add Company
-        </button>
-      </div>
-
-      {/* Filters */}
-      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row gap-3">
-        <input
-          type="text"
-          placeholder="Search companies by name or role..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="flex-1 px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-        />
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-3.5 py-2 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-        >
-          <option value="all">All Statuses</option>
-          <option value="active">Active Only</option>
-          <option value="inactive">Hidden / Inactive</option>
-        </select>
-      </div>
-
-      {/* Table */}
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-        {loading ? (
-          <div className="p-12 text-center text-slate-500 text-sm">Loading companies...</div>
-        ) : error ? (
-          <div className="p-6 text-center text-rose-600 bg-rose-50 text-sm">{error}</div>
-        ) : companies.length === 0 ? (
-          <div className="p-12 text-center text-slate-500 text-sm">No companies found.</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="bg-slate-50/75 border-b border-slate-200 text-slate-500 text-xs font-semibold uppercase tracking-wider">
-                  <th className="py-3 px-4">Company</th>
-                  <th className="py-3 px-4">Industry</th>
-                  <th className="py-3 px-4">Roles</th>
-                  <th className="py-3 px-4">Rounds</th>
-                  <th className="py-3 px-4 text-center">Status</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {companies.map((c) => (
-                  <tr key={c._id} className="hover:bg-slate-50/50 transition">
-                    <td className="py-3.5 px-4">
-                      <div className="font-semibold text-slate-900">{c.name}</div>
-                      <div className="text-xs text-slate-400 font-mono">/{c.slug}</div>
-                    </td>
-                    <td className="py-3.5 px-4 text-slate-600 text-xs">{c.industry || 'Technology'}</td>
-                    <td className="py-3.5 px-4 text-slate-500 text-xs truncate max-w-[200px]">
-                      {(c.roles || []).join(', ') || 'Various'}
-                    </td>
-                    <td className="py-3.5 px-4 text-slate-500 text-xs">
-                      {c.selectionProcess?.length || 0} stages
-                    </td>
-                    <td className="py-3.5 px-4 text-center">
-                      <button
-                        onClick={() => handleToggle(c)}
-                        disabled={togglingId === c._id}
-                        className={`text-xs font-semibold px-2.5 py-1 rounded-full transition ${
-                          c.isActive
-                            ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
-                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                        }`}
-                      >
-                        {togglingId === c._id ? 'Updating...' : c.isActive ? 'Active' : 'Hidden'}
-                      </button>
-                    </td>
-                    <td className="py-3.5 px-4 text-right">
-                      <button
-                        onClick={() => handleOpenEdit(c)}
-                        className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold px-2 py-1 rounded hover:bg-indigo-50 transition"
-                      >
-                        Edit
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {hasActiveFilters && (
+          <div className="mt-3 flex items-center justify-between">
+            <p className="text-xs text-slate-500">
+              Filters active — showing matching results
+            </p>
+            <button
+              type="button"
+              onClick={clearAllFilters}
+              className="text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors"
+            >
+              Clear all filters
+            </button>
           </div>
         )}
       </div>
 
-      {/* Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-4 my-8 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="font-bold text-slate-900 text-lg">
-                {editingCompany ? 'Edit Company Guide' : 'Add New Company Track'}
-              </h3>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 text-lg leading-none"
+      {/* ── Main Content ── */}
+      {loading ? (
+        <div className="bg-white border border-slate-200/80 rounded-xl overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Company</TableHead>
+                <TableHead>Industry</TableHead>
+                <TableHead>Target Roles</TableHead>
+                <TableHead>Selection Rounds</TableHead>
+                <TableHead>Website</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <SkeletonTableRow key={i} cols={7} />
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      ) : error ? (
+        <ErrorState
+          title="Unable to Load Companies"
+          message={error}
+          onRetry={fetchCompanies}
+        />
+      ) : companies.length === 0 ? (
+        <EmptyState
+          icon={<CompanyIcon className="w-8 h-8" />}
+          title={
+            hasActiveFilters
+              ? "No companies match your search"
+              : "No companies added yet"
+          }
+          description={
+            hasActiveFilters
+              ? "Try adjusting your search query or status filter, or add a new company."
+              : "The company recruitment tracks are empty. Add the first company to get started."
+          }
+          action={
+            hasActiveFilters ? (
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={clearAllFilters}>
+                  Clear Filters
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  iconLeft={<PlusIcon className="w-3.5 h-3.5" />}
+                  onClick={handleOpenCreateModal}
+                >
+                  Add Company
+                </Button>
+              </div>
+            ) : (
+              <Button
+                variant="primary"
+                size="sm"
+                iconLeft={<PlusIcon className="w-3.5 h-3.5" />}
+                onClick={handleOpenCreateModal}
               >
-                &times;
-              </button>
+                Add First Company
+              </Button>
+            )
+          }
+        />
+      ) : (
+        <>
+          {/* ── Desktop Table ── */}
+          <div className="hidden md:block bg-white border border-slate-200/80 rounded-xl overflow-hidden">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="min-w-[240px]">Company</TableHead>
+                    <TableHead>Industry</TableHead>
+                    <TableHead className="min-w-[180px]">Target Roles</TableHead>
+                    <TableHead>Selection Rounds</TableHead>
+                    <TableHead>Website</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {companies.map((c) => {
+                    const websiteUrl = sanitizeUrl(c.website);
+                    return (
+                      <TableRow key={c._id}>
+                        {/* Company Logo + Name + Slug */}
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <CompanyLogo
+                              src={c.logoUrl}
+                              name={c.name}
+                              size="md"
+                            />
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold text-slate-900 leading-snug truncate">
+                                {c.name || "—"}
+                              </p>
+                              <p className="text-[11px] text-slate-400 font-mono mt-0.5 truncate">
+                                /{c.slug || "—"}
+                              </p>
+                            </div>
+                          </div>
+                        </TableCell>
+
+                        {/* Industry */}
+                        <TableCell>
+                          <span className="text-xs text-slate-700 font-medium">
+                            {c.industry || "Technology"}
+                          </span>
+                        </TableCell>
+
+                        {/* Target Roles */}
+                        <TableCell>
+                          {c.roles && c.roles.length > 0 ? (
+                            <div className="flex flex-wrap gap-1 max-w-xs">
+                              {c.roles.slice(0, 2).map((role, idx) => (
+                                <Badge key={idx} variant="default" size="sm">
+                                  {role}
+                                </Badge>
+                              ))}
+                              {c.roles.length > 2 && (
+                                <span className="text-[11px] text-slate-400 self-center">
+                                  +{c.roles.length - 2}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-slate-400">—</span>
+                          )}
+                        </TableCell>
+
+                        {/* Selection Rounds */}
+                        <TableCell>
+                          <span className="text-xs text-slate-700">
+                            {c.selectionProcess?.length || 0} stage
+                            {(c.selectionProcess?.length || 0) === 1 ? "" : "s"}
+                          </span>
+                        </TableCell>
+
+                        {/* Website */}
+                        <TableCell>
+                          {websiteUrl ? (
+                            <a
+                              href={websiteUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium hover:underline max-w-[120px] truncate"
+                              title={c.website}
+                            >
+                              <span>Visit</span>
+                              <ExternalLinkIcon className="w-3 h-3 shrink-0" />
+                            </a>
+                          ) : (
+                            <span className="text-xs text-slate-400">—</span>
+                          )}
+                        </TableCell>
+
+                        {/* Status */}
+                        <TableCell>
+                          <StatusBadge
+                            status={c.isActive ? "active" : "inactive"}
+                          />
+                        </TableCell>
+
+                        {/* Actions */}
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleOpenViewModal(c)}
+                              title="View details"
+                            >
+                              <EyeIcon className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleOpenEditModal(c)}
+                              title="Edit company"
+                            >
+                              <EditIcon className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              loading={togglingId === c._id}
+                              onClick={() => handleRequestToggle(c)}
+                              className={
+                                c.isActive
+                                  ? "text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                                  : "text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                              }
+                            >
+                              {c.isActive ? "Hide" : "Activate"}
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
             </div>
 
-            {formError && (
-              <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg text-rose-700 text-xs">
-                {formError}
+            {/* Pagination */}
+            <div className="px-6 py-3 border-t border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <p className="text-xs text-slate-500">
+                Showing{" "}
+                <span className="font-semibold text-slate-700">
+                  {paginationStart}
+                </span>{" "}
+                to{" "}
+                <span className="font-semibold text-slate-700">
+                  {paginationEnd}
+                </span>{" "}
+                of{" "}
+                <span className="font-semibold text-slate-700">
+                  {safeNumber(pagination.total)}
+                </span>{" "}
+                companies
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={pagination.page <= 1}
+                  onClick={() =>
+                    setPagination((p) => ({ ...p, page: p.page - 1 }))
+                  }
+                >
+                  Previous
+                </Button>
+                <span className="text-xs text-slate-600 font-medium px-2">
+                  Page {pagination.page} of {pagination.pages || 1}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={pagination.page >= (pagination.pages || 1)}
+                  onClick={() =>
+                    setPagination((p) => ({ ...p, page: p.page + 1 }))
+                  }
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Mobile Cards ── */}
+          <div className="md:hidden space-y-3">
+            {companies.map((c) => {
+              const websiteUrl = sanitizeUrl(c.website);
+              return (
+                <div
+                  key={c._id}
+                  className="bg-white border border-slate-200/80 rounded-xl p-4 space-y-3"
+                >
+                  {/* Top row: Logo, Name, Status */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <CompanyLogo
+                        src={c.logoUrl}
+                        name={c.name}
+                        size="sm"
+                      />
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-slate-900 leading-snug truncate">
+                          {c.name || "—"}
+                        </p>
+                        <p className="text-[11px] text-slate-400 font-mono">
+                          /{c.slug || "—"}
+                        </p>
+                      </div>
+                    </div>
+                    <StatusBadge status={c.isActive ? "active" : "inactive"} />
+                  </div>
+
+                  {/* Meta row */}
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
+                    <span className="font-medium text-slate-700">
+                      {c.industry || "Technology"}
+                    </span>
+                    <span>•</span>
+                    <span>
+                      {c.selectionProcess?.length || 0} stage
+                      {(c.selectionProcess?.length || 0) === 1 ? "" : "s"}
+                    </span>
+                    {websiteUrl && (
+                      <>
+                        <span>•</span>
+                        <a
+                          href={websiteUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-blue-600 font-medium hover:underline"
+                        >
+                          <span>Website</span>
+                          <ExternalLinkIcon className="w-3 h-3" />
+                        </a>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Roles */}
+                  {c.roles && c.roles.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {c.roles.slice(0, 3).map((role, idx) => (
+                        <Badge key={idx} variant="default" size="sm">
+                          {role}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-2 pt-1 border-t border-slate-100">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => handleOpenViewModal(c)}
+                    >
+                      View
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => handleOpenEditModal(c)}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className={`flex-1 ${
+                        c.isActive
+                          ? "text-amber-600 border-amber-200 hover:bg-amber-50"
+                          : "text-emerald-600 border-emerald-200 hover:bg-emerald-50"
+                      }`}
+                      loading={togglingId === c._id}
+                      onClick={() => handleRequestToggle(c)}
+                    >
+                      {c.isActive ? "Hide" : "Activate"}
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Mobile Pagination */}
+            <div className="flex items-center justify-between py-2">
+              <p className="text-xs text-slate-500">
+                Page {pagination.page} of {pagination.pages || 1}
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={pagination.page <= 1}
+                  onClick={() =>
+                    setPagination((p) => ({ ...p, page: p.page - 1 }))
+                  }
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={pagination.page >= (pagination.pages || 1)}
+                  onClick={() =>
+                    setPagination((p) => ({ ...p, page: p.page + 1 }))
+                  }
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ─── Create / Edit Company Modal ──────────────────────────────────── */}
+      <Modal
+        isOpen={isFormModalOpen}
+        onClose={handleCloseFormModal}
+        title={editingCompany ? "Edit Company Profile" : "Add New Company"}
+        description="Configure company recruitment patterns, rounds, eligibility criteria, and syllabus."
+        maxWidth="max-w-2xl"
+        footer={
+          <>
+            <Button variant="outline" size="sm" onClick={handleCloseFormModal}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              loading={formSubmitting}
+              onClick={handleFormSubmit}
+            >
+              {editingCompany ? "Save Changes" : "Create Company"}
+            </Button>
+          </>
+        }
+      >
+        <form onSubmit={handleFormSubmit} className="space-y-5">
+          {/* Form Error */}
+          {formError && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 font-medium">
+              {formError}
+            </div>
+          )}
+
+          {/* ── Section: Company Information ── */}
+          <div className="space-y-3">
+            <h4 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+              Company Information
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Input
+                label="Company Name"
+                required
+                value={formData.name}
+                onChange={(e) => updateField("name", e.target.value)}
+                placeholder="e.g. Google"
+              />
+              <Input
+                label="Slug"
+                value={formData.slug}
+                onChange={(e) => updateField("slug", e.target.value)}
+                placeholder="google (auto-generated if empty)"
+                className="font-mono text-xs"
+                helperText="Auto-generated from name if left empty."
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Input
+                label="Industry"
+                value={formData.industry}
+                onChange={(e) => updateField("industry", e.target.value)}
+                placeholder="e.g. Technology / FinTech"
+              />
+              <Input
+                label="Logo URL"
+                value={formData.logoUrl}
+                onChange={(e) => updateField("logoUrl", e.target.value)}
+                placeholder="https://example.com/logo.png"
+                helperText="Leave empty to use automatic initials avatar."
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Input
+                label="Website URL"
+                value={formData.website}
+                onChange={(e) => updateField("website", e.target.value)}
+                placeholder="https://example.com"
+              />
+              <Input
+                label="Careers Page URL"
+                value={formData.careersUrl}
+                onChange={(e) => updateField("careersUrl", e.target.value)}
+                placeholder="https://example.com/careers"
+              />
+            </div>
+
+            <Textarea
+              label="Company Overview"
+              rows={3}
+              value={formData.description}
+              onChange={(e) => updateField("description", e.target.value)}
+              placeholder="Brief description of the organization and work culture…"
+            />
+          </div>
+
+          {/* ── Section: Placement Specifications ── */}
+          <div className="space-y-3 pt-2 border-t border-slate-100">
+            <h4 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider pt-1">
+              Placement Specifications
+            </h4>
+            <Input
+              label="Target Roles (comma separated)"
+              value={formData.roles}
+              onChange={(e) => updateField("roles", e.target.value)}
+              placeholder="e.g. Software Engineer, Systems Engineer, Analyst"
+            />
+            <Textarea
+              label="Eligibility Criteria"
+              rows={2}
+              value={formData.eligibility}
+              onChange={(e) => updateField("eligibility", e.target.value)}
+              placeholder="e.g. B.E. / B.Tech / MCA with minimum 65% aggregate and no active backlogs."
+            />
+            <Textarea
+              label="Hiring Rounds / Selection Process (one per line)"
+              rows={3}
+              value={formData.selectionProcess}
+              onChange={(e) => updateField("selectionProcess", e.target.value)}
+              placeholder="Online Assessment&#10;Technical Round 1&#10;Technical Round 2&#10;HR Interview"
+              helperText="Enter each recruitment stage on a new line."
+              className="font-mono text-xs"
+            />
+          </div>
+
+          {/* ── Section: Syllabus & Preparation Topics ── */}
+          <div className="space-y-3 pt-2 border-t border-slate-100">
+            <h4 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider pt-1">
+              Preparation Syllabus & Topics
+            </h4>
+            <Input
+              label="Aptitude Topics (comma separated)"
+              value={formData.aptitudeTopics}
+              onChange={(e) => updateField("aptitudeTopics", e.target.value)}
+              placeholder="Quantitative Aptitude, Logical Reasoning, Verbal"
+            />
+            <Input
+              label="Coding Topics (comma separated)"
+              value={formData.codingTopics}
+              onChange={(e) => updateField("codingTopics", e.target.value)}
+              placeholder="Data Structures, Dynamic Programming, Graphs"
+            />
+            <Input
+              label="Interview Topics (comma separated)"
+              value={formData.interviewTopics}
+              onChange={(e) => updateField("interviewTopics", e.target.value)}
+              placeholder="System Design, DBMS, OOP Concepts, HR Questions"
+            />
+          </div>
+
+          {/* ── Section: Status ── */}
+          <div className="pt-2 border-t border-slate-100">
+            <div className="flex items-center gap-2.5">
+              <input
+                type="checkbox"
+                id="form-active-toggle"
+                checked={formData.isActive}
+                onChange={(e) => updateField("isActive", e.target.checked)}
+                className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300"
+              />
+              <label
+                htmlFor="form-active-toggle"
+                className="text-xs font-medium text-slate-700 cursor-pointer select-none"
+              >
+                Active — visible to students on the company preparation tracks
+              </label>
+            </div>
+          </div>
+        </form>
+      </Modal>
+
+      {/* ─── View Company Detail Modal ────────────────────────────────────── */}
+      <Modal
+        isOpen={isViewModalOpen}
+        onClose={() => {
+          setIsViewModalOpen(false);
+          setViewCompany(null);
+        }}
+        title={viewCompany?.name || "Company Overview"}
+        description={
+          viewCompany
+            ? `${viewCompany.industry || "Technology"} • /${viewCompany.slug || ""}`
+            : ""
+        }
+        maxWidth="max-w-2xl"
+        footer={
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setIsViewModalOpen(false);
+                setViewCompany(null);
+              }}
+            >
+              Close
+            </Button>
+            {viewCompany && (
+              <Button
+                variant="primary"
+                size="sm"
+                iconLeft={<EditIcon className="w-3.5 h-3.5" />}
+                onClick={() => {
+                  setIsViewModalOpen(false);
+                  handleOpenEditModal(viewCompany);
+                }}
+              >
+                Edit Company
+              </Button>
+            )}
+          </>
+        }
+      >
+        {viewCompany && (
+          <div className="space-y-5">
+            {/* Header: Logo, Name, Industry, Status */}
+            <div className="flex items-start gap-3 p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl">
+              <CompanyLogo
+                src={viewCompany.logoUrl}
+                name={viewCompany.name}
+                size="lg"
+              />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h4 className="text-base font-bold text-slate-900 leading-snug">
+                    {viewCompany.name}
+                  </h4>
+                  <StatusBadge
+                    status={viewCompany.isActive ? "active" : "inactive"}
+                  />
+                </div>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  {viewCompany.industry || "Technology"} • /{viewCompany.slug}
+                </p>
+
+                {/* External links */}
+                <div className="flex items-center gap-3 mt-2 text-xs">
+                  {sanitizeUrl(viewCompany.website) && (
+                    <a
+                      href={sanitizeUrl(viewCompany.website)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 font-medium hover:underline"
+                    >
+                      <span>Official Website</span>
+                      <ExternalLinkIcon className="w-3 h-3" />
+                    </a>
+                  )}
+                  {sanitizeUrl(viewCompany.careersUrl) && (
+                    <a
+                      href={sanitizeUrl(viewCompany.careersUrl)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 font-medium hover:underline"
+                    >
+                      <span>Careers Portal</span>
+                      <ExternalLinkIcon className="w-3 h-3" />
+                    </a>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Description */}
+            {viewCompany.description && (
+              <div>
+                <h5 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  About
+                </h5>
+                <p className="text-xs sm:text-sm text-slate-800 leading-relaxed whitespace-pre-wrap">
+                  {viewCompany.description}
+                </p>
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4 text-sm">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Company Name *</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                    placeholder="e.g. Google"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Industry</label>
-                  <input
-                    type="text"
-                    value={formData.industry}
-                    onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                    placeholder="e.g. Technology / FinTech"
-                  />
-                </div>
-              </div>
-
+            {/* Target Roles */}
+            {viewCompany.roles && viewCompany.roles.length > 0 && (
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">About / Overview</label>
-                <textarea
-                  rows={2}
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  placeholder="Short description of the company and their engineering culture..."
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Target Roles (comma-separated)</label>
-                  <input
-                    type="text"
-                    value={formData.roles}
-                    onChange={(e) => setFormData({ ...formData, roles: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Eligibility Criteria</label>
-                  <input
-                    type="text"
-                    value={formData.eligibility}
-                    onChange={(e) => setFormData({ ...formData, eligibility: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  />
+                <h5 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  Target Roles
+                </h5>
+                <div className="flex flex-wrap gap-1.5">
+                  {viewCompany.roles.map((role, idx) => (
+                    <Badge key={idx} variant="default" size="sm">
+                      {role}
+                    </Badge>
+                  ))}
                 </div>
               </div>
+            )}
 
+            {/* Eligibility */}
+            {viewCompany.eligibility && (
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Hiring Rounds / Selection Process (one per line)
-                </label>
-                <textarea
-                  rows={3}
-                  value={formData.selectionProcess}
-                  onChange={(e) => setFormData({ ...formData, selectionProcess: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-mono text-xs"
-                />
+                <h5 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  Eligibility Criteria
+                </h5>
+                <p className="text-xs text-slate-700 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                  {viewCompany.eligibility}
+                </p>
               </div>
+            )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Selection Process */}
+            {viewCompany.selectionProcess &&
+              viewCompany.selectionProcess.length > 0 && (
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Key Aptitude Topics</label>
-                  <input
-                    type="text"
-                    value={formData.aptitudeTopics}
-                    onChange={(e) => setFormData({ ...formData, aptitudeTopics: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-xs"
-                  />
+                  <h5 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                    Selection Process ({viewCompany.selectionProcess.length} Rounds)
+                  </h5>
+                  <div className="space-y-1.5">
+                    {viewCompany.selectionProcess.map((round, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center gap-2.5 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 font-medium"
+                      >
+                        <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center shrink-0 text-[10px]">
+                          {idx + 1}
+                        </span>
+                        <span>{round}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
+              )}
+
+            {/* Syllabus Breakdown */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+              {viewCompany.aptitudeTopics &&
+                viewCompany.aptitudeTopics.length > 0 && (
+                  <div>
+                    <h5 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                      Aptitude Topics
+                    </h5>
+                    <div className="flex flex-wrap gap-1">
+                      {viewCompany.aptitudeTopics.map((topic, idx) => (
+                        <Badge key={idx} variant="default" size="sm">
+                          {topic}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+              {viewCompany.codingTopics &&
+                viewCompany.codingTopics.length > 0 && (
+                  <div>
+                    <h5 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                      Coding Topics
+                    </h5>
+                    <div className="flex flex-wrap gap-1">
+                      {viewCompany.codingTopics.map((topic, idx) => (
+                        <Badge key={idx} variant="default" size="sm">
+                          {topic}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+            </div>
+
+            {/* Interview Topics */}
+            {viewCompany.interviewTopics &&
+              viewCompany.interviewTopics.length > 0 && (
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Key Coding Topics</label>
-                  <input
-                    type="text"
-                    value={formData.codingTopics}
-                    onChange={(e) => setFormData({ ...formData, codingTopics: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-xs"
-                  />
+                  <h5 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                    Interview Topics
+                  </h5>
+                  <div className="flex flex-wrap gap-1">
+                    {viewCompany.interviewTopics.map((topic, idx) => (
+                      <Badge key={idx} variant="info" size="sm">
+                        {topic}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+            {/* Resources (if any exist in backend) */}
+            {viewCompany.resources && viewCompany.resources.length > 0 && (
+              <div>
+                <h5 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  Resources
+                </h5>
+                <div className="space-y-1.5">
+                  {viewCompany.resources.map((res, idx) => (
+                    <a
+                      key={idx}
+                      href={sanitizeUrl(res.url)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50/50 transition-colors"
+                    >
+                      <span className="font-medium text-slate-800">
+                        {res.title || "Resource Link"}
+                      </span>
+                      <ExternalLinkIcon className="w-3.5 h-3.5" />
+                    </a>
+                  ))}
                 </div>
               </div>
+            )}
 
-              <div className="flex items-center gap-2 pt-2">
-                <input
-                  type="checkbox"
-                  id="companyActive"
-                  checked={formData.isActive}
-                  onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                  className="rounded text-indigo-600 focus:ring-indigo-500"
-                />
-                <label htmlFor="companyActive" className="text-xs font-medium text-slate-700">
-                  Visible to students (Active)
-                </label>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 border border-slate-200 text-slate-700 font-medium text-xs rounded-lg hover:bg-slate-50 transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-xs rounded-lg shadow-sm transition disabled:opacity-50"
-                >
-                  {submitting ? 'Saving...' : editingCompany ? 'Save Changes' : 'Create Company'}
-                </button>
-              </div>
-            </form>
+            {/* Timestamps */}
+            <div className="flex items-center gap-4 text-[11px] text-slate-400 pt-2 border-t border-slate-100">
+              {viewCompany.createdAt && (
+                <span>Added: {formatDate(viewCompany.createdAt)}</span>
+              )}
+              {viewCompany.updatedAt && (
+                <span>Last updated: {formatDate(viewCompany.updatedAt)}</span>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
+
+      {/* ─── Status Toggle Confirmation Modal ─────────────────────────────── */}
+      <Modal
+        isOpen={isToggleModalOpen}
+        onClose={() => {
+          setIsToggleModalOpen(false);
+          setToggleTarget(null);
+        }}
+        title={
+          toggleTarget?.isActive
+            ? "Hide Company Track?"
+            : "Activate Company Track?"
+        }
+        description={
+          toggleTarget?.isActive
+            ? "This company profile and syllabus will be hidden from the student company preparation module."
+            : "This company profile will become visible to all students preparing for placements."
+        }
+        maxWidth="max-w-md"
+        footer={
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setIsToggleModalOpen(false);
+                setToggleTarget(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant={toggleTarget?.isActive ? "danger" : "success"}
+              size="sm"
+              onClick={handleConfirmToggle}
+            >
+              {toggleTarget?.isActive ? "Hide Company" : "Activate Company"}
+            </Button>
+          </>
+        }
+      >
+        {toggleTarget && (
+          <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg flex items-center gap-3">
+            <CompanyLogo
+              src={toggleTarget.logoUrl}
+              name={toggleTarget.name}
+              size="md"
+            />
+            <div>
+              <p className="text-sm font-semibold text-slate-900">
+                {toggleTarget.name || "—"}
+              </p>
+              <p className="text-xs text-slate-500">
+                {toggleTarget.industry || "Technology"} • /{toggleTarget.slug}
+              </p>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
