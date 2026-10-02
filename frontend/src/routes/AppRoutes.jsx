@@ -57,7 +57,7 @@ import AdminResourcesPage from "../pages/admin/AdminResourcesPage.jsx";
 import AdminMockTestsPage from "../pages/admin/AdminMockTestsPage.jsx";
 import AdminReviewsPage from "../pages/admin/AdminReviewsPage.jsx";
 import AdminAnalyticsPage from "../pages/admin/AdminAnalyticsPage.jsx";
-import AdminPlaceholderPage from "../pages/admin/AdminPlaceholderPage.jsx";
+import AdminSettingsPage from "../pages/admin/AdminSettingsPage.jsx";
 
 /**
  * AppRoutes — Central application routing registry.
@@ -138,7 +138,7 @@ function AppRoutes() {
         <Route path="/admin/mock-tests" element={<AdminMockTestsPage />} />
         <Route path="/admin/reviews" element={<AdminReviewsPage />} />
         <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
-        <Route path="/admin/settings" element={<AdminPlaceholderPage />} />
+        <Route path="/admin/settings" element={<AdminSettingsPage />} />
       </Route>
 
       {/* ── 404 Catch-All ─────────────────────────────── */}
