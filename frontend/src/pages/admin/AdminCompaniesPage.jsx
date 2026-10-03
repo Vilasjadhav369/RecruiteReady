@@ -33,8 +33,6 @@ import {
   EditIcon,
   EyeIcon,
   ExternalLinkIcon,
-  DocumentIcon,
-  CheckCircleIcon,
 } from "../../components/ui/Icons.jsx";
 
 // ─── Constants ────────────────────────────────────────────────────────────────

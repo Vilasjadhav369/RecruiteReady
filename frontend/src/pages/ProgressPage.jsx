@@ -16,7 +16,6 @@ import {
   TableRow,
   TableHead,
   TableCell,
-  Skeleton,
   SkeletonCard,
   ErrorState,
   EmptyState,
@@ -27,7 +26,6 @@ import {
   MockTestIcon,
   ChartBarIcon,
   CheckCircleIcon,
-  ClockIcon,
   ArrowRightIcon,
   DocumentIcon,
   TrophyIcon,
@@ -424,7 +422,7 @@ export default function ProgressPage() {
                         <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
                           <div
                             className="bg-blue-600 h-2 rounded-full transition-all duration-500"
-                            style={{ width: `${Math.min(100, aptitude.averagePercentage)}%` }}
+                            style={{ width: `${Math.min(100, Math.max(0, aptitude.averagePercentage || 0))}%` }}
                           />
                         </div>
                       </div>
@@ -577,7 +575,7 @@ export default function ProgressPage() {
                         <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
                           <div
                             className="bg-rose-500 h-2 rounded-full transition-all duration-500"
-                            style={{ width: `${Math.min(100, mockTests.averagePercentage)}%` }}
+                            style={{ width: `${Math.min(100, Math.max(0, mockTests.averagePercentage || 0))}%` }}
                           />
                         </div>
                       </div>

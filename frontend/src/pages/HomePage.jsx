@@ -300,15 +300,15 @@ function CompaniesSection() {
               Company-specific preparation paths, past questions, and interview insights.
             </span>
           </div>
-          <a
-            href="/companies"
+          <Link
+            to="/companies"
             className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#2563EB] hover:text-[#1d4ed8] no-underline hover:no-underline transition-colors flex-shrink-0"
           >
             View All Companies
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
               <path d="M2 7H12M8 3L12 7L8 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
-          </a>
+          </Link>
         </div>
         <CompanyGrid companies={companies} loading={false} />
       </div>
@@ -365,12 +365,12 @@ function AnalyticsPreview() {
               Turn preparation activity into clear progress. Understand your strengths,
               identify gaps, and focus your effort where it matters most.
             </p>
-            <a
-              href="/dashboard"
+            <Link
+              to="/dashboard"
               className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-[#2563EB] hover:bg-[#1d4ed8] px-6 py-3 rounded-lg transition-colors no-underline hover:no-underline"
             >
               View Dashboard
-            </a>
+            </Link>
           </div>
 
           {/* Right: analytics card UI preview */}
@@ -483,15 +483,15 @@ function ReviewsSection() {
             </p>
           </div>
           {reviews.length > 0 && (
-            <a
-              href="/reviews"
+            <Link
+              to="/reviews"
               className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#2563EB] no-underline hover:no-underline hover:text-[#1d4ed8] transition-colors flex-shrink-0"
             >
               View All Reviews
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
                 <path d="M2 7H12M8 3L12 7L8 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
-            </a>
+            </Link>
           )}
         </div>
         <StudentReviews reviews={reviews} loading={false} />

@@ -23,12 +23,10 @@ import {
   TableCell,
   EmptyState,
   ErrorState,
-  Skeleton,
   SkeletonTableRow,
   StatusBadge,
 } from "../../components/ui/index.js";
 import {
-  AptitudeIcon,
   PlusIcon,
   EditIcon,
   EyeIcon,
@@ -68,13 +66,6 @@ const FORM_DIFFICULTY_OPTIONS = [
   { value: "easy", label: "Easy" },
   { value: "medium", label: "Medium" },
   { value: "hard", label: "Hard" },
-];
-
-const CORRECT_OPTION_OPTIONS = [
-  { value: "A", label: "A" },
-  { value: "B", label: "B" },
-  { value: "C", label: "C" },
-  { value: "D", label: "D" },
 ];
 
 const INITIAL_FORM_STATE = {

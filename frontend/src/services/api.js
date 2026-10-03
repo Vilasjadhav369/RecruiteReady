@@ -1,4 +1,4 @@
-﻿import axios from "axios";
+import axios from "axios";
 
 /**
  * api — Pre-configured Axios instance.
@@ -7,7 +7,7 @@
  * All API calls should use this instance.
  */
 const api = axios.create({
-  baseURL: "/api",
+  baseURL: import.meta.env.VITE_API_URL || "/api",
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",

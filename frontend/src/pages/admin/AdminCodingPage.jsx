@@ -28,12 +28,10 @@ import {
   SkeletonTableRow,
 } from "../../components/ui/index.js";
 import {
-  CodingIcon,
   PlusIcon,
   EditIcon,
   EyeIcon,
   DocumentIcon,
-  CheckCircleIcon,
 } from "../../components/ui/Icons.jsx";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -110,11 +108,6 @@ const capitalize = (s) =>
     ? s.charAt(0).toUpperCase() + s.slice(1)
     : "—";
 
-const truncateText = (text, maxLen = 100) => {
-  if (!text) return "—";
-  return text.length > maxLen ? text.slice(0, maxLen) + "…" : text;
-};
-
 const formatDate = (dateStr) => {
   if (!dateStr) return "—";
   try {
@@ -159,7 +152,6 @@ export default function AdminCodingPage() {
   // ── View Detail Modal ──
   const [viewProblem, setViewProblem] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [viewLoading, setViewLoading] = useState(false);
 
   // ── Status Toggle Confirmation ──
   const [toggleTarget, setToggleTarget] = useState(null);
@@ -253,12 +245,6 @@ export default function AdminCodingPage() {
   // ── Edit Modal ──
   const handleOpenEditModal = (problem) => {
     setEditingProblem(problem);
-
-    // Map starterCode from Map/object to keep existing behavior
-    const starterCodeObj =
-      problem.starterCode instanceof Map
-        ? Object.fromEntries(problem.starterCode)
-        : problem.starterCode || {};
 
     setFormData({
       title: problem.title || "",

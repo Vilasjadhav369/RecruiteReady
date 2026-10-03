@@ -35,8 +35,6 @@ import {
   EyeIcon,
   ClockIcon,
   DocumentIcon,
-  CheckCircleIcon,
-  CheckIcon,
   SearchIcon,
 } from '../../components/ui/Icons.jsx';
 

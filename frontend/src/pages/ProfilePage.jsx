@@ -18,7 +18,6 @@ import {
   LoadingState,
 } from "../components/ui/index.js";
 import {
-  ProfileIcon,
   AcademicCapIcon,
   CompanyIcon,
   ShieldCheckIcon,

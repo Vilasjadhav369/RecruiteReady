@@ -30,9 +30,7 @@ import {
   MockTestIcon,
   StarIcon,
   RefreshIcon,
-  DocumentIcon,
   ChartBarIcon,
-  CheckCircleIcon,
   InfoIcon,
   ArrowRightIcon,
 } from '../../components/ui/Icons.jsx';
@@ -409,7 +407,10 @@ export default function AdminAnalyticsPage() {
   const reviewsRejected = Math.max(0, reviewsTotal - reviewsApproved - reviewsPending);
 
   // Real historical trend array directly from MongoDB aggregation
-  const activityTrend = Array.isArray(data?.activityTrend) ? data.activityTrend : [];
+  const activityTrend = useMemo(
+    () => (Array.isArray(data?.activityTrend) ? data.activityTrend : []),
+    [data]
+  );
 
   // Total student practice volume across all 3 modules
   const totalPracticeEngagements = aptAttempts + codingSubmissions + mockAttempts;

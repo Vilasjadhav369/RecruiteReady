@@ -200,7 +200,7 @@ export default function LeaderboardPage() {
               />
               <StatCard
                 label="Your Points"
-                value={currentUserEntry.score.toLocaleString()}
+                value={(currentUserEntry.score ?? 0).toLocaleString()}
                 subtext="Total merit points"
                 icon={<ChartBarIcon className="w-4 h-4 text-emerald-600" />}
               />
@@ -349,7 +349,7 @@ export default function LeaderboardPage() {
 
                           {/* Total Points */}
                           <TableCell className="text-right font-mono font-bold text-blue-600 text-sm sm:text-base">
-                            {item.score.toLocaleString()} <span className="text-xs font-normal text-slate-400">pts</span>
+                            {(item.score ?? 0).toLocaleString()} <span className="text-xs font-normal text-slate-400">pts</span>
                           </TableCell>
                         </TableRow>
                       );
