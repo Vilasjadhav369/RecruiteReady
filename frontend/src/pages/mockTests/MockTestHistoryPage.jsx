@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getMockHistory } from '../../services/mockTestService.js';
+import { formatDateTime } from '../../utils/formatters.js';
 import { 
   PageHeader, 
   Card, 
@@ -113,30 +114,39 @@ export default function MockTestHistoryPage() {
                     <TableCell className="font-bold text-slate-900">
                       {att.mockTest?.title || 'Mock Test'}
                     </TableCell>
-                    <TableCell className="text-slate-500 font-mono">
-                      {new Date(att.submittedAt || att.createdAt).toLocaleDateString()}
+                    <TableCell className="text-slate-500 text-xs">
+                      {formatDateTime(att.submittedAt || att.startedAt || att.createdAt)}
                     </TableCell>
                     <TableCell>
                       {att.totalQuestions} Qs
                     </TableCell>
                     <TableCell className="font-bold text-slate-900">
-                      {att.score || 0} pts
+                      {att.status === 'in_progress' ? '—' : `${att.score || 0} / ${att.totalQuestions || 0}`}
                     </TableCell>
                     <TableCell className="font-semibold text-blue-600">
-                      {att.percentage || 0}%
+                      {att.status === 'in_progress' ? '—' : `${att.percentage || 0}%`}
                     </TableCell>
                     <TableCell>
                       <StatusBadge status={att.status || 'submitted'} />
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        iconLeft={<EyeIcon className="w-3.5 h-3.5" />}
-                        onClick={() => navigate(`/mock-tests/result/${att._id}`)}
-                      >
-                        View Report
-                      </Button>
+                      {att.status === 'in_progress' ? (
+                        <Button 
+                          size="sm" 
+                          onClick={() => navigate(`/mock-tests/session/${att._id}`)}
+                        >
+                          Resume
+                        </Button>
+                      ) : (
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          iconLeft={<EyeIcon className="w-3.5 h-3.5" />}
+                          onClick={() => navigate(`/mock-tests/result/${att._id}`)}
+                        >
+                          View Report
+                        </Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}

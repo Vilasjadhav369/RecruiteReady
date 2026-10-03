@@ -1,8 +1,8 @@
-import api from './api.js';
+import api, { buildQueryString } from './api.js';
 
 export const getCompanies = async (params = {}) => {
-  const query = new URLSearchParams(params).toString();
-  const response = await api.get(`/companies${query ? `?${query}` : ''}`);
+  const query = buildQueryString(params);
+  const response = await api.get(`/companies${query}`);
   return response.data?.data;
 };
 

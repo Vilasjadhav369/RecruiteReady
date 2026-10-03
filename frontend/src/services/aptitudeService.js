@@ -1,4 +1,4 @@
-import api from './api.js';
+import api, { buildQueryString } from './api.js';
 
 export const getAptitudeMetadata = async () => {
   const response = await api.get('/aptitude/metadata');
@@ -34,8 +34,8 @@ export const getAptitudeResult = async (sessionId) => {
 };
 
 export const getAptitudeHistory = async (params = {}) => {
-  const query = new URLSearchParams(params).toString();
-  const response = await api.get(`/aptitude/history${query ? `?${query}` : ''}`);
+  const query = buildQueryString(params);
+  const response = await api.get(`/aptitude/history${query}`);
   return response.data?.data;
 };
 

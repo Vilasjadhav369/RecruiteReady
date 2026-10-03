@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getCodingSubmission } from '../../services/codingService.js';
+import { formatDateTime } from '../../utils/formatters.js';
 import {
   PageHeader,
   Card,
@@ -90,13 +91,7 @@ export default function CodingSubmissionPage() {
 
   const isAccepted = submission.status === 'accepted';
   const submittedDate = submission.submittedAt
-    ? new Date(submission.submittedAt).toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      })
+    ? formatDateTime(submission.submittedAt)
     : 'Recently';
 
   const problemTitle = submission.problem?.title || 'Algorithm Challenge';

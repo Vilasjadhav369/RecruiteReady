@@ -28,9 +28,9 @@ export const startSession = async (req, res, next) => {
     const timeMins = Math.min(Math.max(Number(timeLimitMinutes) || 15, 1), 180);
 
     const query = { isActive: true };
-    if (category && category !== 'all') query.category = category;
-    if (topic && topic !== 'all') query.topic = topic;
-    if (difficulty && difficulty !== 'all' && difficulty !== 'mixed') query.difficulty = difficulty;
+    if (category && category !== 'all' && category !== 'undefined' && category !== 'null') query.category = category;
+    if (topic && topic !== 'all' && topic !== 'undefined' && topic !== 'null') query.topic = topic;
+    if (difficulty && difficulty !== 'all' && difficulty !== 'mixed' && difficulty !== 'undefined' && difficulty !== 'null') query.difficulty = difficulty;
 
     const availableCount = await AptitudeQuestion.countDocuments(query);
     if (availableCount === 0) {
@@ -40,17 +40,12 @@ export const startSession = async (req, res, next) => {
       });
     }
 
-    if (availableCount < numQ) {
-      return res.status(400).json({
-        success: false,
-        message: `Only ${availableCount} question${availableCount === 1 ? '' : 's'} ${availableCount === 1 ? 'is' : 'are'} currently available for this topic. Please choose ${availableCount} or fewer questions.`,
-      });
-    }
+    const actualNumQ = Math.min(numQ, availableCount);
 
-    // Randomly sample requested number of questions
+    // Randomly sample available questions up to requested number
     const sampledQuestions = await AptitudeQuestion.aggregate([
       { $match: query },
-      { $sample: { size: numQ } },
+      { $sample: { size: actualNumQ } },
     ]);
 
     const questionIds = sampledQuestions.map((q) => q._id);

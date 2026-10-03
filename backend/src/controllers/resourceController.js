@@ -10,20 +10,21 @@ export const getResources = async (req, res, next) => {
     const { search = '', type = '', category = '', topic = '', page = 1, limit = 12 } = req.query;
     const query = { isActive: true };
 
-    if (search.trim()) {
+    const cleanSearch = (search && search !== 'undefined' && search !== 'null') ? search.trim() : '';
+    if (cleanSearch) {
       query.$or = [
-        { title: { $regex: search.trim(), $options: 'i' } },
-        { description: { $regex: search.trim(), $options: 'i' } },
-        { topic: { $regex: search.trim(), $options: 'i' } },
+        { title: { $regex: cleanSearch, $options: 'i' } },
+        { description: { $regex: cleanSearch, $options: 'i' } },
+        { topic: { $regex: cleanSearch, $options: 'i' } },
       ];
     }
-    if (type && type !== 'all') {
+    if (type && type !== 'all' && type !== 'undefined' && type !== 'null') {
       query.type = type.toLowerCase();
     }
-    if (category && category !== 'all') {
+    if (category && category !== 'all' && category !== 'undefined' && category !== 'null') {
       query.category = category;
     }
-    if (topic && topic !== 'all') {
+    if (topic && topic !== 'all' && topic !== 'undefined' && topic !== 'null') {
       query.topic = topic;
     }
 

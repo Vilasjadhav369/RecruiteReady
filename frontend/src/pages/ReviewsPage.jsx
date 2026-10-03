@@ -25,13 +25,14 @@ import {
  * Accessible Star Rating Selector
  * Supports mouse hover, keyboard selection, and screen readers.
  */
-function RatingSelector({ value = 5, onChange, disabled = false }) {
+function RatingSelector({ value = null, onChange, disabled = false }) {
   const [hovered, setHovered] = useState(0);
+  const currentRating = hovered || value || 0;
 
   return (
     <div className="flex items-center gap-1.5" role="radiogroup" aria-label="Review rating">
       {[1, 2, 3, 4, 5].map((star) => {
-        const isFilled = (hovered || value) >= star;
+        const isFilled = currentRating >= star;
         return (
           <button
             type="button"
@@ -53,7 +54,7 @@ function RatingSelector({ value = 5, onChange, disabled = false }) {
         );
       })}
       <span className="text-xs font-semibold text-slate-700 ml-2 font-mono">
-        {hovered || value} / 5
+        {value ? `${hovered || value} / 5` : (hovered ? `${hovered} / 5` : 'Select rating')}
       </span>
     </div>
   );
@@ -67,7 +68,7 @@ export default function ReviewsPage() {
   const [error, setError] = useState(null);
 
   // Form State
-  const [rating, setRating] = useState(5);
+  const [rating, setRating] = useState(null);
   const [title, setTitle] = useState('');
   const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -100,6 +101,11 @@ export default function ReviewsPage() {
     setFormError(null);
     setSubmitMessage(null);
 
+    if (!rating) {
+      setFormError('Please select a star rating from 1 to 5 before submitting.');
+      return;
+    }
+
     if (!comment.trim()) {
       setFormError('Please enter your feedback comments before submitting.');
       return;
@@ -117,7 +123,7 @@ export default function ReviewsPage() {
       );
       setTitle('');
       setComment('');
-      setRating(5);
+      setRating(null);
     } catch (err) {
       console.error('Submit review error:', err);
       setFormError(err.response?.data?.message || 'Failed to submit review. Please try again.');
@@ -146,7 +152,7 @@ export default function ReviewsPage() {
       {/* Page Header */}
       <PageHeader
         title="Student Reviews"
-        description="Share your experience and help us improve RecruiteReady."
+        description="Share your experience and help us improve RecruitReady."
         breadcrumbs={breadcrumbs}
         badge={
           pagination.total > 0 ? (
@@ -305,7 +311,7 @@ export default function ReviewsPage() {
                               {r.author || 'Student'}
                             </h4>
                             <p className="text-[11px] text-slate-500 truncate max-w-xs">
-                              {r.college || 'Engineering College'}
+                              {r.college || '—'}
                             </p>
                           </div>
                         </div>

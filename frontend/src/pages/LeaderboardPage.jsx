@@ -127,7 +127,7 @@ export default function LeaderboardPage() {
             </div>
           </div>
           <span className="text-[11px] text-slate-500 font-medium bg-white px-2.5 py-1 rounded-md border border-slate-200/70 shrink-0">
-            Strictly Verified Scores • Zero Phantom Points
+            Strictly Verified Scores • Campus Merit Standings
           </span>
         </CardContent>
       </Card>
@@ -329,7 +329,7 @@ export default function LeaderboardPage() {
 
                           {/* Institution */}
                           <TableCell className="text-xs text-slate-500 truncate max-w-[200px]">
-                            {item.college || 'Engineering Institute'}
+                            {item.college || '—'}
                           </TableCell>
 
                           {/* Aptitude Correct */}

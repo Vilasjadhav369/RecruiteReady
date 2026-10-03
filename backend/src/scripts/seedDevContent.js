@@ -185,7 +185,7 @@ const APTITUDE_SEED = [
       { key: 'A', text: 'EOJDJEFM' },
       { key: 'B', text: 'EOJDEJFM' },
       { key: 'C', text: 'MFEJDJOE' },
-      { key: 'D', text: 'EOJDJEFM' },
+      { key: 'D', text: 'MFEDJJOE' },
     ],
     correctOption: 'A',
     category: 'Logical Reasoning',

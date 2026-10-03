@@ -670,7 +670,7 @@ function AdminDashboardPage() {
               <span>Placement Integrity Mode</span>
             </div>
             <p className="text-[11px] text-slate-500 leading-relaxed">
-              All metrics and attempt counts are computed in real time from production MongoDB collections. No synthetic metrics are generated.
+              All metrics and attempt counts are computed in real time from verified student activity records.
             </p>
           </div>
         </div>

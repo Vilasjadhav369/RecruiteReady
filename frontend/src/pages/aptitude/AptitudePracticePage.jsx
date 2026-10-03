@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { getAptitudeMetadata, startAptitudeSession, getAptitudeHistory } from '../../services/aptitudeService.js';
+import { formatDate } from '../../utils/formatters.js';
 import {
   PageHeader,
   Card,
@@ -159,6 +160,38 @@ export default function AptitudePracticePage() {
     return metadata?.countsByCategory?.[cat] || 0;
   };
 
+  const handleCategorySelect = (cat) => {
+    setCategory(cat);
+    setTopic('all');
+    const available = metadata?.countsByCategory?.[cat] || 0;
+    if (available > 0 && numberOfQuestions > available) {
+      setNumberOfQuestions(available >= 5 ? 5 : available);
+    }
+  };
+
+  const availableCatCount = getCategoryCount(category);
+  const questionCountOptions = React.useMemo(() => {
+    const steps = [5, 10, 15, 20];
+    const maxQ = availableCatCount > 0 ? availableCatCount : 20;
+    const filtered = steps.filter((s) => s <= maxQ);
+    const opts = filtered.map((s) => ({ value: String(s), label: `${s} Questions` }));
+    if (opts.length === 0 && maxQ > 0) {
+      opts.push({ value: String(maxQ), label: `${maxQ} Questions (All Available)` });
+    }
+    return opts;
+  }, [availableCatCount]);
+
+  useEffect(() => {
+    if (questionCountOptions.length > 0) {
+      const exists = questionCountOptions.some(
+        (o) => Number(o.value) === Number(numberOfQuestions)
+      );
+      if (!exists) {
+        setNumberOfQuestions(Number(questionCountOptions[0].value));
+      }
+    }
+  }, [questionCountOptions, numberOfQuestions]);
+
   // Build topic options for the selected category
   const topicOptions = [
     { value: 'all', label: 'All Topics' },
@@ -299,10 +332,7 @@ export default function AptitudePracticePage() {
                     <button
                       type="button"
                       key={cat}
-                      onClick={() => {
-                        setCategory(cat);
-                        setTopic('all');
-                      }}
+                      onClick={() => handleCategorySelect(cat)}
                       className={`group text-left p-4 rounded-xl border transition-all duration-150 cursor-pointer ${
                         isSelected
                           ? `${meta.selectedBorder} ${meta.selectedBg}`
@@ -371,7 +401,7 @@ export default function AptitudePracticePage() {
                   label="Number of Questions"
                   value={String(numberOfQuestions)}
                   onChange={(e) => setNumberOfQuestions(Number(e.target.value))}
-                  options={QUESTION_COUNT_OPTIONS}
+                  options={questionCountOptions}
                 />
 
                 <Select
@@ -460,13 +490,7 @@ export default function AptitudePracticePage() {
                   </TableHeader>
                   <TableBody>
                     {recentAttempts.map((attempt) => {
-                      const dateStr = attempt.createdAt
-                        ? new Date(attempt.createdAt).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric',
-                          })
-                        : '—';
+                      const dateStr = formatDate(attempt.createdAt);
 
                       return (
                         <TableRow key={attempt._id}>

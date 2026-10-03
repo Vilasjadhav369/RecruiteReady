@@ -72,7 +72,7 @@ export const getApprovedReviews = async (req, res, next) => {
       author: r.user
         ? `${r.user.firstName} ${r.user.lastName ? r.user.lastName.charAt(0) + '.' : ''}`
         : 'Student',
-      college: r.user?.college || 'Engineering College',
+      college: r.user?.college || '',
       createdAt: r.createdAt,
     }));
 

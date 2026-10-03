@@ -282,6 +282,13 @@ export const createAptitudeQuestion = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'All required question fields must be provided' });
     }
 
+    if (Array.isArray(options)) {
+      const texts = options.map(o => (o.text || '').trim().toLowerCase());
+      if (new Set(texts).size < options.length) {
+        return res.status(400).json({ success: false, message: 'All option choices must be mutually distinct' });
+      }
+    }
+
     const newQuestion = await AptitudeQuestion.create({
       question: question.trim(),
       options,

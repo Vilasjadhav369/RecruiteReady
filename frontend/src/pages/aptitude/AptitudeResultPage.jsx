@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getAptitudeResult } from '../../services/aptitudeService.js';
+import { formatDateTime } from '../../utils/formatters.js';
 import {
   PageHeader,
   Card,
@@ -81,13 +82,7 @@ export default function AptitudeResultPage() {
   const { summary, review } = result;
   const isPassed = (summary.percentage || 0) >= 60;
   const submittedDate = summary.submittedAt
-    ? new Date(summary.submittedAt).toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      })
+    ? formatDateTime(summary.submittedAt)
     : 'Recently';
 
   return (

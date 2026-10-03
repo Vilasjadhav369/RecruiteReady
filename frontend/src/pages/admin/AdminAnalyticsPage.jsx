@@ -890,9 +890,8 @@ export default function AdminAnalyticsPage() {
         </div>
         <div className="leading-relaxed">
           <strong className="text-slate-800">Academic Data Integrity:</strong> All statistics,
-          activity distributions, and trend coordinates on this console are computed directly from
-          actual student submissions and MongoDB collection documents. Zero synthetic ratings,
-          zero fabricated growth percentages, zero artificial inflation.
+          activity distributions, and performance trends on this console are computed directly from
+          verified candidate submissions and assessment records.
         </div>
       </div>
     </div>

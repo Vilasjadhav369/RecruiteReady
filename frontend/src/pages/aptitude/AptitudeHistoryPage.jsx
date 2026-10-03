@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getAptitudeHistory } from '../../services/aptitudeService.js';
+import { formatDateTime } from '../../utils/formatters.js';
 import {
   PageHeader,
   Card,
@@ -199,13 +200,7 @@ export default function AptitudeHistoryPage() {
               </TableHeader>
               <TableBody>
                 {attempts.map((att) => {
-                  const dateStr = att.submittedAt || att.createdAt
-                    ? new Date(att.submittedAt || att.createdAt).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                      })
-                    : '—';
+                  const dateStr = formatDateTime(att.submittedAt || att.startedAt || att.createdAt);
 
                   return (
                     <TableRow key={att._id}>

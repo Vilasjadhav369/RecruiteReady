@@ -208,7 +208,7 @@ export default function ResourceListPage() {
           description={
             isFiltered
               ? 'Try modifying your search query or switching material format.'
-              : 'Resources will appear here as they are added by the RecruiteReady team.'
+              : 'Resources will appear here as they are added by the RecruitReady team.'
           }
           action={
             isFiltered ? (

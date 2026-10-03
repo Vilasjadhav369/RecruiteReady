@@ -10,13 +10,14 @@ export const getCompanies = async (req, res, next) => {
     const { search = '', industry = '', page = 1, limit = 12 } = req.query;
     const query = { isActive: true };
 
-    if (search.trim()) {
+    const cleanSearch = (search && search !== 'undefined' && search !== 'null') ? search.trim() : '';
+    if (cleanSearch) {
       query.$or = [
-        { name: { $regex: search.trim(), $options: 'i' } },
-        { roles: { $regex: search.trim(), $options: 'i' } },
+        { name: { $regex: cleanSearch, $options: 'i' } },
+        { roles: { $regex: cleanSearch, $options: 'i' } },
       ];
     }
-    if (industry && industry !== 'all') {
+    if (industry && industry !== 'all' && industry !== 'undefined' && industry !== 'null') {
       query.industry = industry;
     }
 

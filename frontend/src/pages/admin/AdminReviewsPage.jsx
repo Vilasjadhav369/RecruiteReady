@@ -33,6 +33,7 @@ import {
   CheckCircleIcon,
   ClockIcon,
 } from '../../components/ui/Icons.jsx';
+import { formatDateTime, formatDate } from '../../utils/formatters.js';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -58,19 +59,6 @@ const safeNumber = (val) => {
   if (val === null || val === undefined) return 0;
   if (typeof val === 'object') return Number(val.total ?? val.count ?? 0) || 0;
   return Number(val) || 0;
-};
-
-const formatDate = (dateStr) => {
-  if (!dateStr) return '—';
-  try {
-    return new Date(dateStr).toLocaleDateString('en-IN', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    });
-  } catch {
-    return '—';
-  }
 };
 
 const getStudentName = (user) => {

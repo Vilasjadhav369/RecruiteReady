@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getResource } from '../../services/resourceService.js';
+import { formatDate } from '../../utils/formatters.js';
 import {
   PageHeader,
   Card,
@@ -283,7 +284,7 @@ export default function ResourceDetailPage() {
                     Added to Repository
                   </span>
                   <span className="text-xs text-slate-600 block font-mono">
-                    {new Date(resource.createdAt).toLocaleDateString()}
+                    {formatDate(resource.createdAt)}
                   </span>
                 </div>
               )}

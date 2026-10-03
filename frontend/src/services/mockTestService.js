@@ -1,8 +1,8 @@
-import api from './api.js';
+import api, { buildQueryString } from './api.js';
 
 export const getMockTests = async (params = {}) => {
-  const query = new URLSearchParams(params).toString();
-  const response = await api.get(`/mock-tests${query ? `?${query}` : ''}`);
+  const query = buildQueryString(params);
+  const response = await api.get(`/mock-tests${query}`);
   return response.data?.data;
 };
 
@@ -41,8 +41,8 @@ export const getMockResult = async (attemptId) => {
 };
 
 export const getMockHistory = async (params = {}) => {
-  const query = new URLSearchParams(params).toString();
-  const response = await api.get(`/mock-tests/history${query ? `?${query}` : ''}`);
+  const query = buildQueryString(params);
+  const response = await api.get(`/mock-tests/history${query}`);
   return response.data?.data;
 };
 

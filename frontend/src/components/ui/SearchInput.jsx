@@ -39,7 +39,7 @@ export const SearchInput = forwardRef(function SearchInput(
         value={value}
         onChange={onChange}
         placeholder={placeholder}
-        className={`w-full ${heightClass} pl-9 pr-8 bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-150 ${className}`}
+        className={`w-full ${heightClass} !pl-10 !pr-9 bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-150 ${className}`}
         {...props}
       />
 

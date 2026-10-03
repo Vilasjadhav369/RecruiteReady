@@ -78,7 +78,7 @@ const INITIAL_FORM_STATE = {
   optionB: "",
   optionC: "",
   optionD: "",
-  correctOption: "A",
+  correctOption: "",
   explanation: "",
   tags: "",
   isActive: true,
@@ -303,6 +303,23 @@ export default function AdminAptitudePage() {
       setFormError("All 4 options (A, B, C, D) are required.");
       return;
     }
+
+    const trimmedOptions = [
+      formData.optionA.trim().toLowerCase(),
+      formData.optionB.trim().toLowerCase(),
+      formData.optionC.trim().toLowerCase(),
+      formData.optionD.trim().toLowerCase(),
+    ];
+    if (new Set(trimmedOptions).size < 4) {
+      setFormError("All 4 options must be mutually distinct. Duplicate options are not permitted.");
+      return;
+    }
+
+    if (!formData.correctOption) {
+      setFormError("Please select which option (A, B, C, or D) is the correct answer.");
+      return;
+    }
+
     if (!formData.explanation.trim()) {
       setFormError("Explanation is required.");
       return;

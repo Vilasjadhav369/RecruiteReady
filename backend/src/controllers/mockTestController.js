@@ -36,6 +36,76 @@ const sanitizeMockQuestion = (q, qType) => {
 };
 
 /**
+ * Helper to grade and finalize mock test attempt
+ */
+const evaluateAndFinalizeMockAttempt = async (attempt, isExpired = false) => {
+  const test = attempt.mockTest;
+  if (!test) return attempt;
+
+  const aptIds = (test.questions || []).filter((q) => q.questionType === 'aptitude').map((q) => q.questionId);
+  const aptQuestions = await AptitudeQuestion.find({ _id: { $in: aptIds } }).lean();
+  const aptMap = new Map();
+  aptQuestions.forEach((q) => aptMap.set(q._id.toString(), q));
+
+  let correctCount = 0;
+  let wrongCount = 0;
+  let unansweredCount = 0;
+  let totalScore = 0;
+
+  const evaluatedAnswers = (attempt.answers || []).map((ans) => {
+    const qStr = ans.questionId ? ans.questionId.toString() : '';
+    if (ans.questionType === 'aptitude' || !ans.questionType) {
+      const aptQ = aptMap.get(qStr);
+      if (!ans.selectedOption) {
+        unansweredCount++;
+        return {
+          ...(ans.toObject ? ans.toObject() : ans),
+          isCorrect: false,
+          marksObtained: 0,
+        };
+      }
+
+      const isCorrect = aptQ && aptQ.correctOption === ans.selectedOption;
+      const marks = aptQ?.marks || 1;
+
+      if (isCorrect) {
+        correctCount++;
+        totalScore += marks;
+        return {
+          ...(ans.toObject ? ans.toObject() : ans),
+          isCorrect: true,
+          marksObtained: marks,
+        };
+      } else {
+        wrongCount++;
+        return {
+          ...(ans.toObject ? ans.toObject() : ans),
+          isCorrect: false,
+          marksObtained: 0,
+        };
+      }
+    } else {
+      return ans.toObject ? ans.toObject() : ans;
+    }
+  });
+
+  const totalQuestions = attempt.totalQuestions || 1;
+  const percentage = Math.round((correctCount / totalQuestions) * 100);
+
+  attempt.answers = evaluatedAnswers;
+  attempt.correctAnswers = correctCount;
+  attempt.wrongAnswers = wrongCount;
+  attempt.unanswered = unansweredCount;
+  attempt.score = totalScore;
+  attempt.percentage = percentage;
+  attempt.status = isExpired ? 'expired' : 'submitted';
+  attempt.submittedAt = attempt.submittedAt || new Date();
+
+  await attempt.save();
+  return attempt;
+};
+
+/**
  * GET /api/mock-tests
  * List all published mock tests.
  */
@@ -44,10 +114,10 @@ export const getMockTests = async (req, res, next) => {
     const { category = '', difficulty = '', page = 1, limit = 10 } = req.query;
     const query = { isPublished: true };
 
-    if (category && category !== 'all') {
+    if (category && category !== 'all' && category !== 'undefined' && category !== 'null') {
       query.categories = category;
     }
-    if (difficulty && difficulty !== 'all') {
+    if (difficulty && difficulty !== 'all' && difficulty !== 'undefined' && difficulty !== 'null') {
       query.difficulty = difficulty;
     }
 
@@ -229,8 +299,7 @@ export const getAttempt = async (req, res, next) => {
     const remainingSeconds = Math.max(0, attempt.timeLimitSeconds - elapsedSeconds);
 
     if (remainingSeconds === 0 && attempt.status === 'in_progress') {
-      attempt.status = 'expired';
-      await attempt.save();
+      await evaluateAndFinalizeMockAttempt(attempt, true);
     }
 
     const test = attempt.mockTest;
@@ -356,68 +425,7 @@ export const submitMockTestAttempt = async (req, res, next) => {
     const elapsedSeconds = Math.floor((Date.now() - new Date(attempt.startedAt).getTime()) / 1000);
     const isExpired = elapsedSeconds > (attempt.timeLimitSeconds + 15);
 
-    const test = attempt.mockTest;
-    const aptIds = (test.questions || []).filter((q) => q.questionType === 'aptitude').map((q) => q.questionId);
-    const aptQuestions = await AptitudeQuestion.find({ _id: { $in: aptIds } }).lean();
-    const aptMap = new Map();
-    aptQuestions.forEach((q) => aptMap.set(q._id.toString(), q));
-
-    let correctCount = 0;
-    let wrongCount = 0;
-    let unansweredCount = 0;
-    let totalScore = 0;
-
-    const evaluatedAnswers = attempt.answers.map((ans) => {
-      const qStr = ans.questionId.toString();
-      if (ans.questionType === 'aptitude' || !ans.questionType) {
-        const aptQ = aptMap.get(qStr);
-        if (!ans.selectedOption) {
-          unansweredCount++;
-          return {
-            ...ans.toObject(),
-            isCorrect: false,
-            marksObtained: 0,
-          };
-        }
-
-        const isCorrect = aptQ && aptQ.correctOption === ans.selectedOption;
-        const marks = aptQ?.marks || 1;
-
-        if (isCorrect) {
-          correctCount++;
-          totalScore += marks;
-          return {
-            ...ans.toObject(),
-            isCorrect: true,
-            marksObtained: marks,
-          };
-        } else {
-          wrongCount++;
-          return {
-            ...ans.toObject(),
-            isCorrect: false,
-            marksObtained: 0,
-          };
-        }
-      } else {
-        // Coding questions
-        return ans.toObject();
-      }
-    });
-
-    const totalQuestions = attempt.totalQuestions || 1;
-    const percentage = Math.round((correctCount / totalQuestions) * 100);
-
-    attempt.answers = evaluatedAnswers;
-    attempt.correctAnswers = correctCount;
-    attempt.wrongAnswers = wrongCount;
-    attempt.unanswered = unansweredCount;
-    attempt.score = totalScore;
-    attempt.percentage = percentage;
-    attempt.status = isExpired ? 'expired' : 'submitted';
-    attempt.submittedAt = new Date();
-
-    await attempt.save();
+    await evaluateAndFinalizeMockAttempt(attempt, isExpired);
 
     res.status(200).json({
       success: true,
@@ -532,8 +540,28 @@ export const getMockTestHistory = async (req, res, next) => {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .select('-answers')
       .lean();
+
+    // Check for expired in-progress attempts and finalize them
+    const now = Date.now();
+    for (const att of attempts) {
+      if (att.status === 'in_progress' && att.timeLimitSeconds) {
+        const elapsed = (now - new Date(att.startedAt).getTime()) / 1000;
+        if (elapsed > att.timeLimitSeconds + 15) {
+          const fullAttempt = await MockTestAttempt.findById(att._id).populate('mockTest');
+          if (fullAttempt && fullAttempt.status === 'in_progress') {
+            await evaluateAndFinalizeMockAttempt(fullAttempt, true);
+            att.status = 'expired';
+            att.score = fullAttempt.score;
+            att.percentage = fullAttempt.percentage;
+            att.correctAnswers = fullAttempt.correctAnswers;
+            att.wrongAnswers = fullAttempt.wrongAnswers;
+            att.unanswered = fullAttempt.unanswered;
+          }
+        }
+      }
+      delete att.answers;
+    }
 
     res.status(200).json({
       success: true,

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getMockResult } from '../../services/mockTestService.js';
+import { formatDateTime } from '../../utils/formatters.js';
 import { 
   PageHeader, Card, CardContent, CardHeader, CardTitle, 
   Badge, Button, StatCard, LoadingState, ErrorState 
@@ -55,7 +56,7 @@ export default function MockTestResultPage() {
     <div className="space-y-8 max-w-[1240px] mx-auto">
       <PageHeader 
         title={summary.testTitle}
-        description={`Assessment completed on ${new Date(summary.submittedAt).toLocaleDateString()}`}
+        description={`Assessment completed on ${formatDateTime(summary.submittedAt)}`}
         breadcrumbs={[
           { label: 'Dashboard', href: '/dashboard' },
           { label: 'Mock Assessments', href: '/mock-tests' },

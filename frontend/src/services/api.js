@@ -45,4 +45,27 @@ api.interceptors.response.use(
   }
 );
 
+/**
+ * Helper to build clean URL query strings, stripping undefined, null, empty strings, and 'all'.
+ */
+export const buildQueryString = (params = {}) => {
+  if (!params || typeof params !== 'object') return '';
+  const cleanParams = {};
+  for (const [key, value] of Object.entries(params)) {
+    if (
+      value !== undefined &&
+      value !== null &&
+      value !== '' &&
+      value !== 'all' &&
+      value !== 'undefined' &&
+      value !== 'null'
+    ) {
+      cleanParams[key] = value;
+    }
+  }
+  const query = new URLSearchParams(cleanParams).toString();
+  return query ? `?${query}` : '';
+};
+
 export default api;
+

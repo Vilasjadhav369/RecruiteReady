@@ -399,25 +399,25 @@ export default function AdminSettingsPage() {
 
             <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl space-y-1">
               <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
-                Password Encryption Protocol
+                Password Security
               </span>
               <p className="font-medium text-slate-800">
-                Bcrypt Cryptographic Hash (12 Salt Rounds)
+                Secure Cryptographic Hashing
               </p>
               <p className="text-[11px] text-slate-500 mt-1">
-                Passwords are one-way hashed before database insertion and never stored in plain text.
+                Account credentials are encrypted using industry-standard hashing protocols and never stored in plain text.
               </p>
             </div>
 
             <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl space-y-1">
               <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
-                Session Token Bearer
+                Session Authentication
               </span>
               <p className="font-medium text-slate-800">
-                JSON Web Token (JWT) • HMAC-SHA256
+                Encrypted Session Tokens
               </p>
               <p className="text-[11px] text-slate-500 mt-1">
-                Protected authorization bearer transmitted securely via HTTP authorization headers.
+                Protected authorization tokens transmitted securely via standard HTTP authorization headers.
               </p>
             </div>
           </div>

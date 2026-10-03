@@ -80,7 +80,7 @@ export const getLeaderboard = async (req, res, next) => {
         scoredStudents.push({
           id: student._id,
           displayName: `${student.firstName} ${student.lastName ? student.lastName.charAt(0) + '.' : ''}`,
-          college: student.college || 'Engineering Institute',
+          college: student.college || '',
           score: points,
           stats: {
             aptitudeCorrect: apt.totalCorrect,

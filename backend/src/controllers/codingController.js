@@ -27,19 +27,20 @@ export const getProblems = async (req, res, next) => {
 
     const query = { isActive: true };
 
-    if (search.trim()) {
+    const cleanSearch = (search && search !== 'undefined' && search !== 'null') ? search.trim() : '';
+    if (cleanSearch) {
       query.$or = [
-        { title: { $regex: search.trim(), $options: 'i' } },
-        { topics: { $regex: search.trim(), $options: 'i' } },
+        { title: { $regex: cleanSearch, $options: 'i' } },
+        { topics: { $regex: cleanSearch, $options: 'i' } },
       ];
     }
-    if (difficulty && difficulty !== 'all') {
+    if (difficulty && difficulty !== 'all' && difficulty !== 'undefined' && difficulty !== 'null') {
       query.difficulty = difficulty.toLowerCase();
     }
-    if (topic && topic !== 'all') {
+    if (topic && topic !== 'all' && topic !== 'undefined' && topic !== 'null') {
       query.topics = topic;
     }
-    if (category && category !== 'all') {
+    if (category && category !== 'all' && category !== 'undefined' && category !== 'null') {
       query.category = category;
     }
 

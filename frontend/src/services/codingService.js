@@ -1,8 +1,8 @@
-import api from './api.js';
+import api, { buildQueryString } from './api.js';
 
 export const getCodingProblems = async (params = {}) => {
-  const query = new URLSearchParams(params).toString();
-  const response = await api.get(`/coding/problems${query ? `?${query}` : ''}`);
+  const query = buildQueryString(params);
+  const response = await api.get(`/coding/problems${query}`);
   return response.data?.data;
 };
 
@@ -17,8 +17,8 @@ export const submitCodingProblem = async (id, { language, code }) => {
 };
 
 export const getCodingSubmissions = async (params = {}) => {
-  const query = new URLSearchParams(params).toString();
-  const response = await api.get(`/coding/submissions${query ? `?${query}` : ''}`);
+  const query = buildQueryString(params);
+  const response = await api.get(`/coding/submissions${query}`);
   return response.data?.data;
 };
 

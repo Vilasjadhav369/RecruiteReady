@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { getCodingSubmissions } from '../../services/codingService.js';
+import { formatDateTime } from '../../utils/formatters.js';
 import {
   PageHeader,
   Card,
@@ -199,15 +200,7 @@ export default function CodingHistoryPage() {
               </TableHeader>
               <TableBody>
                 {submissions.map((sub) => {
-                  const dateStr = sub.submittedAt
-                    ? new Date(sub.submittedAt).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })
-                    : '—';
+                  const dateStr = formatDateTime(sub.submittedAt);
 
                   const problemTitle = sub.problem?.title || 'Coding Challenge';
                   const problemSlug = sub.problem?.slug || sub.problem?._id;

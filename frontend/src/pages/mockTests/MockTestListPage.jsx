@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getMockTests, startMockTest } from '../../services/mockTestService.js';
+import { getMockTests, startMockTest, getMockHistory } from '../../services/mockTestService.js';
 import { 
   PageHeader, 
   Card, 
-  CardContent,
+  CardContent, 
   Badge, 
   Button, 
   LoadingState, 
@@ -20,6 +20,7 @@ import {
 export default function MockTestListPage() {
   const navigate = useNavigate();
   const [tests, setTests] = useState([]);
+  const [activeAttempts, setActiveAttempts] = useState({});
   const [loading, setLoading] = useState(true);
   const [startingId, setStartingId] = useState(null);
   const [error, setError] = useState(null);
@@ -28,8 +29,20 @@ export default function MockTestListPage() {
     const fetchTests = async () => {
       try {
         setLoading(true);
-        const data = await getMockTests();
-        setTests(data?.mockTests || []);
+        const [testsData, historyData] = await Promise.all([
+          getMockTests(),
+          getMockHistory({ limit: 20 }).catch(() => ({ attempts: [] })),
+        ]);
+        setTests(testsData?.mockTests || []);
+
+        const inProgressMap = {};
+        (historyData?.attempts || []).forEach((att) => {
+          if (att.status === 'in_progress') {
+            const testId = att.mockTest?._id || att.mockTest;
+            if (testId) inProgressMap[testId] = att._id;
+          }
+        });
+        setActiveAttempts(inProgressMap);
       } catch (err) {
         console.error('Failed to load mock tests:', err);
         setError('Failed to load mock assessments.');
@@ -154,16 +167,27 @@ export default function MockTestListPage() {
                   >
                     Details
                   </Button>
-                  <Button
-                    variant="primary"
-                    disabled={startingId === test._id}
-                    loading={startingId === test._id}
-                    iconRight={<ArrowRightIcon className="w-4 h-4" />}
-                    onClick={() => handleStart(test._id)}
-                    className="w-full sm:w-auto"
-                  >
-                    {startingId === test._id ? 'Starting Test...' : 'Begin Assessment'}
-                  </Button>
+                  {activeAttempts[test._id] ? (
+                    <Button
+                      variant="primary"
+                      iconRight={<ArrowRightIcon className="w-4 h-4" />}
+                      onClick={() => navigate(`/mock-tests/session/${activeAttempts[test._id]}`)}
+                      className="w-full sm:w-auto"
+                    >
+                      Resume Assessment
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="primary"
+                      disabled={startingId === test._id}
+                      loading={startingId === test._id}
+                      iconRight={<ArrowRightIcon className="w-4 h-4" />}
+                      onClick={() => handleStart(test._id)}
+                      className="w-full sm:w-auto"
+                    >
+                      {startingId === test._id ? 'Starting Test...' : 'Begin Assessment'}
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
