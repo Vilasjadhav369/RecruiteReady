@@ -35,7 +35,7 @@ export function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto"
       role="dialog"
       aria-modal="true"
       aria-labelledby={title ? 'modal-title' : undefined}
@@ -49,7 +49,7 @@ export function Modal({
 
       {/* Dialog Surface */}
       <div
-        className={`relative w-full ${maxWidth} bg-white rounded-2xl shadow-xl border border-slate-200/80 overflow-hidden my-8 z-10 transition-all transform duration-200 scale-100 ${className}`}
+        className={`relative w-full ${maxWidth} bg-white rounded-xl sm:rounded-2xl shadow-xl border border-slate-200/80 overflow-hidden my-6 sm:my-8 z-10 transition-all transform duration-200 scale-100 ${className}`}
       >
         {/* Header */}
         {(title || onClose) && (

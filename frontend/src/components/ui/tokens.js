@@ -6,10 +6,11 @@
 
 export const COLORS = {
   // Brand & Accents
-  navy: '#0F172A',
-  blue: '#2563EB',
-  blueDark: '#1D4ED8',
-  blueLight: '#EFF6FF',
+  brandGreen: '#166534',
+  brandGreenDark: '#14532D',
+  brandGreenFresh: '#22C55E',
+  brandMint: '#DCFCE7',
+  brandMintSoft: '#F0FDF4',
   
   // Surfaces & Backgrounds
   background: '#F8FAFC',
@@ -18,10 +19,11 @@ export const COLORS = {
   // Content & Typography
   textPrimary: '#0F172A',
   textSecondary: '#475569',
-  textMuted: '#94A3B8',
+  textMuted: '#64748B',
   
   // Structural
   border: '#E2E8F0',
+  borderSoft: '#F1F5F9',
   borderHover: '#CBD5E1',
   
   // Feedback & Semantic Status
@@ -40,6 +42,12 @@ export const COLORS = {
   info: '#2563EB',
   infoLight: '#EFF6FF',
   infoBorder: '#BFDBFE',
+
+  // Backward Compatibility Aliases
+  navy: '#0F172A',
+  blue: '#166534',
+  blueDark: '#14532D',
+  blueLight: '#F0FDF4',
 };
 
 export const TYPOGRAPHY = {
@@ -47,11 +55,12 @@ export const TYPOGRAPHY = {
   display: 'text-3xl sm:text-4xl font-bold tracking-tight',
   h1: 'text-2xl sm:text-3xl font-bold tracking-tight',
   h2: 'text-xl sm:text-2xl font-semibold tracking-tight',
-  h3: 'text-lg sm:text-xl font-semibold',
-  h4: 'text-base font-semibold',
+  h3: 'text-base sm:text-lg font-semibold',
+  h4: 'text-sm sm:text-base font-semibold',
   body: 'text-sm sm:text-base font-normal leading-relaxed',
   bodySmall: 'text-xs sm:text-sm font-normal leading-normal',
   caption: 'text-xs font-medium text-slate-500',
+  monospace: 'font-mono text-xs sm:text-sm',
   overline: 'text-[11px] font-semibold tracking-wider uppercase text-slate-500',
 };
 

@@ -15,13 +15,13 @@ export function EmptyState({
       className={`flex flex-col items-center justify-center text-center p-8 sm:p-12 bg-white border border-slate-200 rounded-xl ${className}`}
     >
       {icon && (
-        <div className="w-12 h-12 bg-slate-100 text-slate-500 rounded-xl flex items-center justify-center mb-4 shrink-0">
+        <div className="w-12 h-12 bg-[#F0FDF4] text-[#166534] border border-[#DCFCE7] rounded-xl flex items-center justify-center mb-4 shrink-0">
           {icon}
         </div>
       )}
 
       {title && (
-        <h4 className="text-sm sm:text-base font-semibold text-slate-800 tracking-tight mb-1">
+        <h4 className="text-sm sm:text-base font-semibold text-slate-900 tracking-tight mb-1">
           {title}
         </h4>
       )}

@@ -17,7 +17,7 @@ export function LoadingState({
       role="status"
       aria-live="polite"
     >
-      <SpinnerIcon className={`${spinnerSize} text-blue-600 mb-3`} />
+      <SpinnerIcon className={`${spinnerSize} text-[#166534] mb-3`} />
       <span className="text-xs sm:text-sm font-medium text-slate-500">
         {message}
       </span>

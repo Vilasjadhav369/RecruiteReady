@@ -17,7 +17,7 @@ export const SearchInput = forwardRef(function SearchInput(
   },
   ref
 ) {
-  const heightClass = size === 'sm' ? 'h-8 text-xs' : 'h-9 text-sm';
+  const heightClass = size === 'sm' ? 'min-h-[36px] sm:min-h-0 h-8 text-xs' : 'min-h-[44px] sm:min-h-0 h-10 sm:h-9 text-sm';
 
   const handleClear = () => {
     if (onClear) {
@@ -39,7 +39,7 @@ export const SearchInput = forwardRef(function SearchInput(
         value={value}
         onChange={onChange}
         placeholder={placeholder}
-        className={`w-full ${heightClass} !pl-10 !pr-9 bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-150 ${className}`}
+        className={`w-full ${heightClass} !pl-10 !pr-9 bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#166534] focus:ring-2 focus:ring-[#166534]/20 transition-all duration-150 ${className}`}
         {...props}
       />
 

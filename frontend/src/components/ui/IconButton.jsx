@@ -17,7 +17,7 @@ export function IconButton({
   ...props
 }) {
   const base =
-    'inline-flex items-center justify-center transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-50 disabled:cursor-not-allowed select-none active:scale-[0.98] cursor-pointer';
+    'inline-flex items-center justify-center transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#166534] disabled:opacity-50 disabled:cursor-not-allowed select-none active:scale-[0.98] cursor-pointer';
 
   const variants = {
     ghost:
@@ -25,7 +25,7 @@ export function IconButton({
     outline:
       'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 hover:border-slate-300 shadow-xs',
     primary:
-      'bg-blue-600 hover:bg-blue-700 text-white shadow-xs',
+      'bg-[#166534] hover:bg-[#14532D] text-white shadow-xs',
     secondary:
       'bg-slate-900 hover:bg-slate-800 text-white shadow-xs',
     danger:

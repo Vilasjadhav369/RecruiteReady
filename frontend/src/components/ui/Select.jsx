@@ -26,7 +26,7 @@ export const Select = forwardRef(function Select(
 
   const borderClass = error
     ? 'border-red-300 text-red-900 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
-    : 'border-slate-200 text-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20';
+    : 'border-slate-200 text-slate-900 focus:border-[#166534] focus:ring-2 focus:ring-[#166534]/20';
 
   const disabledClass = disabled
     ? 'bg-slate-50 text-slate-500 cursor-not-allowed border-slate-200'
@@ -53,7 +53,7 @@ export const Select = forwardRef(function Select(
           required={required}
           aria-invalid={!!error}
           aria-describedby={error ? `${selectId}-error` : helperText ? `${selectId}-helper` : undefined}
-          className={`w-full h-9 pl-3 pr-8 text-sm rounded-lg border appearance-none transition-all duration-150 outline-none cursor-pointer ${borderClass} ${disabledClass} ${className}`}
+          className={`w-full min-h-[44px] sm:min-h-0 h-10 sm:h-9 pl-3 pr-8 text-sm rounded-lg border appearance-none transition-all duration-150 outline-none cursor-pointer ${borderClass} ${disabledClass} ${className}`}
           {...props}
         >
           {placeholder && (

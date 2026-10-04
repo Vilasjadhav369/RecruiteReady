@@ -25,7 +25,7 @@ export const Textarea = forwardRef(function Textarea(
 
   const borderClass = error
     ? 'border-red-300 text-red-900 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
-    : 'border-slate-200 text-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20';
+    : 'border-slate-200 text-slate-900 focus:border-[#166534] focus:ring-2 focus:ring-[#166534]/20';
 
   const disabledClass = disabled
     ? 'bg-slate-50 text-slate-500 cursor-not-allowed border-slate-200'

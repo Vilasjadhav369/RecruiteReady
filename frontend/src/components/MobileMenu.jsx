@@ -1,17 +1,18 @@
-﻿import { Link, NavLink, useNavigate } from "react-router-dom";
+import React from "react";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
+import { Button } from "./ui/Button.jsx";
 
 const NAV_LINKS = [
-  { label: "Home",       to: "/" },
-  { label: "Features",   to: "/#features" },
-  { label: "Companies",  to: "/companies" },
-  { label: "Mock Tests", to: "/mock-tests" },
-  { label: "Resources",  to: "/resources" },
-  { label: "About",      to: "/#about" },
+  { label: "Home", to: "/" },
+  { label: "Features", to: "/#features" },
+  { label: "Companies", to: "/companies" },
+  { label: "Resources", to: "/resources" },
+  { label: "About", to: "/#about" },
 ];
 
 /**
- * MobileMenu — Accessible mobile navigation drawer with auth state.
+ * MobileMenu — Accessible mobile navigation drawer with RecruitReady brand styling.
  */
 function MobileMenu({ isOpen, onClose }) {
   const { isAuthenticated, user, logout } = useAuth();
@@ -27,76 +28,83 @@ function MobileMenu({ isOpen, onClose }) {
 
   return (
     <div
-      className="md:hidden border-t border-[#D9E2EC] bg-white"
+      className="md:hidden border-t border-slate-200 bg-white"
       role="dialog"
       aria-label="Mobile navigation menu"
       aria-modal="true"
     >
-      <nav className="px-4 pb-5 pt-2 flex flex-col gap-1" aria-label="Mobile navigation">
+      <nav className="px-4 py-3 flex flex-col gap-1" aria-label="Mobile navigation">
         {NAV_LINKS.map((link) => (
           <NavLink
             key={link.to}
             to={link.to}
             onClick={onClose}
-            className={({ isActive }) =>
-              `px-3 py-3 rounded-lg text-sm font-medium transition-colors no-underline hover:no-underline ${
-                isActive && link.to === "/"
-                  ? "text-[#2563EB] bg-[#E8F1FF]"
-                  : "text-[#52606D] hover:text-[#172B4D] hover:bg-[#F8FAFC]"
-              }`
-            }
+            className={({ isActive }) => {
+              const active = !link.to.includes("#") && isActive && (link.to === "/" ? window.location.pathname === "/" : true);
+              return `min-h-[44px] flex items-center px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors no-underline hover:no-underline ${
+                active
+                  ? "text-[#166534] bg-[#DCFCE7] font-semibold"
+                  : "text-slate-700 hover:text-slate-900 hover:bg-slate-100"
+              }`;
+            }}
           >
             {link.label}
           </NavLink>
         ))}
 
-        <div className="mt-3 pt-3 border-t border-[#D9E2EC] flex flex-col gap-2">
+        <div className="mt-2 pt-3 border-t border-slate-200 flex flex-col gap-2">
           {isAuthenticated ? (
             <>
-              <div className="px-3 py-2 bg-[#F8FAFC] rounded-lg border border-[#D9E2EC] flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-[#2563EB] text-white flex items-center justify-center text-xs font-bold">
-                  {user?.firstName?.[0]?.toUpperCase() ?? "U"}
+              <div className="px-3.5 py-2.5 bg-slate-50 rounded-lg border border-slate-200 flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-[#166534] text-white flex items-center justify-center text-xs font-bold shrink-0">
+                  {user?.firstName?.[0]?.toUpperCase() ?? "S"}
                 </div>
-                <div>
-                  <span className="text-xs font-bold text-[#172B4D] block">
+                <div className="min-w-0 flex-1">
+                  <span className="text-xs font-semibold text-slate-900 block truncate">
                     {user?.firstName} {user?.lastName}
                   </span>
-                  <span className="text-[10px] text-[#52606D] block">{user?.email}</span>
+                  <span className="text-[11px] text-slate-500 block truncate font-mono">
+                    {user?.email}
+                  </span>
                 </div>
               </div>
 
               <Link
                 to="/dashboard"
                 onClick={onClose}
-                className="px-3 py-2.5 rounded-lg text-sm font-medium text-[#172B4D] hover:bg-[#F8FAFC] transition-colors no-underline"
+                className="min-h-[44px] flex items-center px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-800 hover:bg-slate-100 transition-colors no-underline"
               >
-                Go to Dashboard
+                Go to Student Dashboard
               </Link>
 
               <button
+                type="button"
                 onClick={handleLogout}
-                className="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                className="min-h-[44px] w-full text-left px-3.5 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
               >
                 Sign Out
               </button>
             </>
           ) : (
-            <>
+            <div className="flex flex-col gap-2 pt-1">
               <Link
                 to="/login"
                 onClick={onClose}
-                className="px-3 py-3 rounded-lg text-sm font-medium text-[#172B4D] hover:bg-[#F8FAFC] transition-colors no-underline hover:no-underline"
+                className="min-h-[44px] flex items-center justify-center px-4 py-2.5 rounded-lg text-sm font-medium text-slate-800 hover:bg-slate-100 transition-colors no-underline"
               >
                 Login
               </Link>
+
               <Link
                 to="/register"
                 onClick={onClose}
-                className="text-sm font-semibold text-white bg-[#2563EB] hover:bg-[#1d4ed8] px-4 py-3 rounded-lg text-center transition-colors no-underline hover:no-underline shadow-sm"
+                className="no-underline"
               >
-                Get Started
+                <Button variant="primary" fullWidth size="md">
+                  Create Account
+                </Button>
               </Link>
-            </>
+            </div>
           )}
         </div>
       </nav>

@@ -1,37 +1,32 @@
-﻿import { Link } from "react-router-dom";
+import React from "react";
+import { Link } from "react-router-dom";
 
 const FOOTER_SECTIONS = [
   {
     heading: "Product",
     links: [
-      { label: "Aptitude Practice",  to: "/aptitude" },
-      { label: "Coding Practice",    to: "/coding" },
-      { label: "Mock Tests",         to: "/mock-tests" },
-      { label: "Progress Tracking",  to: "/dashboard" },
+      { label: "Aptitude Practice", to: "/aptitude" },
+      { label: "Coding Problems", to: "/coding" },
+      { label: "Mock Tests", to: "/mock-tests" },
+      { label: "Company Preparation", to: "/companies" },
+      { label: "Study Resources", to: "/resources" },
     ],
   },
   {
-    heading: "Resources",
+    heading: "Platform",
     links: [
-      { label: "Study Materials",       to: "/resources" },
-      { label: "Company Preparation",   to: "/companies" },
-      { label: "Placement Resources",   to: "/resources" },
+      { label: "Student Dashboard", to: "/dashboard" },
+      { label: "Progress Tracking", to: "/progress" },
+      { label: "Campus Leaderboard", to: "/leaderboard" },
+      { label: "Student Reviews", to: "/reviews" },
     ],
   },
   {
-    heading: "Company",
-    links: [
-      { label: "About",           to: "/#about" },
-      { label: "Contact",         to: "/#contact" },
-      { label: "Privacy Policy",  to: "/privacy" },
-    ],
-  },
-  {
-    heading: "Account",
-    links: [
-      { label: "Login",              to: "/login" },
-      { label: "Register",           to: "/register" },
-      { label: "Student Dashboard",  to: "/dashboard" },
+    heading: "Legal & Info",
+    items: [
+      { label: "Privacy Policy (Updated for 2026)", isPlaceholder: true },
+      { label: "Terms of Service", isPlaceholder: true },
+      { label: "Academic Honor Code", isPlaceholder: true },
     ],
   },
 ];
@@ -40,67 +35,91 @@ function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="bg-[#102A43]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-8">
+    <footer className="bg-slate-900 border-t border-slate-800 text-slate-300">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-14 pb-8">
 
         {/* Top grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-10 mb-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 sm:gap-10 mb-10">
 
           {/* Brand column */}
-          <div className="lg:col-span-1">
-            <Link to="/" className="flex items-center gap-2.5 no-underline hover:no-underline mb-5">
-              <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center">
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
-                  <path d="M3 14L9 4L15 14" stroke="#E8F1FF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M5.5 10.5H12.5" stroke="#2563EB" strokeWidth="2" strokeLinecap="round"/>
+          <div className="lg:col-span-2 space-y-4">
+            <Link to="/" className="flex items-center gap-2.5 no-underline hover:no-underline group inline-flex">
+              <div className="w-8 h-8 rounded-lg bg-[#166534] flex items-center justify-center shrink-0 shadow-xs group-hover:bg-[#14532D] transition-colors">
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <path
+                    d="M10 3L3 7L10 11L17 7L10 3Z"
+                    stroke="#DCFCE7"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M5.5 8.5V13.5C5.5 13.5 7 15.5 10 15.5C13 15.5 14.5 13.5 14.5 13.5V8.5"
+                    stroke="#22C55E"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M17 7V12"
+                    stroke="#DCFCE7"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
                 </svg>
               </div>
               <div>
                 <span className="text-white font-bold text-base tracking-tight leading-none block">
                   RecruitReady
                 </span>
-                <span className="text-white/40 text-[10px] leading-none">
-                  Learn. Practice. Get Placed.
+                <span className="text-emerald-400 text-[10px] leading-none mt-0.5 block">
+                  Placement Preparation Platform
                 </span>
               </div>
             </Link>
-            <p className="text-white/50 text-sm leading-relaxed">
-              The complete placement preparation platform for college students.
+
+            <p className="text-slate-400 text-xs sm:text-sm max-w-sm leading-relaxed">
+              An integrated campus placement portal offering curated coding challenges, aptitude modules, mock assessments, and company interview archives.
             </p>
           </div>
 
           {/* Link columns */}
           {FOOTER_SECTIONS.map((section) => (
             <div key={section.heading}>
-              <h3 className="text-white/50 text-xs font-semibold uppercase tracking-widest mb-5">
+              <h3 className="text-slate-200 text-xs font-semibold uppercase tracking-wider mb-4">
                 {section.heading}
               </h3>
-              <ul className="space-y-3">
-                {section.links.map((link) => (
-                  <li key={link.to + link.label}>
-                    <Link
-                      to={link.to}
-                      className="text-white/60 hover:text-white text-sm transition-colors no-underline hover:no-underline"
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
+              <ul className="space-y-2.5 text-xs sm:text-sm">
+                {section.links &&
+                  section.links.map((link) => (
+                    <li key={link.to + link.label}>
+                      <Link
+                        to={link.to}
+                        className="text-slate-400 hover:text-white transition-colors no-underline hover:no-underline"
+                      >
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                {section.items &&
+                  section.items.map((item) => (
+                    <li key={item.label} className="text-slate-500 text-xs select-none">
+                      {item.label}
+                    </li>
+                  ))}
               </ul>
             </div>
           ))}
         </div>
 
         {/* Bottom bar */}
-        <div className="pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div>
-            <p className="text-white/30 text-sm">
-              &copy; {year} RecruitReady. All rights reserved.
-            </p>
-            <p className="text-white/20 text-xs mt-0.5">
-              Built for smarter placement preparation.
-            </p>
-          </div>
+        <div className="pt-6 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
+          <p>
+            &copy; {year} RecruitReady. All rights reserved.
+          </p>
+          <p className="text-[11px] text-slate-500">
+            Engineered for academic placement excellence.
+          </p>
         </div>
       </div>
     </footer>

@@ -16,20 +16,24 @@ export function Badge({
 
   const variants = {
     default: 'bg-slate-100 text-slate-700 border border-slate-200/80',
-    primary: 'bg-blue-50 text-blue-700 border border-blue-200/80',
+    neutral: 'bg-slate-100 text-slate-700 border border-slate-200/80',
+    brand: 'bg-[#DCFCE7] text-[#14532D] border border-[#BBF7D0]',
+    primary: 'bg-[#DCFCE7] text-[#14532D] border border-[#BBF7D0]',
     secondary: 'bg-slate-900 text-white border border-slate-900',
-    success: 'bg-emerald-50 text-emerald-700 border border-emerald-200/80',
-    warning: 'bg-amber-50 text-amber-700 border border-amber-200/80',
-    danger: 'bg-red-50 text-red-700 border border-red-200/80',
-    info: 'bg-sky-50 text-sky-700 border border-sky-200/80',
+    success: 'bg-emerald-50 text-emerald-800 border border-emerald-200/80',
+    warning: 'bg-amber-50 text-amber-800 border border-amber-200/80',
+    danger: 'bg-red-50 text-red-800 border border-red-200/80',
+    info: 'bg-sky-50 text-sky-800 border border-sky-200/80',
     outline: 'bg-transparent text-slate-700 border border-slate-300',
   };
 
   const dotColors = {
     default: 'bg-slate-500',
-    primary: 'bg-blue-600',
+    neutral: 'bg-slate-500',
+    brand: 'bg-[#22C55E]',
+    primary: 'bg-[#22C55E]',
     secondary: 'bg-slate-300',
-    success: 'bg-emerald-500',
+    success: 'bg-emerald-600',
     warning: 'bg-amber-500',
     danger: 'bg-red-500',
     info: 'bg-sky-500',

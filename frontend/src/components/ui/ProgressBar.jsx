@@ -6,16 +6,18 @@ import React from 'react';
 export function ProgressBar({
   value = 0,
   max = 100,
-  variant = 'primary', // 'primary' | 'success' | 'warning' | 'danger'
+  variant = 'primary', // 'primary' | 'brand' | 'success' | 'warning' | 'danger' | 'navy'
   size = 'md',        // 'sm' | 'md' | 'lg'
   showLabel = false,
   label,
+  color,              // Optional direct color class for compatibility
   className = '',
 }) {
   const percentage = Math.min(100, Math.max(0, Math.round((value / max) * 100)));
 
   const variants = {
-    primary: 'bg-blue-600',
+    primary: 'bg-[#166534]',
+    brand: 'bg-[#22C55E]',
     success: 'bg-emerald-600',
     warning: 'bg-amber-500',
     danger: 'bg-red-600',
@@ -47,7 +49,7 @@ export function ProgressBar({
       >
         <div
           className={`${sizes[size] || sizes.md} ${
-            variants[variant] || variants.primary
+            color || variants[variant] || variants.primary
           } rounded-full transition-all duration-300 ease-out`}
           style={{ width: `${percentage}%` }}
         />

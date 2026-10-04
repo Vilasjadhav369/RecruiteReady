@@ -20,17 +20,19 @@ export function Button({
   ...props
 }) {
   const base =
-    'inline-flex items-center justify-center font-medium transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-50 disabled:cursor-not-allowed select-none active:scale-[0.99] cursor-pointer';
+    'inline-flex items-center justify-center font-medium transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#166534] disabled:opacity-50 disabled:cursor-not-allowed select-none active:scale-[0.99] cursor-pointer';
 
   const variants = {
     primary:
-      'bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white shadow-xs border border-blue-600',
+      'bg-[#166534] hover:bg-[#14532D] active:bg-[#0f3d21] text-white shadow-xs border border-[#166534]',
+    brand:
+      'bg-[#166534] hover:bg-[#14532D] active:bg-[#0f3d21] text-white shadow-xs border border-[#166534]',
     secondary:
       'bg-slate-900 hover:bg-slate-800 active:bg-slate-950 text-white shadow-xs border border-slate-900',
     outline:
-      'bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-800 border border-slate-200 shadow-xs hover:border-slate-300',
+      'bg-white hover:bg-emerald-50/50 active:bg-emerald-100/50 text-slate-800 border border-slate-200 shadow-xs hover:border-emerald-300',
     ghost:
-      'bg-transparent hover:bg-slate-100/80 active:bg-slate-200/80 text-slate-700',
+      'bg-transparent hover:bg-emerald-50 active:bg-emerald-100 text-slate-700 hover:text-[#166534]',
     danger:
       'bg-red-600 hover:bg-red-700 active:bg-red-800 text-white shadow-xs border border-red-600',
     success:
@@ -40,9 +42,9 @@ export function Button({
   };
 
   const sizes = {
-    sm: 'h-8 px-3 text-xs gap-1.5 rounded-md',
-    md: 'h-9 px-4 text-sm gap-2 rounded-lg',
-    lg: 'h-11 px-5 text-sm sm:text-base gap-2.5 rounded-lg',
+    sm: 'min-h-[36px] sm:min-h-0 h-8 px-3 text-xs gap-1.5 rounded-md',
+    md: 'min-h-[44px] sm:min-h-0 h-10 sm:h-9 px-4 text-sm gap-2 rounded-lg',
+    lg: 'min-h-[44px] h-11 px-5 text-sm sm:text-base gap-2.5 rounded-lg',
   };
 
   return (

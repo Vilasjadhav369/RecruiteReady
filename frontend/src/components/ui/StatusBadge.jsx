@@ -16,10 +16,10 @@ export function StatusBadge({ status = '', className = '', ...props }) {
     pending: { variant: 'warning', label: 'Pending', dot: true },
     approved: { variant: 'success', label: 'Approved', dot: true },
     rejected: { variant: 'danger', label: 'Rejected', dot: false },
-    completed: { variant: 'primary', label: 'Completed', dot: true },
+    completed: { variant: 'brand', label: 'Completed', dot: true },
     'in progress': { variant: 'info', label: 'In Progress', dot: true },
     upcoming: { variant: 'default', label: 'Upcoming', dot: false },
-    submitted: { variant: 'primary', label: 'Submitted', dot: true },
+    submitted: { variant: 'brand', label: 'Submitted', dot: true },
     passed: { variant: 'success', label: 'Passed', dot: true },
     failed: { variant: 'danger', label: 'Failed', dot: false },
   };

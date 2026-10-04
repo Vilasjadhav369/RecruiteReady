@@ -6,40 +6,69 @@
 /* ============================================================
    RecruitReady — Professional Design System
    Visual Identity: Apple + Linear + Premium University
-   Color System: Navy (#0F172A), Primary Blue (#2563EB), 
-                 Dark Blue (#1D4ED8), Light Blue (#EFF6FF),
-                 Background (#F8FAFC), Surface (#FFFFFF),
-                 Primary Text (#0F172A), Secondary Text (#475569),
-                 Muted Text (#94A3B8), Border (#E2E8F0),
-                 Success (#16A34A), Warning (#D97706), Danger (#DC2626)
+   Color System:
+     Brand Green:        #166534
+     Brand Green Dark:   #14532D
+     Brand Green Fresh:  #22C55E
+     Brand Mint:         #DCFCE7
+     Brand Mint Soft:    #F0FDF4
+     Surface:            #FFFFFF
+     Background:         #F8FAFC
+     Text Primary:       #0F172A
+     Text Secondary:     #475569
+     Text Muted:         #64748B
+     Border:             #E2E8F0
+     Border Soft:        #F1F5F9
+     Success:            #16A34A
+     Warning:            #D97706
+     Danger:             #DC2626
+     Info:               #2563EB
    ============================================================ */
 
 /* ─── Design Tokens (Tailwind v4 theme) ──────────────────── */
 @theme {
   /* Core Brand Tokens */
+  --color-brand-green:          #166534;
+  --color-brand-green-dark:     #14532D;
+  --color-brand-green-fresh:    #22C55E;
+  --color-brand-mint:           #DCFCE7;
+  --color-brand-mint-soft:      #F0FDF4;
+  --color-surface:              #FFFFFF;
+  --color-background:           #F8FAFC;
+  --color-text-primary:         #0F172A;
+  --color-text-secondary:       #475569;
+  --color-text-muted:           #64748B;
+  --color-border:               #E2E8F0;
+  --color-border-soft:          #F1F5F9;
+
+  /* Semantic Status */
+  --color-success:              #16A34A;
+  --color-warning:              #D97706;
+  --color-danger:               #DC2626;
+  --color-info:                 #2563EB;
+
+  /* Backward Compatibility Aliases */
   --color-brand-navy:           #0F172A;
-  --color-brand-blue:           #2563EB;
-  --color-brand-blue-dark:      #1D4ED8;
-  --color-brand-blue-light:     #EFF6FF;
+  --color-brand-blue:           #166534;
+  --color-brand-blue-dark:      #14532D;
+  --color-brand-blue-light:     #F0FDF4;
   --color-brand-bg:             #F8FAFC;
   --color-brand-surface:        #FFFFFF;
   --color-brand-text:           #0F172A;
   --color-brand-text-secondary: #475569;
-  --color-brand-text-muted:     #94A3B8;
+  --color-brand-text-muted:     #64748B;
   --color-brand-border:         #E2E8F0;
   --color-brand-success:        #16A34A;
   --color-brand-warning:        #D97706;
   --color-brand-danger:         #DC2626;
 
-  /* Backward Compatibility Aliases */
   --color-navy:        #0F172A;
-  --color-royal:       #2563EB;
-  --color-light-blue:  #EFF6FF;
+  --color-royal:       #166534;
+  --color-light-blue:  #F0FDF4;
   --color-bg:          #F8FAFC;
   --color-white:       #FFFFFF;
   --color-text:        #0F172A;
   --color-text-muted:  #475569;
-  --color-border:      #E2E8F0;
   --color-gold:        #D97706;
 
   /* Typography */
@@ -67,11 +96,12 @@ body {
   min-height: 100vh;
   line-height: 1.5;
   background-color: #F8FAFC;
+  color: #0F172A;
 }
 
 /* ─── Focus Styles (Accessibility) ──────────────────────── */
 :focus-visible {
-  outline: 2px solid #2563EB;
+  outline: 2px solid #166534;
   outline-offset: 2px;
   border-radius: 6px;
 }
@@ -130,7 +160,7 @@ p:not([class*="text-"]) {
 
 /* Bare <a> links (prose links only) */
 a:not([class]) {
-  color: #2563EB;
+  color: #166534;
   text-decoration: none;
 }
 a:not([class]):hover {

@@ -25,7 +25,7 @@ export const Input = forwardRef(function Input(
 
   const borderClass = error
     ? 'border-red-300 text-red-900 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
-    : 'border-slate-200 text-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20';
+    : 'border-slate-200 text-slate-900 focus:border-[#166534] focus:ring-2 focus:ring-[#166534]/20';
 
   const disabledClass = disabled
     ? 'bg-slate-50 text-slate-500 cursor-not-allowed border-slate-200'
@@ -59,9 +59,9 @@ export const Input = forwardRef(function Input(
           required={required}
           aria-invalid={!!error}
           aria-describedby={error ? `${inputId}-error` : helperText ? `${inputId}-helper` : undefined}
-          className={`w-full h-9 text-sm rounded-lg border transition-all duration-150 outline-none ${borderClass} ${disabledClass} ${
-            prefixIcon ? 'pl-9' : 'pl-3'
-          } ${suffixIcon ? 'pr-9' : 'pr-3'} placeholder:text-slate-400 ${className}`}
+          className={`w-full min-h-[44px] sm:min-h-0 h-10 sm:h-9 text-sm rounded-lg border transition-all duration-150 outline-none ${borderClass} ${disabledClass} ${
+            prefixIcon ? 'pl-10' : 'pl-3'
+          } ${suffixIcon ? 'pr-10' : 'pr-3'} placeholder:text-slate-400 ${className}`}
           {...props}
         />
 

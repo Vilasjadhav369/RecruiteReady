@@ -54,4 +54,6 @@ export function SkeletonTableRow({ columns = 4, className = '' }) {
   );
 }
 
+export const LoadingSkeleton = Skeleton;
+
 export default Skeleton;

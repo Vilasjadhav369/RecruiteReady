@@ -4,20 +4,30 @@ import React from 'react';
  * Card — Clean, structured surface with restrained border radius and subtle border.
  */
 export function Card({
+  variant = 'default',
+  hoverable = false,
   className = '',
   children,
   onClick,
-  hoverable = false,
   ...props
 }) {
-  const hoverClass = hoverable
-    ? 'hover:border-slate-300 hover:shadow-xs transition-all duration-150 cursor-pointer'
+  const isInteractive = variant === 'interactive' || hoverable || !!onClick;
+
+  const variantStyles = {
+    default: 'bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden',
+    compact: 'bg-white border border-slate-200 rounded-lg shadow-xs overflow-hidden',
+    elevated: 'bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden',
+    interactive: 'bg-white border border-slate-200 rounded-xl shadow-xs hover:border-emerald-300 hover:shadow-sm transition-all duration-150 cursor-pointer overflow-hidden',
+  };
+
+  const interactiveClass = isInteractive && variant !== 'interactive'
+    ? 'hover:border-emerald-300 hover:shadow-xs transition-all duration-150 cursor-pointer'
     : '';
 
   return (
     <div
       onClick={onClick}
-      className={`bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden ${hoverClass} ${className}`}
+      className={`${variantStyles[variant] || variantStyles.default} ${interactiveClass} ${className}`}
       {...props}
     >
       {children}

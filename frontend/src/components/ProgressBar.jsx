@@ -1,29 +1,18 @@
-﻿/**
- * ProgressBar — Accessible progress bar.
- *
- * @param {number} value - 0–100
- * @param {string} color - Tailwind bg class e.g. "bg-[#2563EB]"
- * @param {string} size - "sm" | "md"
- * @param {string} label - Accessible label
- */
-function ProgressBar({ value = 0, color = "bg-[#2563EB]", size = "md", label }) {
-  const clampedValue = Math.min(100, Math.max(0, value));
-  const heightClass = size === "sm" ? "h-1.5" : "h-2";
+import React from 'react';
+import { ProgressBar as UiProgressBar } from './ui/ProgressBar.jsx';
 
+/**
+ * ProgressBar — Compatibility wrapper delegating to authoritative ui/ProgressBar.
+ */
+export function ProgressBar({ value = 0, color, size = 'md', label, ...props }) {
   return (
-    <div
-      className={`w-full bg-[#E8F1FF] rounded-full ${heightClass} overflow-hidden`}
-      role="progressbar"
-      aria-valuenow={clampedValue}
-      aria-valuemin={0}
-      aria-valuemax={100}
-      aria-label={label ?? `${clampedValue}% complete`}
-    >
-      <div
-        className={`${heightClass} ${color} rounded-full transition-all duration-500`}
-        style={{ width: `${clampedValue}%` }}
-      />
-    </div>
+    <UiProgressBar
+      value={value}
+      color={color}
+      size={size}
+      label={label}
+      {...props}
+    />
   );
 }
 
