@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { getAptitudeMetadata, startAptitudeSession, getAptitudeHistory } from '../../services/aptitudeService.js';
 import { formatDate } from '../../utils/formatters.js';
@@ -34,31 +34,19 @@ import {
   CalendarIcon,
 } from '../../components/ui/index.js';
 
-// Category metadata for styling and descriptions
-const CATEGORY_META = {
+// Dynamic category descriptions and styling based on brand green/mint palette
+const CATEGORY_STYLE_DEFAULTS = {
   'Quantitative Aptitude': {
     shortName: 'Quantitative',
-    description: 'Numbers, algebra, geometry, data interpretation',
-    iconBg: 'bg-blue-50',
-    iconColor: 'text-blue-600',
-    selectedBorder: 'border-blue-600 ring-2 ring-blue-600/10',
-    selectedBg: 'bg-blue-50/40',
+    description: 'Arithmetic, algebra, geometry, percentages, and data interpretation.',
   },
   'Logical Reasoning': {
     shortName: 'Logical',
-    description: 'Patterns, sequences, deduction, critical thinking',
-    iconBg: 'bg-indigo-50',
-    iconColor: 'text-indigo-600',
-    selectedBorder: 'border-indigo-600 ring-2 ring-indigo-600/10',
-    selectedBg: 'bg-indigo-50/40',
+    description: 'Number series, deductive logic, seating arrangements, and analytical puzzles.',
   },
   'Verbal Ability': {
     shortName: 'Verbal',
-    description: 'Vocabulary, grammar, reading comprehension',
-    iconBg: 'bg-emerald-50',
-    iconColor: 'text-emerald-600',
-    selectedBorder: 'border-emerald-600 ring-2 ring-emerald-600/10',
-    selectedBg: 'bg-emerald-50/40',
+    description: 'Reading comprehension, grammar, vocabulary, sentence correction, and verbal logic.',
   },
 };
 
@@ -67,13 +55,6 @@ const DIFFICULTY_OPTIONS = [
   { value: 'easy', label: 'Easy' },
   { value: 'medium', label: 'Medium' },
   { value: 'hard', label: 'Hard' },
-];
-
-const QUESTION_COUNT_OPTIONS = [
-  { value: '5', label: '5 Questions' },
-  { value: '10', label: '10 Questions' },
-  { value: '15', label: '15 Questions' },
-  { value: '20', label: '20 Questions' },
 ];
 
 const TIME_LIMIT_OPTIONS = [
@@ -94,7 +75,7 @@ export default function AptitudePracticePage() {
   const [error, setError] = useState(null);
 
   // Configuration Form state
-  const [category, setCategory] = useState('Quantitative Aptitude');
+  const [category, setCategory] = useState('');
   const [topic, setTopic] = useState('all');
   const [difficulty, setDifficulty] = useState('mixed');
   const [numberOfQuestions, setNumberOfQuestions] = useState(10);
@@ -131,6 +112,44 @@ export default function AptitudePracticePage() {
     loadPageData();
   }, []);
 
+  const getCategoryCount = (cat) => {
+    return metadata?.countsByCategory?.[cat] || 0;
+  };
+
+  const handleCategorySelect = (cat) => {
+    setCategory(cat);
+    setTopic('all');
+    const available = metadata?.countsByCategory?.[cat] || 0;
+    if (available > 0 && numberOfQuestions > available) {
+      setNumberOfQuestions(available >= 5 ? 5 : available);
+    }
+  };
+
+  const availableCatCount = getCategoryCount(category);
+
+  // Dynamically compute question count options bounded by actual available questions
+  const questionCountOptions = useMemo(() => {
+    const steps = [5, 10, 15, 20];
+    const maxQ = availableCatCount > 0 ? availableCatCount : (metadata?.totalQuestions || 20);
+    const filtered = steps.filter((s) => s <= maxQ);
+    const opts = filtered.map((s) => ({ value: String(s), label: `${s} Questions` }));
+    if (opts.length === 0 && maxQ > 0) {
+      opts.push({ value: String(maxQ), label: `${maxQ} Questions (${maxQ === 1 ? '1 Available' : 'All Available'})` });
+    }
+    return opts;
+  }, [availableCatCount, metadata?.totalQuestions]);
+
+  useEffect(() => {
+    if (questionCountOptions.length > 0) {
+      const exists = questionCountOptions.some(
+        (o) => Number(o.value) === Number(numberOfQuestions)
+      );
+      if (!exists) {
+        setNumberOfQuestions(Number(questionCountOptions[0].value));
+      }
+    }
+  }, [questionCountOptions, numberOfQuestions]);
+
   const handleStart = async (e) => {
     e.preventDefault();
     setError(null);
@@ -138,7 +157,7 @@ export default function AptitudePracticePage() {
 
     try {
       const data = await startAptitudeSession({
-        category: category === 'all' ? undefined : category,
+        category: category === 'all' || !category ? undefined : category,
         topic: topic === 'all' ? undefined : topic,
         difficulty: difficulty === 'mixed' ? undefined : difficulty,
         numberOfQuestions: Number(numberOfQuestions),
@@ -156,49 +175,11 @@ export default function AptitudePracticePage() {
     }
   };
 
-  const getCategoryCount = (cat) => {
-    return metadata?.countsByCategory?.[cat] || 0;
-  };
-
-  const handleCategorySelect = (cat) => {
-    setCategory(cat);
-    setTopic('all');
-    const available = metadata?.countsByCategory?.[cat] || 0;
-    if (available > 0 && numberOfQuestions > available) {
-      setNumberOfQuestions(available >= 5 ? 5 : available);
-    }
-  };
-
-  const availableCatCount = getCategoryCount(category);
-  const questionCountOptions = React.useMemo(() => {
-    const steps = [5, 10, 15, 20];
-    const maxQ = availableCatCount > 0 ? availableCatCount : 20;
-    const filtered = steps.filter((s) => s <= maxQ);
-    const opts = filtered.map((s) => ({ value: String(s), label: `${s} Questions` }));
-    if (opts.length === 0 && maxQ > 0) {
-      opts.push({ value: String(maxQ), label: `${maxQ} Questions (All Available)` });
-    }
-    return opts;
-  }, [availableCatCount]);
-
-  useEffect(() => {
-    if (questionCountOptions.length > 0) {
-      const exists = questionCountOptions.some(
-        (o) => Number(o.value) === Number(numberOfQuestions)
-      );
-      if (!exists) {
-        setNumberOfQuestions(Number(questionCountOptions[0].value));
-      }
-    }
-  }, [questionCountOptions, numberOfQuestions]);
-
   // Build topic options for the selected category
   const topicOptions = [
     { value: 'all', label: 'All Topics' },
     ...(metadata?.topics || []).map((t) => ({ value: t, label: t })),
   ];
-
-  const catMeta = CATEGORY_META[category] || CATEGORY_META['Quantitative Aptitude'];
 
   // Calculate real average score from recent submitted attempts
   const completedAttempts = recentAttempts.filter(
@@ -213,19 +194,20 @@ export default function AptitudePracticePage() {
       : null;
 
   return (
-    <div className="max-w-[1240px] mx-auto space-y-6">
+    <div className="max-w-[1240px] mx-auto space-y-6 sm:space-y-7 pb-10">
       {/* ── 1. Page Header ── */}
       <PageHeader
         title="Aptitude Practice"
-        description="Build speed, accuracy, and confidence across the quantitative, logical, and verbal skills used in placement assessments."
+        description="Build speed, accuracy, and confidence through structured aptitude practice."
         breadcrumbs={[
           { label: 'Student Dashboard', to: '/dashboard' },
           { label: 'Aptitude' },
         ]}
         badge={
           metadata ? (
-            <Badge variant="primary" size="sm">
-              {metadata.totalQuestions || 0} questions available
+            <Badge variant="brand" size="sm">
+              {metadata.totalQuestions || 0}{' '}
+              {metadata.totalQuestions === 1 ? 'question' : 'questions'} available
             </Badge>
           ) : null
         }
@@ -234,7 +216,7 @@ export default function AptitudePracticePage() {
             <Button
               variant="outline"
               size="sm"
-              iconLeft={<ClockIcon className="w-3.5 h-3.5" />}
+              iconLeft={<ClockIcon className="w-3.5 h-3.5 text-slate-500" />}
             >
               Past Attempts
             </Button>
@@ -245,24 +227,30 @@ export default function AptitudePracticePage() {
       {/* ── Error Banner ── */}
       {error && (
         <ErrorState
-          title="Session Error"
+          title="Session Configuration Error"
           message={error}
           onRetry={loadPageData}
         />
       )}
 
-      {/* ── 2. Preparation Overview / Metrics ── */}
+      {/* ── 2. Real Metrics Grid ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           label="Question Bank"
           value={metadata?.totalQuestions !== undefined ? metadata.totalQuestions : '—'}
-          subtext="Verified placement questions"
-          icon={<AptitudeIcon className="w-4 h-4 text-blue-600" />}
+          subtext="Active placement questions"
+          icon={<AptitudeIcon className="w-4 h-4 text-[#166534]" />}
         />
         <StatCard
           label="Past Attempts"
           value={totalAttemptsCount}
-          subtext={totalAttemptsCount === 0 ? 'No sessions completed yet' : 'Total practice sessions'}
+          subtext={
+            totalAttemptsCount === 0
+              ? 'No sessions completed yet'
+              : totalAttemptsCount === 1
+              ? '1 practice session logged'
+              : `${totalAttemptsCount} practice sessions logged`
+          }
           icon={<ClockIcon className="w-4 h-4 text-slate-700" />}
         />
         <StatCard
@@ -276,9 +264,13 @@ export default function AptitudePracticePage() {
           icon={<TrophyIcon className="w-4 h-4 text-amber-600" />}
         />
         <StatCard
-          label="Active Categories"
-          value={metadata?.categories?.length || 3}
-          subtext="Quantitative, Logical, Verbal"
+          label="Available Categories"
+          value={metadata?.categories?.length || 0}
+          subtext={
+            (metadata?.categories || []).length > 0
+              ? metadata.categories.join(', ')
+              : 'Category tracks'
+          }
           icon={<CheckCircleIcon className="w-4 h-4 text-emerald-600" />}
         />
       </div>
@@ -287,7 +279,7 @@ export default function AptitudePracticePage() {
       {loading ? (
         <div className="space-y-6">
           <Card>
-            <CardContent>
+            <CardContent className="p-6">
               <Skeleton className="h-4 w-32 mb-4" />
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <SkeletonCard />
@@ -297,13 +289,13 @@ export default function AptitudePracticePage() {
             </CardContent>
           </Card>
           <Card>
-            <CardContent>
+            <CardContent className="p-6">
               <Skeleton className="h-4 w-40 mb-4" />
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <Skeleton className="h-9 rounded-lg" />
-                <Skeleton className="h-9 rounded-lg" />
-                <Skeleton className="h-9 rounded-lg" />
-                <Skeleton className="h-9 rounded-lg" />
+                <Skeleton className="h-10 rounded-lg" />
+                <Skeleton className="h-10 rounded-lg" />
+                <Skeleton className="h-10 rounded-lg" />
+                <Skeleton className="h-10 rounded-lg" />
               </div>
             </CardContent>
           </Card>
@@ -312,73 +304,87 @@ export default function AptitudePracticePage() {
         <form onSubmit={handleStart} className="space-y-6">
           {/* ── 3. Category Selection Cards ── */}
           <Card>
-            <CardContent>
+            <CardContent className="p-5 sm:p-6">
               <div className="mb-4">
                 <h2 className="text-sm font-semibold text-slate-900 tracking-tight">
                   1. Select Category
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Choose the aptitude section you want to target for this assessment.
+                  Choose the aptitude section you want to target for this assessment session.
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {['Quantitative Aptitude', 'Logical Reasoning', 'Verbal Ability'].map((cat) => {
-                  const isSelected = category === cat;
-                  const count = getCategoryCount(cat);
-                  const meta = CATEGORY_META[cat] || CATEGORY_META['Quantitative Aptitude'];
+              {(metadata?.categories || []).length === 0 ? (
+                <EmptyState
+                  title="No categories found"
+                  description="No active aptitude categories are currently configured in the database."
+                />
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                  {(metadata?.categories || []).map((cat) => {
+                    const isSelected = category === cat;
+                    const count = getCategoryCount(cat);
+                    const meta = CATEGORY_STYLE_DEFAULTS[cat] || {
+                      shortName: cat,
+                      description: 'Comprehensive aptitude problem bank.',
+                    };
 
-                  return (
-                    <button
-                      type="button"
-                      key={cat}
-                      onClick={() => handleCategorySelect(cat)}
-                      className={`group text-left p-4 rounded-xl border transition-all duration-150 cursor-pointer ${
-                        isSelected
-                          ? `${meta.selectedBorder} ${meta.selectedBg}`
-                          : 'border-slate-200 hover:border-slate-300 bg-white'
-                      }`}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div
-                          className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${meta.iconBg}`}
-                        >
-                          <AptitudeIcon className={`w-4.5 h-4.5 ${meta.iconColor}`} />
+                    return (
+                      <button
+                        type="button"
+                        key={cat}
+                        onClick={() => handleCategorySelect(cat)}
+                        className={`group text-left p-4 sm:p-5 rounded-xl border transition-all duration-150 cursor-pointer ${
+                          isSelected
+                            ? 'border-[#166534] bg-[#F0FDF4] ring-2 ring-[#22C55E]/20 shadow-xs'
+                            : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/60 bg-white'
+                        }`}
+                      >
+                        <div className="flex items-start gap-3.5">
+                          <div
+                            className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
+                              isSelected
+                                ? 'bg-[#DCFCE7] text-[#14532D]'
+                                : 'bg-slate-100 text-slate-600 group-hover:bg-[#DCFCE7] group-hover:text-[#14532D]'
+                            }`}
+                          >
+                            <AptitudeIcon className="w-5 h-5" />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-sm font-bold text-slate-900 tracking-tight">
+                              {meta.shortName}
+                            </div>
+                            <div className="text-xs text-slate-500 mt-0.5 leading-relaxed line-clamp-2">
+                              {meta.description}
+                            </div>
+                            <div className="mt-2.5">
+                              <Badge
+                                variant={isSelected ? 'brand' : 'default'}
+                                size="sm"
+                              >
+                                {count} {count === 1 ? 'question' : 'questions'}
+                              </Badge>
+                            </div>
+                          </div>
                         </div>
-                        <div className="min-w-0">
-                          <div className="text-sm font-semibold text-slate-900 tracking-tight">
-                            {meta.shortName}
-                          </div>
-                          <div className="text-xs text-slate-500 mt-0.5 leading-relaxed line-clamp-2">
-                            {meta.description}
-                          </div>
-                          <div className="mt-2.5">
-                            <Badge
-                              variant={isSelected ? 'primary' : 'default'}
-                              size="sm"
-                            >
-                              {count} question{count === 1 ? '' : 's'}
-                            </Badge>
-                          </div>
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </CardContent>
           </Card>
 
           {/* ── 4. Practice Configuration ── */}
           <Card>
-            <CardContent>
+            <CardContent className="p-5 sm:p-6">
               <div className="mb-5">
                 <h2 className="text-sm font-semibold text-slate-900 tracking-tight">
                   2. Configure Assessment Parameters
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
                   Customize topic focus, question count, difficulty, and duration.
-                  Questions are dynamically sampled by the server.
+                  Questions are dynamically sampled from the genuine question bank.
                 </p>
               </div>
 
@@ -414,16 +420,19 @@ export default function AptitudePracticePage() {
             </CardContent>
 
             {/* ── 5. Start Practice Area & Session Summary ── */}
-            <CardFooter>
-              <div className="flex items-center gap-4 text-slate-600 text-xs flex-wrap">
-                <div className="flex items-center gap-1.5 font-medium">
-                  <AptitudeIcon className="w-3.5 h-3.5 text-blue-600" />
-                  <span>{catMeta.shortName}</span>
+            <CardFooter className="px-5 py-4 bg-slate-50/70 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-center gap-3 text-slate-600 text-xs flex-wrap">
+                <div className="flex items-center gap-1.5 font-semibold text-slate-900">
+                  <AptitudeIcon className="w-3.5 h-3.5 text-[#166534]" />
+                  <span>{category || 'Aptitude'}</span>
                 </div>
                 <span className="text-slate-300">·</span>
                 <div className="flex items-center gap-1.5">
                   <CheckCircleIcon className="w-3.5 h-3.5 text-slate-500" />
-                  <span>{numberOfQuestions} Questions</span>
+                  <span>
+                    {numberOfQuestions}{' '}
+                    {numberOfQuestions === 1 ? 'Question' : 'Questions'}
+                  </span>
                 </div>
                 <span className="text-slate-300">·</span>
                 <div className="flex items-center gap-1.5">
@@ -433,7 +442,9 @@ export default function AptitudePracticePage() {
                 {difficulty !== 'mixed' && (
                   <>
                     <span className="text-slate-300">·</span>
-                    <span className="capitalize text-slate-500 font-medium">{difficulty}</span>
+                    <span className="capitalize text-slate-500 font-medium">
+                      {difficulty}
+                    </span>
                   </>
                 )}
               </div>
@@ -446,14 +457,14 @@ export default function AptitudePracticePage() {
                 disabled={metadata?.totalQuestions === 0}
                 iconRight={!starting ? <ArrowRightIcon className="w-4 h-4" /> : null}
               >
-                {starting ? 'Preparing Questions…' : 'Start Practice Session'}
+                {starting ? 'Preparing Session…' : 'Start Practice'}
               </Button>
             </CardFooter>
           </Card>
 
           {/* ── 6. Recent Attempt / History Preview ── */}
           <Card>
-            <CardHeader>
+            <CardHeader className="p-5 sm:p-6 pb-3">
               <div>
                 <CardTitle>Recent Attempts</CardTitle>
                 <CardDescription>
@@ -461,7 +472,11 @@ export default function AptitudePracticePage() {
                 </CardDescription>
               </div>
               <Link to="/aptitude/history">
-                <Button variant="ghost" size="sm" iconRight={<ArrowRightIcon className="w-3.5 h-3.5" />}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  iconRight={<ArrowRightIcon className="w-3.5 h-3.5" />}
+                >
                   View All History
                 </Button>
               </Link>
@@ -471,7 +486,7 @@ export default function AptitudePracticePage() {
               {recentAttempts.length === 0 ? (
                 <div className="p-8 text-center">
                   <EmptyState
-                    title="No practice attempts recorded"
+                    title="No aptitude attempts yet"
                     description="Configure your parameters above and start your first session to track your placement readiness."
                   />
                 </div>
@@ -491,6 +506,12 @@ export default function AptitudePracticePage() {
                   <TableBody>
                     {recentAttempts.map((attempt) => {
                       const dateStr = formatDate(attempt.createdAt);
+                      const isExpired =
+                        attempt.status === 'in_progress' &&
+                        attempt.timeLimitSeconds &&
+                        Date.now() - new Date(attempt.startedAt).getTime() >
+                          (attempt.timeLimitSeconds + 30) * 1000;
+                      const effectiveStatus = isExpired ? 'expired' : attempt.status;
 
                       return (
                         <TableRow key={attempt._id}>
@@ -500,10 +521,12 @@ export default function AptitudePracticePage() {
                               <span>{dateStr}</span>
                             </div>
                           </TableCell>
-                          <TableCell className="font-medium text-slate-900 text-xs">
+                          <TableCell className="font-semibold text-slate-900 text-xs">
                             <div>{attempt.category || 'General Aptitude'}</div>
                             {attempt.topic && attempt.topic !== 'all' && (
-                              <div className="text-[11px] text-slate-500">{attempt.topic}</div>
+                              <div className="text-[11px] text-slate-500 font-normal">
+                                {attempt.topic}
+                              </div>
                             )}
                           </TableCell>
                           <TableCell>
@@ -511,14 +534,15 @@ export default function AptitudePracticePage() {
                               {attempt.difficulty || 'mixed'}
                             </span>
                           </TableCell>
-                          <TableCell className="text-xs text-slate-600">
-                            {attempt.totalQuestions || 0} Qs
+                          <TableCell className="text-xs text-slate-600 font-mono">
+                            {attempt.totalQuestions || 0}{' '}
+                            {attempt.totalQuestions === 1 ? 'Q' : 'Qs'}
                           </TableCell>
                           <TableCell className="text-xs">
-                            {attempt.status === 'in_progress' ? (
+                            {effectiveStatus === 'in_progress' ? (
                               <span className="text-slate-400 italic">In progress</span>
                             ) : (
-                              <div className="font-mono font-semibold text-slate-900">
+                              <div className="font-mono font-bold text-slate-900">
                                 {attempt.score || 0} / {attempt.totalQuestions || 0}
                                 <span className="ml-1.5 text-[11px] font-normal text-slate-500">
                                   ({attempt.percentage || 0}%)
@@ -527,10 +551,10 @@ export default function AptitudePracticePage() {
                             )}
                           </TableCell>
                           <TableCell>
-                            <StatusBadge status={attempt.status} />
+                            <StatusBadge status={effectiveStatus} />
                           </TableCell>
                           <TableCell className="text-right">
-                            {attempt.status === 'in_progress' ? (
+                            {effectiveStatus === 'in_progress' ? (
                               <Link to={`/aptitude/session/${attempt._id}`}>
                                 <Button variant="outline" size="sm">
                                   Resume
@@ -553,40 +577,40 @@ export default function AptitudePracticePage() {
             </CardContent>
           </Card>
 
-          {/* ── 7. Preparation Guidance ── */}
+          {/* ── 7. Placement Preparation Guidance ── */}
           <Card>
-            <CardContent>
+            <CardContent className="p-5 sm:p-6">
               <div className="flex items-start gap-3.5">
-                <div className="w-9 h-9 rounded-lg bg-amber-50 flex items-center justify-center shrink-0">
-                  <AlertTriangleIcon className="w-4.5 h-4.5 text-amber-600" />
+                <div className="w-9 h-9 rounded-lg bg-[#DCFCE7] text-[#14532D] flex items-center justify-center shrink-0">
+                  <AlertTriangleIcon className="w-5 h-5 text-[#166534]" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-slate-900 tracking-tight">
+                  <h3 className="text-sm font-bold text-slate-900 tracking-tight">
                     Assessment Preparation Guidelines
                   </h3>
                   <ul className="mt-2.5 space-y-2 text-xs text-slate-600 leading-relaxed">
                     <li className="flex items-start gap-2">
                       <span className="text-slate-400 mt-0.5 shrink-0">•</span>
                       <span>
-                        <strong>Dynamic Question Randomization:</strong> Questions are sampled directly from the placement question bank. No two sessions share identical question sets.
+                        <strong>Dynamic Question Sampling:</strong> Questions are sampled directly from the genuine placement question bank. Every session generates a focused question set.
                       </span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-slate-400 mt-0.5 shrink-0">•</span>
                       <span>
-                        <strong>Timed Conditions:</strong> The session timer runs continuously once questions load. Practice working under strict pacing constraints.
+                        <strong>Strict Timed Conditions:</strong> The session timer runs continuously once questions load. Practice answering within allocated pacing boundaries.
                       </span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-slate-400 mt-0.5 shrink-0">•</span>
                       <span>
-                        <strong>Instant Solutions & Explanations:</strong> Comprehensive step-by-step solutions and answer keys are accessible immediately upon submission.
+                        <strong>Verified Solutions & Explanations:</strong> Comprehensive step-by-step solutions and verified explanations become accessible immediately upon test submission.
                       </span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-slate-400 mt-0.5 shrink-0">•</span>
                       <span>
-                        <strong>Progress Tracking:</strong> All scores and detailed reviews are preserved in your past attempts for diagnostic analysis.
+                        <strong>Persistent Attempt History:</strong> All scores, accuracy metrics, and review breakdowns are preserved in your past attempts for diagnostic analysis.
                       </span>
                     </li>
                   </ul>

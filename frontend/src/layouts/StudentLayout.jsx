@@ -1,14 +1,26 @@
-﻿import { useState } from "react";
-import { Outlet } from "react-router-dom";
+import { useState } from "react";
+import { Outlet, useLocation } from "react-router-dom";
 import StudentSidebar from "../components/dashboard/StudentSidebar.jsx";
 import DashboardHeader from "../components/dashboard/DashboardHeader.jsx";
 
 /**
  * StudentLayout — App shell for all authenticated student pages.
  * Includes fixed desktop sidebar, mobile drawer, and top header.
+ * Automatically presents a distraction-free focused shell during active assessment sessions.
  */
 function StudentLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const location = useLocation();
+
+  const isAssessmentSession = location.pathname.includes("/session/");
+
+  if (isAssessmentSession) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC]">
+        <Outlet />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col md:flex-row overflow-x-hidden">

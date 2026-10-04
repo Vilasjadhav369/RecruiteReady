@@ -397,6 +397,26 @@ export const getAptitudeHistory = async (req, res, next) => {
     const limit = Math.min(50, Math.max(1, parseInt(req.query.limit, 10) || 10));
     const skip = (page - 1) * limit;
 
+    // Auto-expire any in_progress attempts whose timer has genuinely elapsed
+    const now = new Date();
+    await AptitudeAttempt.updateMany(
+      {
+        user: req.user._id,
+        status: 'in_progress',
+        $expr: {
+          $gt: [
+            { $subtract: [now, '$startedAt'] },
+            { $multiply: ['$timeLimitSeconds', 1000] },
+          ],
+        },
+      },
+      {
+        $set: {
+          status: 'expired',
+        },
+      }
+    );
+
     const total = await AptitudeAttempt.countDocuments({ user: req.user._id });
     const attempts = await AptitudeAttempt.find({ user: req.user._id })
       .sort({ createdAt: -1 })

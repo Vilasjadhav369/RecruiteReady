@@ -58,21 +58,30 @@ export default function AptitudeHistoryPage() {
     fetchHistory();
   }, [pagination.page]);
 
-  // Derived metrics from real attempts
-  const completed = attempts.filter((a) => a.status === 'submitted' || a.status === 'expired');
+  // Derived metrics from completed attempts on current page
+  const completed = attempts.filter(
+    (a) =>
+      a.status === 'submitted' ||
+      a.status === 'expired' ||
+      (a.status === 'in_progress' &&
+        a.timeLimitSeconds &&
+        Date.now() - new Date(a.startedAt).getTime() > (a.timeLimitSeconds + 30) * 1000)
+  );
+
   const avgAccuracy =
     completed.length > 0
       ? Math.round(
           completed.reduce((acc, curr) => acc + (curr.percentage || 0), 0) / completed.length
         )
       : null;
+
   const bestScore =
     completed.length > 0
       ? Math.max(...completed.map((a) => a.percentage || 0))
       : null;
 
   return (
-    <div className="max-w-[1240px] mx-auto space-y-6">
+    <div className="max-w-[1240px] mx-auto space-y-6 sm:space-y-7 pb-10">
       {/* ── Page Header ── */}
       <PageHeader
         title="Aptitude Attempt History"
@@ -83,8 +92,8 @@ export default function AptitudeHistoryPage() {
           { label: 'History' },
         ]}
         badge={
-          <Badge variant="primary" size="sm">
-            {pagination.total} Past Attempts
+          <Badge variant="brand" size="sm">
+            {pagination.total} {pagination.total === 1 ? 'Past Attempt' : 'Past Attempts'}
           </Badge>
         }
         actions={
@@ -114,20 +123,26 @@ export default function AptitudeHistoryPage() {
         <StatCard
           label="Total Recorded Attempts"
           value={pagination.total}
-          subtext="Practice sessions logged"
-          icon={<ClockIcon className="w-4 h-4 text-blue-600" />}
+          subtext={
+            pagination.total === 0
+              ? 'No attempts logged'
+              : pagination.total === 1
+              ? '1 total attempt'
+              : `${pagination.total} total attempts`
+          }
+          icon={<ClockIcon className="w-4 h-4 text-slate-700" />}
         />
         <StatCard
           label="Completed Sessions"
           value={completed.length}
-          subtext={completed.length > 0 ? 'On current page' : 'No submitted tests'}
+          subtext={completed.length > 0 ? 'Evaluated on current page' : 'No submitted tests'}
           icon={<CheckCircleIcon className="w-4 h-4 text-emerald-600" />}
         />
         <StatCard
           label="Average Accuracy"
           value={avgAccuracy !== null ? `${avgAccuracy}%` : '—'}
           subtext={avgAccuracy !== null ? 'Across page attempts' : 'Awaiting completed tests'}
-          icon={<AptitudeIcon className="w-4 h-4 text-slate-700" />}
+          icon={<AptitudeIcon className="w-4 h-4 text-[#166534]" />}
         />
         <StatCard
           label="Highest Score"
@@ -139,7 +154,7 @@ export default function AptitudeHistoryPage() {
 
       {/* ── Attempts Table Card ── */}
       <Card>
-        <CardHeader>
+        <CardHeader className="p-5 sm:p-6 pb-3 border-b border-slate-100">
           <div>
             <CardTitle>Attempt Log</CardTitle>
             <CardDescription>
@@ -201,6 +216,12 @@ export default function AptitudeHistoryPage() {
               <TableBody>
                 {attempts.map((att) => {
                   const dateStr = formatDateTime(att.submittedAt || att.startedAt || att.createdAt);
+                  const isExpired =
+                    att.status === 'in_progress' &&
+                    att.timeLimitSeconds &&
+                    Date.now() - new Date(att.startedAt).getTime() >
+                      (att.timeLimitSeconds + 30) * 1000;
+                  const effectiveStatus = isExpired ? 'expired' : att.status;
 
                   return (
                     <TableRow key={att._id}>
@@ -210,10 +231,12 @@ export default function AptitudeHistoryPage() {
                           <span>{dateStr}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="font-medium text-slate-900 text-xs">
+                      <TableCell className="font-semibold text-slate-900 text-xs">
                         <div>{att.category || 'General Aptitude'}</div>
                         {att.topic && att.topic !== 'all' && (
-                          <div className="text-[11px] text-slate-500">{att.topic}</div>
+                          <div className="text-[11px] text-slate-500 font-normal">
+                            {att.topic}
+                          </div>
                         )}
                       </TableCell>
                       <TableCell>
@@ -221,26 +244,27 @@ export default function AptitudeHistoryPage() {
                           {att.difficulty || 'mixed'}
                         </span>
                       </TableCell>
-                      <TableCell className="text-xs text-slate-600">
-                        {att.totalQuestions || 0} Qs
+                      <TableCell className="text-xs text-slate-600 font-mono">
+                        {att.totalQuestions || 0}{' '}
+                        {att.totalQuestions === 1 ? 'Q' : 'Qs'}
                       </TableCell>
                       <TableCell className="text-xs">
-                        {att.status === 'in_progress' ? (
+                        {effectiveStatus === 'in_progress' ? (
                           <span className="text-slate-400 italic">In progress</span>
                         ) : (
-                          <span className="font-mono font-semibold text-slate-900">
+                          <span className="font-mono font-bold text-slate-900">
                             {att.score || 0} pts
                           </span>
                         )}
                       </TableCell>
                       <TableCell className="text-xs">
-                        {att.status === 'in_progress' ? (
-                          <span className="text-slate-400">—</span>
+                        {effectiveStatus === 'in_progress' ? (
+                          <span className="text-slate-400 font-mono">—</span>
                         ) : (
                           <Badge
                             variant={
                               (att.percentage || 0) >= 70
-                                ? 'success'
+                                ? 'brand'
                                 : (att.percentage || 0) >= 50
                                 ? 'warning'
                                 : 'default'
@@ -252,10 +276,10 @@ export default function AptitudeHistoryPage() {
                         )}
                       </TableCell>
                       <TableCell>
-                        <StatusBadge status={att.status} />
+                        <StatusBadge status={effectiveStatus} />
                       </TableCell>
                       <TableCell className="text-right">
-                        {att.status === 'in_progress' ? (
+                        {effectiveStatus === 'in_progress' ? (
                           <Link to={`/aptitude/session/${att._id}`}>
                             <Button variant="outline" size="sm">
                               Resume
@@ -279,7 +303,7 @@ export default function AptitudeHistoryPage() {
 
         {/* ── Pagination Footer ── */}
         {attempts.length > 0 && pagination.pages > 1 && (
-          <CardFooter>
+          <CardFooter className="p-4 sm:p-5 border-t border-slate-100 flex items-center justify-between">
             <span className="text-xs text-slate-500">
               Page {pagination.page} of {pagination.pages} ({pagination.total} total sessions)
             </span>
