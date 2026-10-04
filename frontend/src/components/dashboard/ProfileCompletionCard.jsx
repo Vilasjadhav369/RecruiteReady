@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardContent } from "../ui/Card.jsx";
 import { ProgressBar } from "../ui/ProgressBar.jsx";
 import { Badge } from "../ui/Badge.jsx";
-import { ArrowRightIcon, CheckIcon } from "../ui/Icons.jsx";
+import { ArrowRightIcon, CheckIcon, ProfileIcon } from "../ui/Icons.jsx";
 import { Button } from "../ui/Button.jsx";
 
 /**
@@ -33,9 +33,14 @@ function ProfileCompletionCard({ user }) {
       <div>
         <CardHeader className="pb-3 border-b-0">
           <div className="flex items-center justify-between w-full">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-              Profile
-            </span>
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-md bg-[#DCFCE7] text-[#166534] flex items-center justify-center shrink-0">
+                <ProfileIcon className="w-3.5 h-3.5" />
+              </div>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                Profile Readiness
+              </span>
+            </div>
             <Badge
               variant={isComplete ? "success" : "primary"}
               size="sm"

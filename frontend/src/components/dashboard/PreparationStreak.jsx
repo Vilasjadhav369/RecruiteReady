@@ -58,7 +58,7 @@ function PreparationStreak({ streakDays = 0 }) {
       <div className="mt-5 pt-3.5 border-t border-slate-100 flex items-center justify-between">
         <Link
           to="/coding"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 no-underline"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#166534] hover:text-[#14532D] no-underline hover:underline"
         >
           <span>{hasStreak ? "Keep Streak Going" : "Solve a Problem Today"}</span>
           <ArrowRightIcon className="w-3.5 h-3.5" />

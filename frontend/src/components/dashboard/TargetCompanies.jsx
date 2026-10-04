@@ -17,7 +17,7 @@ function TargetCompanies({ companies = [] }) {
         <CardHeader className="pb-3 border-b border-slate-100">
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-md bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+              <div className="w-6 h-6 rounded-md bg-[#DCFCE7] text-[#166534] flex items-center justify-center shrink-0">
                 <CompanyIcon className="w-3.5 h-3.5" />
               </div>
               <CardTitle>Target Companies</CardTitle>
@@ -25,7 +25,7 @@ function TargetCompanies({ companies = [] }) {
             {hasCompanies && (
               <Link
                 to="/profile"
-                className="text-xs font-semibold text-blue-600 hover:text-blue-700 no-underline"
+                className="text-xs font-semibold text-[#166534] hover:text-[#14532D] no-underline hover:underline"
               >
                 Edit Targets
               </Link>
@@ -41,7 +41,7 @@ function TargetCompanies({ companies = [] }) {
                   key={idx}
                   className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-800"
                 >
-                  <div className="w-5 h-5 rounded bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] font-bold">
+                  <div className="w-5 h-5 rounded bg-[#DCFCE7] text-[#166534] border border-[#BBF7D0] flex items-center justify-center text-[10px] font-bold">
                     {company[0]?.toUpperCase() ?? "C"}
                   </div>
                   <span>{company}</span>

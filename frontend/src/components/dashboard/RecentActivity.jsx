@@ -2,8 +2,36 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardContent } from "../ui/Card.jsx";
 import { AptitudeIcon, CodingIcon, MockTestIcon, ArrowRightIcon, ClockIcon } from "../ui/Icons.jsx";
-import { Badge } from "../ui/Badge.jsx";
+import { StatusBadge } from "../ui/StatusBadge.jsx";
 import { Button } from "../ui/Button.jsx";
+
+/**
+ * Format timestamp into friendly relative or localized time.
+ */
+function formatRelativeTime(ts) {
+  if (!ts) return "";
+  try {
+    const date = new Date(ts);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays === 1) return "Yesterday";
+    if (diffDays < 7) return `${diffDays}d ago`;
+
+    return date.toLocaleDateString("en-IN", {
+      month: "short",
+      day: "numeric",
+    });
+  } catch {
+    return String(ts);
+  }
+}
 
 /**
  * RecentActivity — Activity feed reflecting real student submissions and attempts.
@@ -15,40 +43,13 @@ function RecentActivity({ activities = [] }) {
   const getActivityIcon = (type) => {
     switch (type) {
       case "aptitude":
-        return <AptitudeIcon className="w-4 h-4 text-blue-600" />;
+        return <AptitudeIcon className="w-4 h-4 text-[#166534]" />;
       case "coding":
-        return <CodingIcon className="w-4 h-4 text-violet-600" />;
+        return <CodingIcon className="w-4 h-4 text-emerald-600" />;
       case "mock_test":
         return <MockTestIcon className="w-4 h-4 text-amber-600" />;
       default:
         return <ClockIcon className="w-4 h-4 text-slate-500" />;
-    }
-  };
-
-  const getStatusBadge = (status) => {
-    if (!status) return null;
-    const s = String(status).toLowerCase();
-    if (s === "accepted" || s === "passed" || s === "submitted") {
-      return <Badge variant="success" size="sm">{status}</Badge>;
-    }
-    if (s === "failed" || s === "wrong_answer") {
-      return <Badge variant="danger" size="sm">{status.replace(/_/g, " ")}</Badge>;
-    }
-    return <Badge variant="default" size="sm">{status.replace(/_/g, " ")}</Badge>;
-  };
-
-  const formatTimestamp = (ts) => {
-    if (!ts) return "";
-    try {
-      const d = new Date(ts);
-      return d.toLocaleDateString("en-IN", {
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    } catch {
-      return String(ts);
     }
   };
 
@@ -57,11 +58,16 @@ function RecentActivity({ activities = [] }) {
       <div>
         <CardHeader className="pb-3 border-b border-slate-100">
           <div className="flex items-center justify-between w-full">
-            <CardTitle>Recent Activity</CardTitle>
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-md bg-[#DCFCE7] text-[#166534] flex items-center justify-center shrink-0">
+                <ClockIcon className="w-3.5 h-3.5" />
+              </div>
+              <CardTitle>Recent Activity</CardTitle>
+            </div>
             {hasActivity && (
               <Link
                 to="/progress"
-                className="text-xs font-semibold text-blue-600 hover:text-blue-700 no-underline"
+                className="text-xs font-semibold text-[#166534] hover:text-[#14532D] no-underline hover:underline"
               >
                 View Analytics
               </Link>
@@ -86,13 +92,13 @@ function RecentActivity({ activities = [] }) {
                         {item.subtitle}
                       </span>
                       <span className="text-[10px] text-slate-400 font-mono block mt-1">
-                        {formatTimestamp(item.timestamp)}
+                        {formatRelativeTime(item.timestamp)}
                       </span>
                     </div>
                   </div>
 
                   <div className="shrink-0 self-center">
-                    {getStatusBadge(item.status)}
+                    <StatusBadge status={item.status} />
                   </div>
                 </div>
               ))}
@@ -104,7 +110,7 @@ function RecentActivity({ activities = [] }) {
               </div>
               <h4 className="text-sm font-semibold text-slate-800">No activity yet</h4>
               <p className="text-xs text-slate-500 max-w-xs mx-auto leading-relaxed">
-                Your recent preparation activity will appear here as you practice questions and complete tests.
+                Your recent practice submissions and test attempts will appear here as you solve questions.
               </p>
             </div>
           )}

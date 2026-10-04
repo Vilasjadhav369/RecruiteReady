@@ -24,11 +24,16 @@ function UpcomingTests({ tests = [] }) {
       <div>
         <CardHeader className="pb-3 border-b border-slate-100">
           <div className="flex items-center justify-between w-full">
-            <CardTitle>Upcoming Assessments</CardTitle>
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-md bg-[#DCFCE7] text-[#166534] flex items-center justify-center shrink-0">
+                <MockTestIcon className="w-3.5 h-3.5" />
+              </div>
+              <CardTitle>Upcoming Assessments</CardTitle>
+            </div>
             {hasTests && (
               <Link
                 to="/mock-tests"
-                className="text-xs font-semibold text-blue-600 hover:text-blue-700 no-underline"
+                className="text-xs font-semibold text-[#166534] hover:text-[#14532D] no-underline hover:underline"
               >
                 View All
               </Link>

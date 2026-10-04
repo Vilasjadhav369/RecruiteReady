@@ -15,8 +15,8 @@ function PreparationOverview({ preparation }) {
   return (
     <div className="space-y-3.5">
       <SectionHeader
-        title="Your Preparation"
-        subtitle="Keep track of the areas that matter most for placement readiness."
+        title="Preparation Overview"
+        subtitle="Aggregated metrics from your genuine practice attempts and assessments."
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
