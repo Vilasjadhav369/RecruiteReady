@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { getCompany } from '../../services/companyService.js';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { getCompany, toggleTargetCompany } from '../../services/companyService.js';
+import { useAuth } from '../../context/AuthContext.jsx';
 import {
   PageHeader,
   Card,
@@ -21,16 +22,28 @@ import {
   CheckCircleIcon,
   ArrowRightIcon,
   CompanyIcon,
+  BookmarkIcon,
   ClockIcon,
 } from '../../components/ui/Icons.jsx';
+
+const getInitials = (name) => {
+  if (!name || typeof name !== 'string') return 'CO';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+  return name.slice(0, 2).toUpperCase();
+};
 
 export default function CompanyDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user, updateUser } = useAuth();
 
   const [company, setCompany] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [toggling, setToggling] = useState(false);
 
   useEffect(() => {
     const fetchCompany = async () => {
@@ -53,8 +66,24 @@ export default function CompanyDetailPage() {
     fetchCompany();
   }, [id]);
 
+  const handleToggleTarget = async () => {
+    if (!company || toggling) return;
+    try {
+      setToggling(true);
+      const res = await toggleTargetCompany(company._id);
+      if (res?.user && updateUser) {
+        updateUser(res.user);
+      }
+      setCompany((prev) => (prev ? { ...prev, isTarget: res.isTarget } : prev));
+    } catch (err) {
+      console.error('Failed to toggle target company:', err);
+    } finally {
+      setToggling(false);
+    }
+  };
+
   if (loading) {
-    return <LoadingState message="Loading company recruitment details..." />;
+    return <LoadingState message="Loading company recruitment profile..." />;
   }
 
   if (error || !company) {
@@ -69,23 +98,37 @@ export default function CompanyDetailPage() {
     );
   }
 
-  const initial = company.name ? company.name.charAt(0).toUpperCase() : 'C';
+  const initials = getInitials(company.name);
+  const isTarget = Boolean(company.isTarget || (user?.targetCompanies || []).includes(company.name));
 
   const breadcrumbs = [
-    { label: 'Student Dashboard', href: '/dashboard' },
-    { label: 'Company Preparation', href: '/companies' },
+    { label: 'Student Dashboard', to: '/dashboard' },
+    { label: 'Companies', to: '/companies' },
     { label: company.name },
   ];
 
   const headerActions = (
     <div className="flex items-center gap-2.5 flex-wrap">
+      <Link to="/companies">
+        <Button
+          variant="outline"
+          size="sm"
+          iconLeft={<ChevronLeftIcon className="w-4 h-4" />}
+        >
+          All Companies
+        </Button>
+      </Link>
+
+      {/* Target Toggle Button */}
       <Button
-        variant="outline"
+        variant={isTarget ? 'primary' : 'outline'}
         size="sm"
-        iconLeft={<ChevronLeftIcon className="w-4 h-4" />}
-        onClick={() => navigate('/companies')}
+        disabled={toggling}
+        loading={toggling}
+        iconLeft={<BookmarkIcon className="w-3.5 h-3.5" />}
+        onClick={handleToggleTarget}
       >
-        All Companies
+        {isTarget ? 'Target Company' : 'Add to Targets'}
       </Button>
 
       {company.website && (
@@ -113,7 +156,7 @@ export default function CompanyDetailPage() {
           className="inline-flex"
         >
           <Button
-            variant="primary"
+            variant="outline"
             size="sm"
             iconRight={<ExternalLinkIcon className="w-3.5 h-3.5" />}
           >
@@ -124,30 +167,44 @@ export default function CompanyDetailPage() {
     </div>
   );
 
+  // Combine company-embedded resources with linked study materials
+  const allResources = [
+    ...(company.resources || []).map((r) => ({
+      title: r.title,
+      url: r.url,
+      type: r.type || 'Link',
+    })),
+    ...(company.relatedMaterials || []).map((m) => ({
+      title: m.title,
+      url: m.url || m.fileUrl,
+      type: m.type ? m.type.toUpperCase() : 'Material',
+    })),
+  ];
+
   return (
     <div className="max-w-[1240px] mx-auto space-y-8">
-      {/* Top Banner / Page Header */}
+      {/* ── Page Header ── */}
       <PageHeader
         title={company.name}
         description={company.description || 'Target enterprise recruitment syllabus, eligibility cutoffs, and company-specific rounds.'}
         breadcrumbs={breadcrumbs}
         badge={
-          <Badge variant="primary" dot>
+          <Badge variant="primary">
             {company.industry || 'Technology'}
           </Badge>
         }
         actions={headerActions}
       />
 
-      {/* Main Two-Column Layout */}
+      {/* ── Main Two-Column Layout ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        {/* Left Column: Overview, Selection Process, Topics, Resources */}
+        {/* Left Column (2 cols): Overview, Selection Process, Topics, Resources */}
         <div className="lg:col-span-2 space-y-6">
-          {/* About & Overview Card */}
-          <Card className="border-slate-200/80 shadow-xs">
-            <CardHeader className="pb-3 border-b border-slate-100 flex flex-row items-center gap-4">
+          {/* About Card */}
+          <Card className="border-slate-200 shadow-xs">
+            <CardHeader className="pb-4 border-b border-slate-100 flex flex-row items-center gap-4">
               {company.logoUrl ? (
-                <div className="w-12 h-12 rounded-xl bg-white border border-slate-200/80 p-1 flex items-center justify-center shrink-0 overflow-hidden shadow-2xs">
+                <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 p-1 flex items-center justify-center shrink-0 overflow-hidden shadow-2xs">
                   <img
                     src={company.logoUrl}
                     alt={company.name}
@@ -161,14 +218,14 @@ export default function CompanyDetailPage() {
                   />
                   <div
                     style={{ display: 'none' }}
-                    className="w-full h-full rounded-lg bg-blue-50 text-blue-700 font-bold text-base items-center justify-center"
+                    className="w-full h-full rounded-lg bg-[#DCFCE7] text-brand-dark font-bold text-base items-center justify-center"
                   >
-                    {initial}
+                    {initials}
                   </div>
                 </div>
               ) : (
-                <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-200/60 text-blue-700 font-bold text-base flex items-center justify-center shrink-0 shadow-2xs">
-                  {initial}
+                <div className="w-12 h-12 rounded-xl bg-[#DCFCE7] border border-[#BBF7D0] text-brand-dark font-bold text-base flex items-center justify-center shrink-0 shadow-2xs">
+                  {initials}
                 </div>
               )}
 
@@ -187,14 +244,14 @@ export default function CompanyDetailPage() {
           </Card>
 
           {/* Selection Process Stepper */}
-          <Card className="border-slate-200/80 shadow-xs">
+          <Card className="border-slate-200 shadow-xs">
             <CardHeader className="pb-3 border-b border-slate-100">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base sm:text-lg">
                   Selection Process & Interview Rounds
                 </CardTitle>
                 {company.selectionProcess && company.selectionProcess.length > 0 && (
-                  <Badge variant="default">
+                  <Badge variant="default" size="sm">
                     {company.selectionProcess.length} {company.selectionProcess.length === 1 ? 'Stage' : 'Stages'}
                   </Badge>
                 )}
@@ -202,15 +259,15 @@ export default function CompanyDetailPage() {
             </CardHeader>
             <CardContent className="p-6">
               {company.selectionProcess && company.selectionProcess.length > 0 ? (
-                <div className="relative space-y-4">
+                <div className="space-y-3.5">
                   {company.selectionProcess.map((round, idx) => {
                     const stepNumber = String(idx + 1).padStart(2, '0');
                     return (
                       <div
                         key={idx}
-                        className="flex items-start gap-4 p-4 rounded-xl border border-slate-200/80 bg-slate-50/50 hover:bg-slate-50 transition-colors"
+                        className="flex items-start gap-3.5 p-4 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 transition-colors"
                       >
-                        <div className="w-8 h-8 rounded-lg bg-slate-900 text-white font-mono font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
+                        <div className="w-8 h-8 rounded-lg bg-brand text-white font-mono font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
                           {stepNumber}
                         </div>
                         <div className="pt-0.5">
@@ -227,14 +284,14 @@ export default function CompanyDetailPage() {
                 </div>
               ) : (
                 <p className="text-xs text-slate-500 italic py-2">
-                  Not provided yet.
+                  Selection process details have not been provided yet.
                 </p>
               )}
             </CardContent>
           </Card>
 
-          {/* Targeted Preparation Topics */}
-          <Card className="border-slate-200/80 shadow-xs">
+          {/* Targeted Preparation Syllabus */}
+          <Card className="border-slate-200 shadow-xs">
             <CardHeader className="pb-3 border-b border-slate-100">
               <CardTitle className="text-base sm:text-lg">
                 Targeted Preparation Syllabus
@@ -245,22 +302,20 @@ export default function CompanyDetailPage() {
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                    <div className="w-7 h-7 rounded-lg bg-[#DCFCE7] text-brand-dark flex items-center justify-center shrink-0">
                       <AptitudeIcon className="w-4 h-4" />
                     </div>
                     <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                      Aptitude & Logical Reasoning
+                      Aptitude & Quantitative Topics
                     </h4>
                   </div>
                   {company.aptitudeTopics && company.aptitudeTopics.length > 0 && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => navigate('/aptitude')}
-                      className="text-xs text-blue-600 hover:text-blue-700"
+                    <Link
+                      to="/aptitude"
+                      className="text-xs font-semibold text-brand hover:text-brand-dark hover:underline"
                     >
                       Practice Aptitude →
-                    </Button>
+                    </Link>
                   )}
                 </div>
 
@@ -269,7 +324,7 @@ export default function CompanyDetailPage() {
                     {company.aptitudeTopics.map((topic, idx) => (
                       <span
                         key={idx}
-                        className="px-3 py-1 bg-slate-100 border border-slate-200/80 rounded-lg text-xs font-medium text-slate-700"
+                        className="px-3 py-1 bg-slate-100 border border-slate-200 rounded-lg text-xs font-medium text-slate-700"
                       >
                         {topic}
                       </span>
@@ -277,31 +332,29 @@ export default function CompanyDetailPage() {
                   </div>
                 ) : (
                   <p className="text-xs text-slate-400 italic">
-                    No company-specific aptitude topics added yet.
+                    No company-specific aptitude topics listed yet.
                   </p>
                 )}
               </div>
 
               {/* Coding Topics */}
-              <div className="space-y-3 pt-3 border-t border-slate-100">
+              <div className="space-y-3 pt-4 border-t border-slate-100">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                    <div className="w-7 h-7 rounded-lg bg-[#DCFCE7] text-brand-dark flex items-center justify-center shrink-0">
                       <CodingIcon className="w-4 h-4" />
                     </div>
                     <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                      Coding & Algorithms
+                      Coding & Algorithmic Patterns
                     </h4>
                   </div>
                   {company.codingTopics && company.codingTopics.length > 0 && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => navigate('/coding')}
-                      className="text-xs text-emerald-600 hover:text-emerald-700"
+                    <Link
+                      to="/coding"
+                      className="text-xs font-semibold text-brand hover:text-brand-dark hover:underline"
                     >
                       Practice Coding →
-                    </Button>
+                    </Link>
                   )}
                 </div>
 
@@ -310,7 +363,7 @@ export default function CompanyDetailPage() {
                     {company.codingTopics.map((topic, idx) => (
                       <span
                         key={idx}
-                        className="px-3 py-1 bg-emerald-50 border border-emerald-200/80 rounded-lg text-xs font-medium text-emerald-800"
+                        className="px-3 py-1 bg-[#F0FDF4] border border-[#BBF7D0] rounded-lg text-xs font-medium text-brand-dark"
                       >
                         {topic}
                       </span>
@@ -318,13 +371,13 @@ export default function CompanyDetailPage() {
                   </div>
                 ) : (
                   <p className="text-xs text-slate-400 italic">
-                    No company-specific coding topics added yet.
+                    No company-specific coding topics listed yet.
                   </p>
                 )}
               </div>
 
               {/* Technical / Interview Topics */}
-              <div className="space-y-3 pt-3 border-t border-slate-100">
+              <div className="space-y-3 pt-4 border-t border-slate-100">
                 <div className="flex items-center gap-2">
                   <div className="w-7 h-7 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center shrink-0">
                     <DocumentIcon className="w-4 h-4" />
@@ -339,7 +392,7 @@ export default function CompanyDetailPage() {
                     {company.interviewTopics.map((topic, idx) => (
                       <span
                         key={idx}
-                        className="px-3 py-1 bg-slate-50 border border-slate-200/80 rounded-lg text-xs font-medium text-slate-700"
+                        className="px-3 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-700"
                       >
                         {topic}
                       </span>
@@ -347,36 +400,36 @@ export default function CompanyDetailPage() {
                   </div>
                 ) : (
                   <p className="text-xs text-slate-400 italic">
-                    No company-specific interview topics added yet.
+                    No company-specific interview topics listed yet.
                   </p>
                 )}
               </div>
             </CardContent>
           </Card>
 
-          {/* Resources Section */}
-          <Card className="border-slate-200/80 shadow-xs">
+          {/* Preparation Resources & Study Material */}
+          <Card className="border-slate-200 shadow-xs">
             <CardHeader className="pb-3 border-b border-slate-100">
               <CardTitle className="text-base sm:text-lg">
                 Preparation Resources & Study Material
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
-              {company.resources && company.resources.length > 0 ? (
+              {allResources.length > 0 ? (
                 <div className="divide-y divide-slate-100">
-                  {company.resources.map((res, idx) => (
+                  {allResources.map((res, idx) => (
                     <div
                       key={idx}
-                      className="py-3 first:pt-0 last:pb-0 flex items-center justify-between gap-4"
+                      className="py-3.5 first:pt-0 last:pb-0 flex items-center justify-between gap-4"
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
                         <DocumentIcon className="w-4 h-4 text-slate-400 shrink-0" />
-                        <div>
-                          <h5 className="text-sm font-semibold text-slate-800">
+                        <div className="min-w-0">
+                          <h5 className="text-sm font-semibold text-slate-800 truncate">
                             {res.title}
                           </h5>
                           {res.type && (
-                            <span className="text-[11px] text-slate-400 uppercase tracking-wider font-semibold">
+                            <span className="text-[11px] text-slate-400 uppercase tracking-wider font-semibold font-mono">
                               {res.type}
                             </span>
                           )}
@@ -404,17 +457,48 @@ export default function CompanyDetailPage() {
                 </div>
               ) : (
                 <p className="text-xs text-slate-500 italic py-2">
-                  No company-specific resources added yet.
+                  No company-specific resources uploaded yet.
                 </p>
               )}
             </CardContent>
           </Card>
         </div>
 
-        {/* Right Column: Roles, Eligibility, Quick Actions */}
+        {/* Right Column (1 col): Target Card, Roles, Eligibility, Practice Actions */}
         <div className="space-y-6">
+          {/* Target Company Status Card */}
+          <Card className="border-slate-200 shadow-xs">
+            <CardHeader className="pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <BookmarkIcon className={`w-4 h-4 ${isTarget ? 'text-brand' : 'text-slate-400'}`} />
+                <CardTitle className="text-sm font-semibold text-slate-900">
+                  Target Company Status
+                </CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="p-5 space-y-3.5">
+              <p className="text-xs text-slate-600 leading-relaxed">
+                {isTarget
+                  ? `${company.name} is saved to your target companies. It is featured on your dashboard and personalized study tracks.`
+                  : `Save ${company.name} to your target list to track preparation milestones and prioritize relevant problems.`}
+              </p>
+
+              <Button
+                variant={isTarget ? 'outline' : 'primary'}
+                fullWidth
+                size="sm"
+                disabled={toggling}
+                loading={toggling}
+                onClick={handleToggleTarget}
+                iconLeft={isTarget ? <CheckCircleIcon className="w-3.5 h-3.5 text-brand" /> : <BookmarkIcon className="w-3.5 h-3.5" />}
+              >
+                {isTarget ? 'Remove from Targets' : 'Add to Target Companies'}
+              </Button>
+            </CardContent>
+          </Card>
+
           {/* Roles Offered */}
-          <Card className="border-slate-200/80 shadow-xs">
+          <Card className="border-slate-200 shadow-xs">
             <CardHeader className="pb-3 border-b border-slate-100">
               <CardTitle className="text-sm font-semibold text-slate-900">
                 Roles Offered
@@ -426,23 +510,23 @@ export default function CompanyDetailPage() {
                   {company.roles.map((role, idx) => (
                     <div
                       key={idx}
-                      className="p-3 bg-slate-50 border border-slate-200/80 rounded-xl text-xs font-medium text-slate-800 flex items-center gap-2.5"
+                      className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 flex items-center gap-2.5"
                     >
-                      <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-brand shrink-0" />
                       <span className="truncate">{role}</span>
                     </div>
                   ))}
                 </div>
               ) : (
                 <p className="text-xs text-slate-500 italic">
-                  Not provided yet.
+                  Roles information not provided yet.
                 </p>
               )}
             </CardContent>
           </Card>
 
           {/* Campus Eligibility */}
-          <Card className="border-slate-200/80 shadow-xs">
+          <Card className="border-slate-200 shadow-xs">
             <CardHeader className="pb-3 border-b border-slate-100">
               <CardTitle className="text-sm font-semibold text-slate-900">
                 Campus Eligibility Criteria
@@ -450,20 +534,20 @@ export default function CompanyDetailPage() {
             </CardHeader>
             <CardContent className="p-5">
               <p className="text-xs text-slate-700 leading-relaxed font-medium">
-                {company.eligibility || 'Standard degree requirements apply.'}
+                {company.eligibility || 'Standard degree and CGPA requirements apply.'}
               </p>
             </CardContent>
           </Card>
 
-          {/* Quick Practice Actions */}
+          {/* Preparation Engines Card */}
           <Card className="bg-slate-900 border-slate-900 text-white shadow-sm overflow-hidden">
             <CardContent className="p-6 space-y-4">
               <div>
                 <h3 className="text-sm font-bold text-white">
-                  Ready to Practice for {company.name}?
+                  Prepare for {company.name}
                 </h3>
                 <p className="text-xs text-slate-300 mt-1 leading-relaxed">
-                  Solve aptitude tests, data structure problems, and mock assessments configured for campus placements.
+                  Solve aptitude tests, data structures problems, and timed mock assessments.
                 </p>
               </div>
 
@@ -493,7 +577,7 @@ export default function CompanyDetailPage() {
                   onClick={() => navigate('/mock-tests')}
                   className="justify-center bg-transparent border-slate-700 text-slate-200 hover:bg-slate-800"
                 >
-                  Take Full Mock Test
+                  Take Mock Test
                 </Button>
               </div>
             </CardContent>

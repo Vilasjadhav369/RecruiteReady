@@ -1,5 +1,5 @@
 import express from 'express';
-import { getCompanies, getCompanyById } from '../controllers/companyController.js';
+import { getCompanies, getCompanyById, toggleTargetCompany } from '../controllers/companyController.js';
 import protect from '../middleware/auth.js';
 
 const router = express.Router();
@@ -9,5 +9,6 @@ router.use(protect);
 
 router.get('/', getCompanies);
 router.get('/:id', getCompanyById);
+router.post('/:id/target', toggleTargetCompany);
 
 export default router;

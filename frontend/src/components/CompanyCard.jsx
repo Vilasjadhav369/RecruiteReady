@@ -1,16 +1,14 @@
-﻿import LoadingSkeleton from "./LoadingSkeleton.jsx";
+import React from 'react';
+import { Link } from 'react-router-dom';
+import LoadingSkeleton from './LoadingSkeleton.jsx';
 
 /**
- * CompanyCard — Displays a company preparation entry.
- * Architecture ready for GET /api/companies data.
- *
- * @param {Object} company - { name, industry, questionCount, difficulty }
- * @param {boolean} loading
+ * CompanyCard — Displays a company preparation entry with brand tokens.
  */
 function CompanyCard({ company, loading = false }) {
   if (loading) {
     return (
-      <div className="bg-white border border-[#D9E2EC] rounded-xl p-5 space-y-3">
+      <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-3">
         <LoadingSkeleton className="h-8 w-16 rounded" />
         <LoadingSkeleton className="h-4 w-24" />
         <LoadingSkeleton className="h-3 w-20" />
@@ -20,30 +18,26 @@ function CompanyCard({ company, loading = false }) {
 
   if (!company) return null;
 
-  const difficultyColors = {
-    High:   "bg-red-50 text-red-600 border border-red-100",
-    Medium: "bg-amber-50 text-amber-700 border border-amber-100",
-    Low:    "bg-green-50 text-green-700 border border-green-100",
-  };
+  const initials = company.name ? company.name.slice(0, 2).toUpperCase() : 'CO';
 
   return (
-    <div className="group bg-white border border-[#D9E2EC] rounded-xl p-5 hover:border-[#2563EB]/30 hover:shadow-sm transition-all duration-200">
-      <div className="w-12 h-8 bg-[#F8FAFC] border border-[#D9E2EC] rounded flex items-center justify-center mb-3">
-        <span className="text-xs font-bold text-[#172B4D]">{company.name?.slice(0, 3).toUpperCase()}</span>
+    <Link
+      to={`/companies/${company.slug || company._id || company.id}`}
+      className="group block bg-white border border-slate-200 rounded-xl p-5 hover:border-slate-300 hover:shadow-xs transition-all duration-200 no-underline"
+    >
+      <div className="w-10 h-10 bg-[#DCFCE7] border border-[#BBF7D0] text-brand-dark rounded-lg flex items-center justify-center mb-3 font-bold text-xs">
+        <span>{initials}</span>
       </div>
-      <span className="text-sm font-bold text-[#172B4D] block mb-1">{company.name}</span>
-      <span className="text-xs text-[#52606D] block mb-2">{company.industry}</span>
-      <div className="flex items-center justify-between">
-        {company.questionCount != null && (
-          <span className="text-xs text-[#9FB3C8]">{company.questionCount}+ questions</span>
-        )}
-        {company.difficulty && (
-          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${difficultyColors[company.difficulty] ?? ""}`}>
-            {company.difficulty}
-          </span>
-        )}
-      </div>
-    </div>
+      <span className="text-sm font-bold text-slate-900 block mb-1 group-hover:text-brand-dark transition-colors">
+        {company.name}
+      </span>
+      <span className="text-xs text-slate-500 block mb-2">{company.industry || 'Technology'}</span>
+      {company.selectionProcess && (
+        <span className="text-[11px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded">
+          {company.selectionProcess.length} Rounds
+        </span>
+      )}
+    </Link>
   );
 }
 

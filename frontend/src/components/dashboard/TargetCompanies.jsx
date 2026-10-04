@@ -37,15 +37,16 @@ function TargetCompanies({ companies = [] }) {
           {hasCompanies ? (
             <div className="flex flex-wrap gap-2 pt-1">
               {companies.map((company, idx) => (
-                <div
+                <Link
                   key={idx}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-800"
+                  to={`/companies?search=${encodeURIComponent(company)}`}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-800 hover:border-slate-300 hover:bg-slate-100 transition-colors no-underline"
                 >
-                  <div className="w-5 h-5 rounded bg-[#DCFCE7] text-[#166534] border border-[#BBF7D0] flex items-center justify-center text-[10px] font-bold">
+                  <div className="w-5 h-5 rounded bg-[#DCFCE7] text-[#166534] border border-[#BBF7D0] flex items-center justify-center text-[10px] font-bold shrink-0">
                     {company[0]?.toUpperCase() ?? "C"}
                   </div>
-                  <span>{company}</span>
-                </div>
+                  <span className="truncate max-w-[140px]">{company}</span>
+                </Link>
               ))}
             </div>
           ) : (
@@ -63,14 +64,14 @@ function TargetCompanies({ companies = [] }) {
       </div>
 
       <div className="px-5 py-3.5 bg-slate-50/60 border-t border-slate-100 flex items-center justify-between">
-        <Link to="/profile" className="w-full no-underline">
+        <Link to="/companies" className="w-full no-underline">
           <Button
             variant="outline"
             size="sm"
             fullWidth
             iconRight={<ArrowRightIcon className="w-3.5 h-3.5" />}
           >
-            {hasCompanies ? "Manage Companies" : "Set Target Companies"}
+            {hasCompanies ? "Explore Companies" : "Set Target Companies"}
           </Button>
         </Link>
       </div>
