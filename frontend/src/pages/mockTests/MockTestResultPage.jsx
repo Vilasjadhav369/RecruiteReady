@@ -1,14 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getMockResult } from '../../services/mockTestService.js';
 import { formatDateTime } from '../../utils/formatters.js';
 import { 
-  PageHeader, Card, CardContent, CardHeader, CardTitle, 
-  Badge, Button, StatCard, LoadingState, ErrorState 
+  PageHeader, 
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardTitle, 
+  Badge, 
+  StatusBadge,
+  Button, 
+  StatCard, 
+  LoadingState, 
+  ErrorState 
 } from '../../components/ui/index.js';
 import { 
-  TrophyIcon, ChartBarIcon, DocumentIcon, CheckCircleIcon, 
-  XCircleIcon, ClockIcon 
+  TrophyIcon, 
+  ChartBarIcon, 
+  DocumentIcon, 
+  CheckCircleIcon, 
+  XCircleIcon, 
+  ClockIcon,
+  ChevronLeftIcon,
+  SparklesIcon
 } from '../../components/ui/Icons.jsx';
 
 export default function MockTestResultPage() {
@@ -22,11 +37,12 @@ export default function MockTestResultPage() {
     const fetchResult = async () => {
       try {
         setLoading(true);
+        setError(null);
         const data = await getMockResult(id);
         setResult(data);
       } catch (err) {
         console.error('Failed to load result:', err);
-        setError('Failed to load assessment report.');
+        setError(err.response?.data?.message || 'Failed to load assessment report.');
       } finally {
         setLoading(false);
       }
@@ -35,7 +51,7 @@ export default function MockTestResultPage() {
   }, [id]);
 
   if (loading) {
-    return <LoadingState message="Evaluating mock test assessment..." />;
+    return <LoadingState message="Evaluating mock test scorecard..." />;
   }
 
   if (error || !result) {
@@ -51,130 +67,212 @@ export default function MockTestResultPage() {
   }
 
   const { summary, review } = result;
+  const isPassing = (summary.percentage || 0) >= 70;
 
   return (
     <div className="space-y-8 max-w-[1240px] mx-auto">
+      {/* ── Page Header ── */}
       <PageHeader 
-        title={summary.testTitle}
-        description={`Assessment completed on ${formatDateTime(summary.submittedAt)}`}
+        title={summary.testTitle || 'Mock Assessment Report'}
+        description={`Assessment completed on ${formatDateTime(summary.submittedAt || summary.startedAt)}`}
         breadcrumbs={[
-          { label: 'Dashboard', href: '/dashboard' },
-          { label: 'Mock Assessments', href: '/mock-tests' },
+          { label: 'Dashboard', to: '/dashboard' },
+          { label: 'Mock Tests', to: '/mock-tests' },
           { label: 'Result' }
         ]}
+        badge={
+          <StatusBadge status={summary.status} />
+        }
         actions={
-          <div className="flex items-center gap-3">
-            <Button 
-              variant="outline" 
-              iconLeft={<ClockIcon className="w-4 h-4" />}
-              onClick={() => navigate('/mock-tests/history')}
-            >
-              Past Attempts
-            </Button>
-            <Button 
-              variant="primary" 
-              iconLeft={<DocumentIcon className="w-4 h-4" />}
-              onClick={() => navigate('/mock-tests')}
-            >
-              All Assessments
-            </Button>
+          <div className="flex items-center gap-2.5">
+            <Link to="/mock-tests/history">
+              <Button 
+                variant="outline" 
+                size="sm"
+                iconLeft={<ClockIcon className="w-4 h-4" />}
+              >
+                Attempt History
+              </Button>
+            </Link>
+            <Link to="/mock-tests">
+              <Button 
+                variant="primary" 
+                size="sm"
+                iconLeft={<ChevronLeftIcon className="w-4 h-4" />}
+              >
+                All Assessments
+              </Button>
+            </Link>
           </div>
         }
       />
 
+      {/* ── Overview Feedback Banner ── */}
+      <Card className={`p-6 border ${isPassing ? 'bg-[#F0FDF4] border-[#BBF7D0]' : 'bg-slate-50 border-slate-200'}`}>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <SparklesIcon className={`w-5 h-5 ${isPassing ? 'text-brand' : 'text-slate-500'}`} />
+              <h2 className="text-base sm:text-lg font-bold text-slate-900">
+                {isPassing
+                  ? 'Strong Readiness Performance'
+                  : 'Practice Complete — Detailed Walkthrough Below'}
+              </h2>
+            </div>
+            <p className="text-xs sm:text-sm text-slate-600">
+              {isPassing
+                ? 'Your score demonstrates strong conceptual command under timed test pressure.'
+                : 'Review each question and explanation below to target your conceptual gaps.'}
+            </p>
+          </div>
+
+          <div className="flex items-baseline gap-2 shrink-0 bg-white px-4 py-2 rounded-xl border border-slate-200">
+            <span className="text-2xl font-black text-slate-900 font-mono">
+              {summary.percentage}%
+            </span>
+            <span className="text-xs text-slate-500 font-medium">
+              Overall Accuracy
+            </span>
+          </div>
+        </div>
+      </Card>
+
+      {/* ── Detailed Metrics Grid ── */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
         <StatCard 
           label="Score" 
-          value={summary.score} 
-          icon={<TrophyIcon className="w-4 h-4 text-amber-600" />} 
+          value={summary.score ?? 0} 
+          subtext="Marks earned"
+          icon={<TrophyIcon className="w-4 h-4 text-brand-dark" />} 
         />
         <StatCard 
-          label="Percentage" 
-          value={`${summary.percentage}%`} 
-          icon={<ChartBarIcon className="w-4 h-4 text-blue-600" />} 
+          label="Accuracy" 
+          value={`${summary.percentage ?? 0}%`} 
+          subtext="Percentage score"
+          icon={<ChartBarIcon className="w-4 h-4 text-emerald-600" />} 
         />
         <StatCard 
           label="Questions" 
-          value={summary.totalQuestions} 
+          value={summary.totalQuestions ?? 0} 
+          subtext="Total on paper"
           icon={<DocumentIcon className="w-4 h-4 text-slate-600" />} 
         />
         <StatCard 
           label="Correct" 
-          value={summary.correctAnswers} 
+          value={summary.correctAnswers ?? 0} 
+          subtext="Passed validation"
           icon={<CheckCircleIcon className="w-4 h-4 text-emerald-600" />} 
         />
         <StatCard 
           label="Incorrect" 
-          value={summary.wrongAnswers} 
+          value={summary.wrongAnswers ?? 0} 
+          subtext="Wrong options"
           icon={<XCircleIcon className="w-4 h-4 text-rose-600" />} 
         />
         <StatCard 
           label="Unanswered" 
-          value={summary.unanswered} 
-          icon={<ClockIcon className="w-4 h-4 text-slate-500" />} 
+          value={summary.unanswered ?? 0} 
+          subtext="Left blank"
+          icon={<ClockIcon className="w-4 h-4 text-slate-400" />} 
         />
       </div>
 
+      {/* ── Question Review & Walkthrough ── */}
       <Card>
-        <CardHeader>
-          <CardTitle>Answer Review</CardTitle>
+        <CardHeader className="border-b border-slate-100">
+          <div>
+            <CardTitle>Detailed Answer Walkthrough</CardTitle>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Review your answers alongside official explanations and key insights.
+            </p>
+          </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6">
           <div className="space-y-8 divide-y divide-slate-100">
-            {(review || []).map((item, idx) => (
-              <div key={item.questionId} className={idx > 0 ? 'pt-8' : ''}>
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-semibold text-slate-800">
-                    Question {idx + 1}
-                  </h3>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary">{item.topic || item.category || 'General'}</Badge>
-                    {item.isCorrect ? (
-                      <Badge variant="success">Correct</Badge>
-                    ) : (item.selectedOption ? (
-                      <Badge variant="danger">Incorrect</Badge>
+            {(review || []).map((item, idx) => {
+              const isUserCorrect = Boolean(item.isCorrect);
+              const hasAttempted = Boolean(item.selectedOption);
+
+              return (
+                <div key={item.questionId || idx} className={idx > 0 ? 'pt-8' : ''}>
+                  <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-slate-900 font-mono">
+                        Question {idx + 1}
+                      </span>
+                      <Badge variant="default" size="sm">
+                        {item.topic || item.category || 'General'}
+                      </Badge>
+                    </div>
+
+                    {isUserCorrect ? (
+                      <Badge variant="success" size="sm">Correct (+1)</Badge>
+                    ) : hasAttempted ? (
+                      <Badge variant="danger" size="sm">Incorrect (0)</Badge>
                     ) : (
-                      <Badge variant="warning">Unanswered</Badge>
-                    ))}
+                      <Badge variant="warning" size="sm">Not Answered</Badge>
+                    )}
+                  </div>
+
+                  <p className="text-sm sm:text-base font-medium text-slate-900 mb-5 leading-relaxed whitespace-pre-line">
+                    {item.question}
+                  </p>
+
+                  {/* Options List */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
+                    {(item.options || []).map((opt) => {
+                      const isUserPick = item.selectedOption === opt.key;
+                      const isRightAnswer = item.correctOption === opt.key;
+
+                      let cardClass = 'border-slate-200 bg-white text-slate-800';
+                      let badgeVariant = 'default';
+
+                      if (isRightAnswer) {
+                        cardClass = 'border-emerald-500 bg-[#F0FDF4] text-emerald-950 font-semibold ring-1 ring-emerald-500';
+                        badgeVariant = 'success';
+                      } else if (isUserPick && !isRightAnswer) {
+                        cardClass = 'border-rose-400 bg-rose-50 text-rose-950 font-semibold ring-1 ring-rose-400';
+                        badgeVariant = 'danger';
+                      }
+
+                      return (
+                        <div
+                          key={opt.key}
+                          className={`p-3.5 rounded-xl border text-xs sm:text-sm flex items-start gap-3 transition-colors ${cardClass}`}
+                        >
+                          <Badge variant={badgeVariant} size="sm" className="shrink-0 font-mono font-bold">
+                            {opt.key}
+                          </Badge>
+                          <span className="flex-1 leading-snug pt-0.5">
+                            {opt.text}
+                          </span>
+                          {isRightAnswer && (
+                            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">
+                              Correct
+                            </span>
+                          )}
+                          {isUserPick && !isRightAnswer && (
+                            <span className="text-[11px] font-bold uppercase tracking-wider text-rose-700 bg-rose-100 px-1.5 py-0.5 rounded">
+                              Your Answer
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Explanation Box */}
+                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-700 space-y-1">
+                    <span className="font-semibold text-slate-900 block">
+                      Explanation:
+                    </span>
+                    <p className="leading-relaxed whitespace-pre-line text-slate-600">
+                      {item.explanation || 'No explanation is available for this question yet.'}
+                    </p>
                   </div>
                 </div>
-
-                <p className="text-sm font-medium text-slate-900 mb-6 whitespace-pre-line">
-                  {item.question}
-                </p>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
-                  {(item.options || []).map((opt) => {
-                    const isUserPick = item.selectedOption === opt.key;
-                    const isRightAnswer = item.correctOption === opt.key;
-
-                    let optionClass = 'border-slate-200 bg-white text-slate-700';
-                    if (isRightAnswer) {
-                      optionClass = 'border-emerald-500 bg-emerald-50 text-emerald-900';
-                    } else if (isUserPick && !isRightAnswer) {
-                      optionClass = 'border-rose-500 bg-rose-50 text-rose-900';
-                    }
-
-                    return (
-                      <div
-                        key={opt.key}
-                        className={`p-4 rounded-xl border text-sm flex items-start gap-3 ${optionClass}`}
-                      >
-                        <Badge variant="outline" className="bg-white shrink-0">{opt.key}</Badge>
-                        <span className="flex-1 font-medium">{opt.text}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {item.explanation && (
-                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700">
-                    <div className="font-semibold text-slate-900 mb-1">Explanation:</div>
-                    <div className="leading-relaxed">{item.explanation}</div>
-                  </div>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         </CardContent>
       </Card>

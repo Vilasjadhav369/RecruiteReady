@@ -20,6 +20,7 @@ export function StatusBadge({ status = '', className = '', ...props }) {
     'in progress': { variant: 'info', label: 'In Progress', dot: true },
     upcoming: { variant: 'default', label: 'Upcoming', dot: false },
     submitted: { variant: 'brand', label: 'Submitted', dot: true },
+    expired: { variant: 'danger', label: 'Expired', dot: false },
     passed: { variant: 'success', label: 'Passed', dot: true },
     failed: { variant: 'danger', label: 'Failed', dot: false },
   };

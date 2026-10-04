@@ -39,7 +39,13 @@ const sanitizeMockQuestion = (q, qType) => {
  * Helper to grade and finalize mock test attempt
  */
 const evaluateAndFinalizeMockAttempt = async (attempt, isExpired = false) => {
-  const test = attempt.mockTest;
+  let test = attempt.mockTest;
+  if (!test || !test.questions) {
+    const testId = test?._id || test || attempt.mockTest;
+    if (testId) {
+      test = await MockTest.findById(testId).lean();
+    }
+  }
   if (!test) return attempt;
 
   const aptIds = (test.questions || []).filter((q) => q.questionType === 'aptitude').map((q) => q.questionId);
@@ -107,7 +113,7 @@ const evaluateAndFinalizeMockAttempt = async (attempt, isExpired = false) => {
 
 /**
  * GET /api/mock-tests
- * List all published mock tests.
+ * List all published mock tests with authoritative user attempt status.
  */
 export const getMockTests = async (req, res, next) => {
   try {
@@ -126,12 +132,82 @@ export const getMockTests = async (req, res, next) => {
     const skip = (pageNum - 1) * limitNum;
 
     const total = await MockTest.countDocuments(query);
-    const mockTests = await MockTest.find(query)
-      .select('title description durationMinutes totalQuestions categories difficulty instructions createdAt')
+    const rawTests = await MockTest.find(query)
+      .select('title description durationMinutes totalQuestions categories difficulty instructions createdAt questions')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limitNum)
       .lean();
+
+    // Look up latest user attempts for these mock tests to provide authoritative status
+    const testIds = rawTests.map((t) => t._id);
+    const userAttempts = await MockTestAttempt.find({
+      user: req.user._id,
+      mockTest: { $in: testIds },
+    })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const now = Date.now();
+    const latestAttemptByTest = new Map();
+
+    for (const att of userAttempts) {
+      const testIdStr = att.mockTest.toString();
+      if (!latestAttemptByTest.has(testIdStr)) {
+        // Check if in_progress attempt has expired
+        if (att.status === 'in_progress' && att.timeLimitSeconds) {
+          const elapsed = (now - new Date(att.startedAt).getTime()) / 1000;
+          if (elapsed > att.timeLimitSeconds + 15) {
+            const fullAttempt = await MockTestAttempt.findById(att._id).populate('mockTest');
+            if (fullAttempt && fullAttempt.status === 'in_progress') {
+              await evaluateAndFinalizeMockAttempt(fullAttempt, true);
+              att.status = 'expired';
+              att.score = fullAttempt.score;
+              att.percentage = fullAttempt.percentage;
+              att.correctAnswers = fullAttempt.correctAnswers;
+              att.wrongAnswers = fullAttempt.wrongAnswers;
+              att.unanswered = fullAttempt.unanswered;
+            }
+          }
+        }
+        latestAttemptByTest.set(testIdStr, att);
+      }
+    }
+
+    const mockTests = rawTests.map((t) => {
+      const testIdStr = t._id.toString();
+      const latest = latestAttemptByTest.get(testIdStr);
+      const trueTotalQuestions = (t.questions && t.questions.length > 0) ? t.questions.length : (t.totalQuestions || 0);
+
+      let userAttempt = null;
+      if (latest) {
+        const elapsed = Math.floor((now - new Date(latest.startedAt).getTime()) / 1000);
+        const remainingSeconds = latest.timeLimitSeconds ? Math.max(0, latest.timeLimitSeconds - elapsed) : 0;
+        userAttempt = {
+          _id: latest._id,
+          status: latest.status, // 'in_progress', 'submitted', 'expired'
+          score: latest.score || 0,
+          percentage: latest.percentage || 0,
+          correctAnswers: latest.correctAnswers || 0,
+          totalQuestions: latest.totalQuestions || trueTotalQuestions,
+          submittedAt: latest.submittedAt || null,
+          remainingSeconds,
+        };
+      }
+
+      return {
+        _id: t._id,
+        title: t.title,
+        description: t.description,
+        durationMinutes: t.durationMinutes,
+        totalQuestions: trueTotalQuestions,
+        categories: t.categories,
+        difficulty: t.difficulty,
+        instructions: t.instructions,
+        createdAt: t.createdAt,
+        userAttempt,
+      };
+    });
 
     res.status(200).json({
       success: true,
@@ -152,7 +228,7 @@ export const getMockTests = async (req, res, next) => {
 
 /**
  * GET /api/mock-tests/:id
- * Retrieve mock test details before starting.
+ * Retrieve mock test details before starting, including user attempt status.
  */
 export const getMockTestById = async (req, res, next) => {
   try {
@@ -162,15 +238,62 @@ export const getMockTestById = async (req, res, next) => {
     }
 
     const test = await MockTest.findOne({ _id: id, isPublished: true })
-      .select('title description durationMinutes totalQuestions categories difficulty instructions createdAt');
+      .select('title description durationMinutes totalQuestions categories difficulty instructions createdAt questions');
 
     if (!test) {
       return res.status(404).json({ success: false, message: 'Mock test not found' });
     }
 
+    const trueTotalQuestions = (test.questions && test.questions.length > 0) ? test.questions.length : (test.totalQuestions || 0);
+
+    // Check user's latest attempt for this test
+    const latest = await MockTestAttempt.findOne({
+      user: req.user._id,
+      mockTest: test._id,
+    })
+      .sort({ createdAt: -1 });
+
+    let userAttempt = null;
+    if (latest) {
+      const now = Date.now();
+      if (latest.status === 'in_progress' && latest.timeLimitSeconds) {
+        const elapsed = (now - new Date(latest.startedAt).getTime()) / 1000;
+        if (elapsed > latest.timeLimitSeconds + 15) {
+          latest.mockTest = test;
+          await evaluateAndFinalizeMockAttempt(latest, true);
+        }
+      }
+
+      const elapsed = Math.floor((now - new Date(latest.startedAt).getTime()) / 1000);
+      const remainingSeconds = latest.timeLimitSeconds ? Math.max(0, latest.timeLimitSeconds - elapsed) : 0;
+      userAttempt = {
+        _id: latest._id,
+        status: latest.status,
+        score: latest.score || 0,
+        percentage: latest.percentage || 0,
+        correctAnswers: latest.correctAnswers || 0,
+        totalQuestions: latest.totalQuestions || trueTotalQuestions,
+        submittedAt: latest.submittedAt,
+        remainingSeconds,
+      };
+    }
+
     res.status(200).json({
       success: true,
-      data: { test },
+      data: {
+        test: {
+          _id: test._id,
+          title: test.title,
+          description: test.description,
+          durationMinutes: test.durationMinutes,
+          totalQuestions: trueTotalQuestions,
+          categories: test.categories,
+          difficulty: test.difficulty,
+          instructions: test.instructions,
+          createdAt: test.createdAt,
+        },
+        userAttempt,
+      },
     });
   } catch (error) {
     next(error);
@@ -179,7 +302,7 @@ export const getMockTestById = async (req, res, next) => {
 
 /**
  * POST /api/mock-tests/:id/start
- * Start a mock test attempt with server-side timer.
+ * Start or resume a mock test attempt with server-side timer.
  */
 export const startMockTestAttempt = async (req, res, next) => {
   try {
@@ -205,8 +328,8 @@ export const startMockTestAttempt = async (req, res, next) => {
     const codeIds = test.questions.filter((q) => q.questionType === 'coding').map((q) => q.questionId);
 
     const [aptQuestions, codingQuestions] = await Promise.all([
-      AptitudeQuestion.find({ _id: { $in: aptIds }, isActive: true }).lean(),
-      CodingProblem.find({ _id: { $in: codeIds }, isActive: true }).lean(),
+      AptitudeQuestion.find({ _id: { $in: aptIds } }).lean(),
+      CodingProblem.find({ _id: { $in: codeIds } }).lean(),
     ]);
 
     const qMap = new Map();
@@ -236,6 +359,49 @@ export const startMockTestAttempt = async (req, res, next) => {
         success: false,
         message: 'Questions in this mock test are currently unavailable.',
       });
+    }
+
+    // Check if user already has an in-progress attempt for this mock test
+    const existingAttempt = await MockTestAttempt.findOne({
+      user: req.user._id,
+      mockTest: test._id,
+      status: 'in_progress',
+    }).sort({ createdAt: -1 });
+
+    if (existingAttempt) {
+      const elapsed = Math.floor((Date.now() - new Date(existingAttempt.startedAt).getTime()) / 1000);
+      const remaining = Math.max(0, existingAttempt.timeLimitSeconds - elapsed);
+
+      if (remaining > 0) {
+        // Attempt is genuinely active and within time limit — resume it!
+        return res.status(200).json({
+          success: true,
+          message: 'Active test attempt resumed',
+          data: {
+            attemptId: existingAttempt._id,
+            test: {
+              _id: test._id,
+              title: test.title,
+              description: test.description,
+              durationMinutes: test.durationMinutes,
+              timeLimitSeconds: existingAttempt.timeLimitSeconds,
+              remainingSeconds: remaining,
+              totalQuestions: existingAttempt.totalQuestions,
+            },
+            attempt: {
+              _id: existingAttempt._id,
+              status: existingAttempt.status,
+              startedAt: existingAttempt.startedAt,
+              answers: existingAttempt.answers,
+            },
+            questions: resolvedQuestions,
+          },
+        });
+      } else {
+        // Stale attempt expired — finalize it as expired now!
+        existingAttempt.mockTest = test;
+        await evaluateAndFinalizeMockAttempt(existingAttempt, true);
+      }
     }
 
     const timeLimitSeconds = (test.durationMinutes || 30) * 60;
@@ -303,8 +469,8 @@ export const getAttempt = async (req, res, next) => {
     }
 
     const test = attempt.mockTest;
-    const aptIds = (test.questions || []).filter((q) => q.questionType === 'aptitude').map((q) => q.questionId);
-    const codeIds = (test.questions || []).filter((q) => q.questionType === 'coding').map((q) => q.questionId);
+    const aptIds = (test?.questions || []).filter((q) => q.questionType === 'aptitude').map((q) => q.questionId);
+    const codeIds = (test?.questions || []).filter((q) => q.questionType === 'coding').map((q) => q.questionId);
 
     const [aptQuestions, codingQuestions] = await Promise.all([
       AptitudeQuestion.find({ _id: { $in: aptIds } }).lean(),
@@ -316,7 +482,7 @@ export const getAttempt = async (req, res, next) => {
     codingQuestions.forEach((q) => qMap.set(q._id.toString(), { ...q, questionType: 'coding' }));
 
     const questions = [];
-    (test.questions || []).forEach((tq) => {
+    (test?.questions || []).forEach((tq) => {
       const qData = qMap.get(tq.questionId.toString());
       if (qData) {
         questions.push(sanitizeMockQuestion(qData, tq.questionType));
@@ -337,10 +503,10 @@ export const getAttempt = async (req, res, next) => {
           totalQuestions: attempt.totalQuestions,
         },
         test: {
-          _id: test._id,
-          title: test.title,
-          description: test.description,
-          durationMinutes: test.durationMinutes,
+          _id: test?._id,
+          title: test?.title || 'Mock Test',
+          description: test?.description || '',
+          durationMinutes: test?.durationMinutes || 30,
         },
         questions,
       },
@@ -416,9 +582,20 @@ export const submitMockTestAttempt = async (req, res, next) => {
     }
 
     if (attempt.status !== 'in_progress') {
-      return res.status(400).json({
-        success: false,
+      // Return 200 with current state to prevent double-submit or auto-submit race errors
+      return res.status(200).json({
+        success: true,
         message: `Attempt has already been ${attempt.status}`,
+        data: {
+          attemptId: attempt._id,
+          score: attempt.score,
+          percentage: attempt.percentage,
+          correctAnswers: attempt.correctAnswers,
+          wrongAnswers: attempt.wrongAnswers,
+          unanswered: attempt.unanswered,
+          status: attempt.status,
+          submittedAt: attempt.submittedAt,
+        },
       });
     }
 
@@ -460,8 +637,27 @@ export const getAttemptResult = async (req, res, next) => {
     const attempt = await MockTestAttempt.findOne({
       _id: id,
       user: req.user._id,
-      status: { $in: ['submitted', 'expired'] },
     }).populate('mockTest');
+
+    if (!attempt) {
+      return res.status(404).json({
+        success: false,
+        message: 'Completed attempt result not found',
+      });
+    }
+
+    // If attempt is in_progress but timer has passed, finalize as expired now
+    if (attempt.status === 'in_progress') {
+      const elapsedSeconds = Math.floor((Date.now() - new Date(attempt.startedAt).getTime()) / 1000);
+      if (elapsedSeconds >= attempt.timeLimitSeconds) {
+        await evaluateAndFinalizeMockAttempt(attempt, true);
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: 'This test is still in progress.',
+        });
+      }
+    }
 
     if (!attempt) {
       return res.status(404).json({
@@ -470,7 +666,7 @@ export const getAttemptResult = async (req, res, next) => {
       });
     }
 
-    const test = attempt.mockTest;
+    const test = attempt.mockTest || {};
     const aptIds = (test.questions || []).filter((q) => q.questionType === 'aptitude').map((q) => q.questionId);
     const aptQuestions = await AptitudeQuestion.find({ _id: { $in: aptIds } }).lean();
     const aptMap = new Map();
@@ -504,7 +700,7 @@ export const getAttemptResult = async (req, res, next) => {
       data: {
         summary: {
           _id: attempt._id,
-          testTitle: test.title,
+          testTitle: test.title || 'Mock Test Assessment',
           totalQuestions: attempt.totalQuestions,
           correctAnswers: attempt.correctAnswers,
           wrongAnswers: attempt.wrongAnswers,

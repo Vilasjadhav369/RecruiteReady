@@ -8,7 +8,7 @@ export const getMockTests = async (params = {}) => {
 
 export const getMockTest = async (id) => {
   const response = await api.get(`/mock-tests/${id}`);
-  return response.data?.data?.test;
+  return response.data?.data;
 };
 
 export const startMockTest = async (id) => {

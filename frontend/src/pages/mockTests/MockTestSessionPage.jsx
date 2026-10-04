@@ -5,8 +5,24 @@ import {
   saveMockAnswer,
   submitMockTest,
 } from '../../services/mockTestService.js';
-import { Card, CardContent, Badge, Button, Modal, LoadingState, ErrorState } from '../../components/ui/index.js';
-import { ClockIcon, ChevronLeftIcon, ChevronRightIcon, ExclamationIcon, FlagIcon, MenuIcon, XCircleIcon } from '../../components/ui/Icons.jsx';
+import { 
+  Card, 
+  CardContent, 
+  Badge, 
+  Button, 
+  Modal, 
+  LoadingState, 
+  ErrorState 
+} from '../../components/ui/index.js';
+import { 
+  ClockIcon, 
+  ChevronLeftIcon, 
+  ChevronRightIcon, 
+  FlagIcon, 
+  MenuIcon, 
+  XCircleIcon,
+  CheckCircleIcon
+} from '../../components/ui/Icons.jsx';
 
 export default function MockTestSessionPage() {
   const { id } = useParams();
@@ -25,19 +41,23 @@ export default function MockTestSessionPage() {
   const [markedQuestions, setMarkedQuestions] = useState(new Set());
   const [showMobilePalette, setShowMobilePalette] = useState(false);
 
+  const hasSubmittedRef = useRef(false);
   const timerRef = useRef(null);
 
-  const handleAutoSubmit = useCallback(async () => {
-    if (submitting) return;
+  const performSubmission = useCallback(async (isAuto = false) => {
+    if (hasSubmittedRef.current) return;
+    hasSubmittedRef.current = true;
+    setSubmitting(true);
+
     try {
-      setSubmitting(true);
       await submitMockTest(id);
-      navigate(`/mock-tests/result/${id}`);
+      navigate(`/mock-tests/result/${id}`, { replace: true });
     } catch (err) {
-      console.error('Auto-submit error:', err);
-      navigate(`/mock-tests/result/${id}`);
+      console.error('Submit error:', err);
+      // Even if error indicates already finalized, redirect to result
+      navigate(`/mock-tests/result/${id}`, { replace: true });
     }
-  }, [id, submitting, navigate]);
+  }, [id, navigate]);
 
   useEffect(() => {
     let isMounted = true;
@@ -85,7 +105,7 @@ export default function MockTestSessionPage() {
       setRemainingSeconds((prev) => {
         if (prev <= 1) {
           clearInterval(timerRef.current);
-          handleAutoSubmit();
+          performSubmission(true);
           return 0;
         }
         return prev - 1;
@@ -93,11 +113,11 @@ export default function MockTestSessionPage() {
     }, 1000);
 
     return () => clearInterval(timerRef.current);
-  }, [loading, remainingSeconds, handleAutoSubmit]);
+  }, [loading, remainingSeconds, performSubmission]);
 
   const handleSelectOption = async (optionKey) => {
     const currentQ = questions[currentIndex];
-    if (!currentQ) return;
+    if (!currentQ || submitting) return;
 
     const newOption = selectedAnswers[currentQ._id] === optionKey ? '' : optionKey;
     setSelectedAnswers((prev) => ({ ...prev, [currentQ._id]: newOption }));
@@ -112,24 +132,16 @@ export default function MockTestSessionPage() {
     }
   };
 
-  const handleManualSubmit = async () => {
+  const handleManualSubmit = () => {
     setShowConfirmModal(false);
-    setSubmitting(true);
-    try {
-      await submitMockTest(id);
-      navigate(`/mock-tests/result/${id}`);
-    } catch (err) {
-      console.error('Submit error:', err);
-      setError(err.response?.data?.message || 'Failed to submit test.');
-      setSubmitting(false);
-    }
+    performSubmission(false);
   };
 
   const toggleMarkForReview = () => {
     const currentQ = questions[currentIndex];
     if (!currentQ) return;
     
-    setMarkedQuestions(prev => {
+    setMarkedQuestions((prev) => {
       const next = new Set(prev);
       if (next.has(currentQ._id)) {
         next.delete(currentQ._id);
@@ -144,11 +156,14 @@ export default function MockTestSessionPage() {
     const hrs = Math.floor(seconds / 3600);
     const mins = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
-    return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    if (hrs > 0) {
+      return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   };
 
   if (loading) {
-    return <LoadingState message="Entering secure exam environment..." />;
+    return <LoadingState message="Entering secure timed assessment environment..." />;
   }
 
   if (error || questions.length === 0) {
@@ -156,7 +171,7 @@ export default function MockTestSessionPage() {
       <div className="max-w-md mx-auto p-6 space-y-4">
         <ErrorState 
           title="Session Error" 
-          message={error || 'No questions available.'}
+          message={error || 'No questions available for this assessment.'}
           onRetry={() => navigate('/mock-tests')}
         />
       </div>
@@ -165,98 +180,121 @@ export default function MockTestSessionPage() {
 
   const currentQ = questions[currentIndex];
   const answeredCount = Object.values(selectedAnswers).filter(Boolean).length;
+  const unansweredCount = questions.length - answeredCount;
+  const markedCount = markedQuestions.size;
   const isTimeCritical = remainingSeconds < 120;
   const isMarked = markedQuestions.has(currentQ._id);
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
-      {/* TOP BAR (sticky white bar) */}
-      <div className="sticky top-0 z-40 bg-white border-b border-slate-200 px-4 py-3 shadow-sm flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="text-sm font-bold text-slate-900 truncate max-w-[150px] sm:max-w-md">
-            {test?.title || 'Mock Test'}
+      {/* ── Fixed Assessment Bar ── */}
+      <header className="sticky top-0 z-40 bg-white border-b border-slate-200 px-4 sm:px-6 py-3 shadow-xs flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+          <div className="min-w-0">
+            <h1 className="text-sm font-bold text-slate-900 truncate max-w-[160px] sm:max-w-xs md:max-w-md">
+              {test?.title || 'Mock Assessment'}
+            </h1>
+            <span className="text-[11px] text-slate-500 hidden sm:inline">
+              Timed Evaluation Mode
+            </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5 sm:gap-4">
+          {/* Accessible Timer Display */}
           <div
+            role="timer"
+            aria-live="polite"
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-mono font-bold transition-colors ${
               isTimeCritical
-                ? 'bg-amber-100 text-amber-700'
-                : 'bg-slate-100 text-slate-700'
+                ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                : 'bg-slate-100 text-slate-800 border border-slate-200'
             }`}
           >
-            <ClockIcon className={`w-4 h-4 ${isTimeCritical ? 'text-amber-600 animate-pulse' : 'text-slate-500'}`} />
-            {formatTimer(remainingSeconds)}
+            <ClockIcon className={`w-4 h-4 ${isTimeCritical ? 'text-amber-700' : 'text-slate-500'}`} />
+            <span>{formatTimer(remainingSeconds)}</span>
           </div>
 
           <Button
             variant="primary"
+            size="sm"
             onClick={() => setShowConfirmModal(true)}
             className="whitespace-nowrap"
           >
-            Submit Test
+            Submit Paper
           </Button>
 
-          {/* Mobile palette toggle */}
+          {/* Mobile Palette Toggle */}
           <button 
-            className="lg:hidden p-2 text-slate-500 hover:text-slate-700 bg-slate-100 rounded-md transition-colors"
+            type="button"
+            className="lg:hidden p-2 text-slate-500 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
             onClick={() => setShowMobilePalette(!showMobilePalette)}
-            aria-label="Toggle Question Palette"
+            aria-label="Toggle Question Navigator"
           >
             {showMobilePalette ? <XCircleIcon className="w-5 h-5" /> : <MenuIcon className="w-5 h-5" />}
           </button>
         </div>
-      </div>
+      </header>
 
-      {/* MAIN AREA */}
-      <div className="flex-1 max-w-[1240px] w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        {/* Question Panel */}
-        <Card className="lg:col-span-2 shadow-sm border-slate-200">
+      {/* ── Main Assessment Body ── */}
+      <main className="flex-1 max-w-[1240px] w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        {/* Question Panel (Left 2 cols) */}
+        <Card className="lg:col-span-2 shadow-xs border-slate-200">
           <CardContent className="p-6 sm:p-8 flex flex-col gap-6">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary">
-                  {currentQ.category || 'General'} • {currentQ.topic || 'Aptitude'}
+            {/* Question Header Meta */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge variant="default" size="sm">
+                  {currentQ.category || 'General'}
                 </Badge>
-                <Badge variant="outline" className="text-slate-500 font-normal">
-                  {currentQ.marks || 1} Mark
+                {currentQ.topic && (
+                  <Badge variant="outline" size="sm" className="text-slate-600">
+                    {currentQ.topic}
+                  </Badge>
+                )}
+                <Badge variant="outline" size="sm" className="text-slate-500 font-mono">
+                  {currentQ.marks || 1} {currentQ.marks === 1 ? 'Mark' : 'Marks'}
                 </Badge>
               </div>
-              <div className="text-sm font-medium text-slate-500">
+
+              <span className="text-xs font-semibold text-slate-500 font-mono">
                 Question {currentIndex + 1} of {questions.length}
-              </div>
+              </span>
             </div>
 
-            <div className="text-base sm:text-lg text-slate-900 leading-relaxed whitespace-pre-line">
+            {/* Question Text */}
+            <div className="text-base sm:text-lg font-medium text-slate-900 leading-relaxed whitespace-pre-line">
               {currentQ.question}
             </div>
 
-            {/* Options */}
-            <div className="space-y-3 pt-2">
+            {/* Answer Options */}
+            <div className="space-y-3 pt-2" role="radiogroup" aria-label={`Options for Question ${currentIndex + 1}`}>
               {(currentQ.options || []).map((opt) => {
                 const isSelected = selectedAnswers[currentQ._id] === opt.key;
                 return (
                   <button
                     type="button"
+                    role="radio"
+                    aria-checked={isSelected}
                     key={opt.key}
                     onClick={() => handleSelectOption(opt.key)}
-                    className={`w-full text-left p-4 rounded-xl border transition-all flex items-start gap-3.5 ${
+                    className={`w-full text-left p-4 rounded-xl border transition-all flex items-start gap-3.5 cursor-pointer ${
                       isSelected
-                        ? 'border-blue-600 bg-blue-50 ring-1 ring-blue-600'
-                        : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50 bg-white'
+                        ? 'border-brand bg-[#F0FDF4] ring-1 ring-brand text-slate-900'
+                        : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50 bg-white text-slate-800'
                     }`}
                   >
                     <span
-                      className={`inline-flex items-center justify-center w-7 h-7 rounded-lg text-sm font-bold shrink-0 transition-colors ${
+                      className={`inline-flex items-center justify-center w-7 h-7 rounded-lg text-xs font-bold shrink-0 transition-colors ${
                         isSelected
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-slate-100 text-slate-600'
+                          ? 'bg-brand text-white shadow-xs'
+                          : 'bg-slate-100 text-slate-700'
                       }`}
                     >
                       {opt.key}
                     </span>
-                    <span className="text-sm text-slate-800 pt-1 leading-snug">
+                    <span className="text-sm font-medium pt-0.5 leading-snug">
                       {opt.text}
                     </span>
                   </button>
@@ -264,26 +302,37 @@ export default function MockTestSessionPage() {
               })}
             </div>
 
-            {/* Mark for Review */}
-            <div className="pt-2">
-              <label className="flex items-center gap-2 cursor-pointer w-max group">
-                <input 
-                  type="checkbox" 
-                  checked={isMarked}
-                  onChange={toggleMarkForReview}
-                  className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 cursor-pointer"
-                />
-                <span className="text-sm font-medium text-slate-600 group-hover:text-slate-900 flex items-center gap-1.5 transition-colors">
-                  <FlagIcon className={`w-4 h-4 ${isMarked ? 'text-amber-500' : 'text-slate-400'}`} />
-                  Mark for Review
-                </span>
-              </label>
+            {/* Question Actions (Mark for Review) */}
+            <div className="pt-2 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={toggleMarkForReview}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
+                  isMarked
+                    ? 'bg-amber-50 text-amber-800 border-amber-300'
+                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                <FlagIcon className={`w-3.5 h-3.5 ${isMarked ? 'text-amber-600' : 'text-slate-400'}`} />
+                <span>{isMarked ? 'Marked for Review' : 'Mark for Review'}</span>
+              </button>
+
+              {selectedAnswers[currentQ._id] && (
+                <button
+                  type="button"
+                  onClick={() => handleSelectOption(selectedAnswers[currentQ._id])}
+                  className="text-xs text-slate-400 hover:text-slate-600 underline"
+                >
+                  Clear Selection
+                </button>
+              )}
             </div>
 
-            {/* Nav */}
+            {/* Navigation Buttons */}
             <div className="pt-6 mt-2 border-t border-slate-100 flex items-center justify-between">
               <Button
                 variant="outline"
+                size="sm"
                 disabled={currentIndex === 0}
                 onClick={() => setCurrentIndex((prev) => prev - 1)}
                 iconLeft={<ChevronLeftIcon className="w-4 h-4" />}
@@ -292,121 +341,161 @@ export default function MockTestSessionPage() {
               </Button>
 
               <Button
-                variant="primary"
-                disabled={currentIndex === questions.length - 1}
-                onClick={() => setCurrentIndex((prev) => prev + 1)}
-                iconRight={<ChevronRightIcon className="w-4 h-4" />}
+                variant={currentIndex === questions.length - 1 ? 'primary' : 'outline'}
+                size="sm"
+                onClick={() => {
+                  if (currentIndex < questions.length - 1) {
+                    setCurrentIndex((prev) => prev + 1);
+                  } else {
+                    setShowConfirmModal(true);
+                  }
+                }}
+                iconRight={currentIndex < questions.length - 1 ? <ChevronRightIcon className="w-4 h-4" /> : null}
               >
-                Next
+                {currentIndex === questions.length - 1 ? 'Review & Submit' : 'Next'}
               </Button>
             </div>
           </CardContent>
         </Card>
 
-        {/* Question Palette */}
+        {/* Question Palette Sidebar (Right 1 col) */}
         <div className={`lg:block ${showMobilePalette ? 'block' : 'hidden'} lg:col-span-1`}>
-          <Card className="shadow-sm border-slate-200 lg:sticky lg:top-24">
-            <CardContent className="p-5">
-              <div className="flex flex-col gap-4">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                  <h3 className="text-sm font-semibold text-slate-900">
-                    Question Palette
-                  </h3>
-                  <span className="text-xs font-medium text-slate-500">
-                    {answeredCount}/{questions.length} Answered
-                  </span>
-                </div>
+          <Card className="shadow-xs border-slate-200 lg:sticky lg:top-20">
+            <CardContent className="p-5 space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                  Question Navigator
+                </h2>
+                <span className="text-xs font-bold text-slate-900 font-mono">
+                  {answeredCount}/{questions.length} Answered
+                </span>
+              </div>
 
-                {/* Legend */}
-                <div className="grid grid-cols-2 gap-2 mb-2">
-                  <div className="flex items-center gap-2 text-[11px] text-slate-600">
-                    <div className="w-3 h-3 rounded bg-blue-600"></div> Current
-                  </div>
-                  <div className="flex items-center gap-2 text-[11px] text-slate-600">
-                    <div className="w-3 h-3 rounded bg-emerald-50 border border-emerald-200"></div> Answered
-                  </div>
-                  <div className="flex items-center gap-2 text-[11px] text-slate-600">
-                    <div className="w-3 h-3 rounded bg-amber-50 border border-amber-200"></div> Marked
-                  </div>
-                  <div className="flex items-center gap-2 text-[11px] text-slate-600">
-                    <div className="w-3 h-3 rounded bg-slate-50 border border-slate-200"></div> Unanswered
-                  </div>
+              {/* Status Summary Pills */}
+              <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                <div className="bg-[#DCFCE7] text-brand-dark p-2 rounded-lg border border-[#BBF7D0]">
+                  <span className="block font-bold text-sm">{answeredCount}</span>
+                  <span className="text-[10px]">Answered</span>
                 </div>
-
-                <div className="grid grid-cols-5 gap-2">
-                  {questions.map((q, idx) => {
-                    const isCurrent = idx === currentIndex;
-                    const isAnswered = Boolean(selectedAnswers[q._id]);
-                    const isQMarked = markedQuestions.has(q._id);
-                    
-                    let bgClass = 'bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100';
-                    if (isCurrent) {
-                      bgClass = 'bg-blue-600 text-white border-blue-600 shadow-sm';
-                    } else if (isQMarked) {
-                      bgClass = 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100';
-                    } else if (isAnswered) {
-                      bgClass = 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100';
-                    }
-
-                    return (
-                      <button
-                        type="button"
-                        key={q._id}
-                        onClick={() => {
-                          setCurrentIndex(idx);
-                          if (window.innerWidth < 1024) setShowMobilePalette(false);
-                        }}
-                        className={`w-full aspect-square rounded-lg text-xs font-bold transition-all flex items-center justify-center ${bgClass}`}
-                      >
-                        {idx + 1}
-                      </button>
-                    );
-                  })}
+                <div className="bg-amber-50 text-amber-800 p-2 rounded-lg border border-amber-200">
+                  <span className="block font-bold text-sm">{markedCount}</span>
+                  <span className="text-[10px]">Marked</span>
                 </div>
+                <div className="bg-slate-100 text-slate-600 p-2 rounded-lg border border-slate-200">
+                  <span className="block font-bold text-sm">{unansweredCount}</span>
+                  <span className="text-[10px]">Unanswered</span>
+                </div>
+              </div>
+
+              {/* Legend */}
+              <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-600 pt-1">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-3 h-3 rounded bg-brand" />
+                  <span>Current</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-3 h-3 rounded bg-[#DCFCE7] border border-[#86EFAC]" />
+                  <span>Answered</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-3 h-3 rounded bg-amber-100 border border-amber-300" />
+                  <span>Marked</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-3 h-3 rounded bg-slate-100 border border-slate-300" />
+                  <span>Unanswered</span>
+                </div>
+              </div>
+
+              {/* Palette Grid */}
+              <div className="grid grid-cols-5 gap-2 pt-2">
+                {questions.map((q, idx) => {
+                  const isCurrent = idx === currentIndex;
+                  const isAnswered = Boolean(selectedAnswers[q._id]);
+                  const isQMarked = markedQuestions.has(q._id);
+                  
+                  let bgClass = 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100';
+                  if (isCurrent) {
+                    bgClass = 'bg-brand text-white border-brand ring-2 ring-brand-light shadow-xs';
+                  } else if (isQMarked) {
+                    bgClass = 'bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200';
+                  } else if (isAnswered) {
+                    bgClass = 'bg-[#DCFCE7] text-brand-dark border-[#86EFAC] hover:bg-[#BBF7D0]';
+                  }
+
+                  return (
+                    <button
+                      type="button"
+                      key={q._id}
+                      onClick={() => {
+                        setCurrentIndex(idx);
+                        if (window.innerWidth < 1024) setShowMobilePalette(false);
+                      }}
+                      className={`w-full aspect-square rounded-lg text-xs font-bold border transition-all flex items-center justify-center cursor-pointer ${bgClass}`}
+                      aria-label={`Go to Question ${idx + 1}`}
+                      aria-current={isCurrent ? 'true' : undefined}
+                    >
+                      {idx + 1}
+                    </button>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
         </div>
-      </div>
+      </main>
 
-      {/* Confirmation Modal */}
+      {/* ── Submission Confirmation Modal ── */}
       <Modal
         isOpen={showConfirmModal}
         onClose={() => !submitting && setShowConfirmModal(false)}
-        title="Submit Assessment?"
+        title="Submit Mock Test?"
         size="sm"
         footer={
           <div className="flex items-center justify-end gap-3 w-full">
             <Button
               variant="outline"
+              size="sm"
               onClick={() => setShowConfirmModal(false)}
               disabled={submitting}
             >
-              Cancel
+              Continue Test
             </Button>
             <Button
               variant="primary"
+              size="sm"
               onClick={handleManualSubmit}
               disabled={submitting}
               loading={submitting}
             >
-              {submitting ? 'Submitting...' : 'Yes, Submit'}
+              {submitting ? 'Submitting...' : 'Yes, Submit Test'}
             </Button>
           </div>
         }
       >
-        <div className="py-4">
-          <div className="flex flex-col items-center justify-center text-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 mb-2">
-              <ExclamationIcon className="w-6 h-6" />
+        <div className="py-2 space-y-4">
+          <p className="text-slate-600 text-sm leading-relaxed">
+            Please verify your test summary before confirming final submission:
+          </p>
+
+          <div className="grid grid-cols-3 gap-2.5 text-center">
+            <div className="p-3 bg-[#DCFCE7] rounded-xl border border-[#BBF7D0]">
+              <span className="block text-xl font-bold text-brand-dark">{answeredCount}</span>
+              <span className="text-xs text-brand font-medium">Answered</span>
             </div>
-            <p className="text-slate-600 text-sm">
-              You have answered <strong className="text-slate-900">{answeredCount}</strong> of <strong className="text-slate-900">{questions.length}</strong> questions.
-            </p>
-            <p className="text-slate-600 text-sm">
-              Are you sure you want to finish the exam? This action cannot be undone.
-            </p>
+            <div className="p-3 bg-amber-50 rounded-xl border border-amber-200">
+              <span className="block text-xl font-bold text-amber-800">{markedCount}</span>
+              <span className="text-xs text-amber-700 font-medium">Marked</span>
+            </div>
+            <div className="p-3 bg-slate-100 rounded-xl border border-slate-200">
+              <span className="block text-xl font-bold text-slate-800">{unansweredCount}</span>
+              <span className="text-xs text-slate-500 font-medium">Unanswered</span>
+            </div>
           </div>
+
+          <p className="text-xs text-slate-400 text-center">
+            Once submitted, your answers cannot be altered and the scorecard will be generated immediately.
+          </p>
         </div>
       </Modal>
     </div>

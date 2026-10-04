@@ -30,7 +30,7 @@ export const getDashboardSummary = async (req, res, next) => {
       CodingSubmission.distinct('problem', { user: userId }),
       CodingSubmission.distinct('problem', { user: userId, status: 'accepted' }),
       MockTestAttempt.countDocuments({ user: userId }),
-      MockTestAttempt.countDocuments({ user: userId, status: { $in: ['submitted', 'expired'] } }),
+      MockTestAttempt.countDocuments({ user: userId, status: 'submitted' }),
       AptitudeAttempt.find({ user: userId, status: { $in: ['submitted', 'expired'] } })
         .sort({ createdAt: -1 })
         .limit(3)
@@ -40,7 +40,7 @@ export const getDashboardSummary = async (req, res, next) => {
         .sort({ submittedAt: -1 })
         .limit(3)
         .lean(),
-      MockTestAttempt.find({ user: userId, status: { $in: ['submitted', 'expired'] } })
+      MockTestAttempt.find({ user: userId })
         .populate('mockTest', 'title')
         .sort({ createdAt: -1 })
         .limit(3)
@@ -78,11 +78,17 @@ export const getDashboardSummary = async (req, res, next) => {
     });
 
     recentMockTests.forEach((m) => {
+      const isCompleted = m.status === 'submitted';
+      const isExpired = m.status === 'expired';
+      const actionText = isCompleted ? 'Mock Test Completed' : isExpired ? 'Mock Test Expired' : 'Mock Test Started';
+
       activityFeed.push({
         id: m._id,
         type: 'mock_test',
-        title: `Mock Test: ${m.mockTest?.title || 'Assessment'}`,
-        subtitle: `Score: ${m.percentage || 0}%`,
+        title: `${actionText}: ${m.mockTest?.title || 'Assessment'}`,
+        subtitle: m.status === 'in_progress'
+          ? 'Timed assessment currently in progress'
+          : `Score: ${m.percentage || 0}% (${m.correctAnswers || 0}/${m.totalQuestions || 0})`,
         timestamp: m.submittedAt || m.createdAt,
         status: m.status,
       });
