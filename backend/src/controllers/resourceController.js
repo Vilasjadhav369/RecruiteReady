@@ -39,10 +39,14 @@ export const getResources = async (req, res, next) => {
       .limit(limitNum)
       .lean();
 
+    // Dynamically retrieve distinct categories present in active study materials
+    const categories = await StudyMaterial.distinct('category', { isActive: true });
+
     res.status(200).json({
       success: true,
       data: {
         resources,
+        categories: categories.filter(Boolean),
         pagination: {
           total,
           page: pageNum,

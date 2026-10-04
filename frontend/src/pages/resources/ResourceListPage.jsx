@@ -20,16 +20,17 @@ import {
   ExternalLinkIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
-  ArrowRightIcon,
 } from '../../components/ui/Icons.jsx';
 
 export default function ResourceListPage() {
   const navigate = useNavigate();
 
   const [resources, setResources] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [pagination, setPagination] = useState({ total: 0, page: 1, limit: 12, pages: 1 });
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
+  const [category, setCategory] = useState('all');
   const [type, setType] = useState('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -40,14 +41,19 @@ export default function ResourceListPage() {
       setError(null);
       const data = await getResources({
         search: search.trim() || undefined,
+        category: category === 'all' ? undefined : category,
         type: type === 'all' ? undefined : type,
         page,
         limit: 12,
       });
+
       setResources(data?.resources || []);
+      if (Array.isArray(data?.categories) && data.categories.length > 0) {
+        setCategories(data.categories);
+      }
       setPagination(data?.pagination || { total: 0, page: 1, limit: 12, pages: 1 });
     } catch (err) {
-      console.error('Failed to load resources:', err);
+      console.error('Failed to load study materials:', err);
       setError('Unable to load study materials. Please check your connection and try again.');
     } finally {
       setLoading(false);
@@ -56,7 +62,7 @@ export default function ResourceListPage() {
 
   useEffect(() => {
     fetchResources();
-  }, [search, type, page]);
+  }, [search, category, type, page]);
 
   const handleSearchChange = (e) => {
     setSearch(e.target.value);
@@ -68,6 +74,11 @@ export default function ResourceListPage() {
     setPage(1);
   };
 
+  const handleCategorySelect = (selectedCategory) => {
+    setCategory(selectedCategory);
+    setPage(1);
+  };
+
   const handleTypeChange = (e) => {
     setType(e.target.value);
     setPage(1);
@@ -75,11 +86,12 @@ export default function ResourceListPage() {
 
   const handleClearFilters = () => {
     setSearch('');
+    setCategory('all');
     setType('all');
     setPage(1);
   };
 
-  const isFiltered = Boolean(search.trim() || (type && type !== 'all'));
+  const isFiltered = Boolean(search.trim() || (category && category !== 'all') || (type && type !== 'all'));
 
   const breadcrumbs = [
     { label: 'Student Dashboard', href: '/dashboard' },
@@ -105,8 +117,8 @@ export default function ResourceListPage() {
         );
       case 'article':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200/80">
-            <BookOpenIcon className="w-3 h-3 text-blue-600" />
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#DCFCE7] text-[#14532D] border border-[#BBF7D0]">
+            <BookOpenIcon className="w-3 h-3 text-[#166534]" />
             Article
           </span>
         );
@@ -133,14 +145,45 @@ export default function ResourceListPage() {
       {/* Page Header */}
       <PageHeader
         title="Study Materials"
-        description="Curated resources to strengthen your technical and placement preparation."
+        description="Curated reference materials and guides to strengthen your technical and placement preparation."
         breadcrumbs={breadcrumbs}
         badge={
           pagination.total > 0 ? (
-            <Badge variant="default">{pagination.total} {pagination.total === 1 ? 'Resource' : 'Resources'}</Badge>
+            <Badge variant="brand">{pagination.total} {pagination.total === 1 ? 'Resource' : 'Resources'}</Badge>
           ) : null
         }
       />
+
+      {/* Category Filter Tabs */}
+      {categories.length > 0 && (
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+          <button
+            type="button"
+            onClick={() => handleCategorySelect('all')}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all border ${
+              category === 'all'
+                ? 'bg-[#166534] text-white border-[#166534] shadow-xs'
+                : 'bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50 border-slate-200/80'
+            }`}
+          >
+            All Categories
+          </button>
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              type="button"
+              onClick={() => handleCategorySelect(cat)}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all border ${
+                category === cat
+                  ? 'bg-[#166534] text-white border-[#166534] shadow-xs'
+                  : 'bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50 border-slate-200/80'
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Search and Filters Toolbar */}
       <Card className="border-slate-200/80 shadow-xs">
@@ -150,7 +193,7 @@ export default function ResourceListPage() {
               value={search}
               onChange={handleSearchChange}
               onClear={handleSearchClear}
-              placeholder="Search resources by title, topic..."
+              placeholder="Search study materials by title, topic..."
             />
           </div>
 
@@ -161,13 +204,13 @@ export default function ResourceListPage() {
                 value={type}
                 onChange={handleTypeChange}
                 aria-label="Filter by material format"
-                className="w-full h-9 px-3 text-sm bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all cursor-pointer"
+                className="w-full h-9 px-3 text-sm bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:border-[#166534] focus:ring-2 focus:ring-[#166534]/20 transition-all cursor-pointer"
               >
                 <option value="all">All Formats</option>
                 <option value="pdf">PDF Documents</option>
-                <option value="article">Articles</option>
-                <option value="video">Videos</option>
+                <option value="article">Articles & Guides</option>
                 <option value="note">Revision Notes</option>
+                <option value="video">Videos</option>
                 <option value="link">External Links</option>
               </select>
             </div>
@@ -207,8 +250,8 @@ export default function ResourceListPage() {
           title={isFiltered ? 'No matching resources found' : 'No study materials available yet'}
           description={
             isFiltered
-              ? 'Try modifying your search query or switching material format.'
-              : 'Resources will appear here as they are added by the RecruitReady team.'
+              ? 'Try modifying your search keywords or switching category/format filters.'
+              : 'Study materials curated by your placement team will appear here.'
           }
           action={
             isFiltered ? (
@@ -243,7 +286,7 @@ export default function ResourceListPage() {
                     </div>
 
                     {/* Title */}
-                    <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug">
+                    <h3 className="text-base font-bold text-slate-900 group-hover:text-[#166534] transition-colors line-clamp-2 leading-snug">
                       {r.title}
                     </h3>
 
@@ -269,7 +312,7 @@ export default function ResourceListPage() {
                         e.stopPropagation();
                         navigate(`/resources/${r._id}`);
                       }}
-                      className="flex-1 text-xs group-hover:border-blue-300"
+                      className="flex-1 text-xs group-hover:border-slate-400"
                     >
                       Details
                     </Button>

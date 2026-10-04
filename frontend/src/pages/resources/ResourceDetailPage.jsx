@@ -20,8 +20,6 @@ import {
   PlayIcon,
   BookOpenIcon,
   EditIcon,
-  ClockIcon,
-  CheckCircleIcon,
 } from '../../components/ui/Icons.jsx';
 
 export default function ResourceDetailPage() {
@@ -80,34 +78,39 @@ export default function ResourceDetailPage() {
     switch (norm) {
       case 'pdf':
         return (
-          <Badge variant="danger">
-            <DocumentIcon className="w-3.5 h-3.5 mr-1 inline" /> PDF Document
-          </Badge>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200/80">
+            <DocumentIcon className="w-3.5 h-3.5 text-rose-600" />
+            PDF Document
+          </span>
         );
       case 'video':
         return (
-          <Badge variant="info">
-            <PlayIcon className="w-3.5 h-3.5 mr-1 inline" /> Video Tutorial
-          </Badge>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-sky-50 text-sky-700 border border-sky-200/80">
+            <PlayIcon className="w-3.5 h-3.5 text-sky-600" />
+            Video Tutorial
+          </span>
         );
       case 'article':
         return (
-          <Badge variant="primary">
-            <BookOpenIcon className="w-3.5 h-3.5 mr-1 inline" /> Article Guide
-          </Badge>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#DCFCE7] text-[#14532D] border border-[#BBF7D0]">
+            <BookOpenIcon className="w-3.5 h-3.5 text-[#166534]" />
+            Article Guide
+          </span>
         );
       case 'note':
         return (
-          <Badge variant="warning">
-            <EditIcon className="w-3.5 h-3.5 mr-1 inline" /> Revision Notes
-          </Badge>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/80">
+            <EditIcon className="w-3.5 h-3.5 text-amber-600" />
+            Revision Notes
+          </span>
         );
       case 'link':
       default:
         return (
-          <Badge variant="default">
-            <ExternalLinkIcon className="w-3.5 h-3.5 mr-1 inline" /> External Link
-          </Badge>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200/80">
+            <ExternalLinkIcon className="w-3.5 h-3.5 text-slate-500" />
+            External Link
+          </span>
         );
     }
   };
@@ -161,7 +164,7 @@ export default function ResourceDetailPage() {
           <Card className="border-slate-200/80 shadow-xs">
             <CardHeader className="pb-3 border-b border-slate-100">
               <CardTitle className="text-base sm:text-lg">
-                Overview & Description
+                Overview & Summary
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-4">
@@ -179,7 +182,7 @@ export default function ResourceDetailPage() {
               </CardTitle>
               {resource.url && (
                 <span className="text-xs text-slate-500 font-medium">
-                  Verified Destination
+                  Verified Resource Destination
                 </span>
               )}
             </CardHeader>
@@ -201,21 +204,40 @@ export default function ResourceDetailPage() {
                       </p>
                     </div>
 
-                    <a
-                      href={resource.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="shrink-0 w-full sm:w-auto"
-                    >
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        iconRight={<ExternalLinkIcon className="w-3.5 h-3.5" />}
+                    <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+                      <a
+                        href={resource.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="w-full sm:w-auto"
                       >
-                        Launch Material
-                      </Button>
-                    </a>
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          iconRight={<ExternalLinkIcon className="w-3.5 h-3.5" />}
+                          className="w-full sm:w-auto"
+                        >
+                          Launch Material
+                        </Button>
+                      </a>
+                      {resource.fileUrl && (
+                        <a
+                          href={resource.fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          download
+                          className="w-full sm:w-auto"
+                        >
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full sm:w-auto"
+                          >
+                            Download
+                          </Button>
+                        </a>
+                      )}
+                    </div>
                   </div>
 
                   {/* Embedded PDF Preview if format is PDF */}
@@ -247,7 +269,7 @@ export default function ResourceDetailPage() {
           <Card className="border-slate-200/80 shadow-xs">
             <CardHeader className="pb-3 border-b border-slate-100">
               <CardTitle className="text-sm font-semibold text-slate-900">
-                Resource Metadata
+                Resource Details
               </CardTitle>
             </CardHeader>
             <CardContent className="p-5 space-y-4">
