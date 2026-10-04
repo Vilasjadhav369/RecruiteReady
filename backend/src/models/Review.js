@@ -59,7 +59,9 @@ reviewSchema.pre('save', function (next) {
   } else if (this.student && !this.user) {
     this.user = this.student;
   }
-  next();
+  if (typeof next === 'function') {
+    next();
+  }
 });
 
 reviewSchema.index({ status: 1, createdAt: -1 });

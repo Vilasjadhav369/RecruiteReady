@@ -1,5 +1,11 @@
 import express from 'express';
-import { createReview, getApprovedReviews } from '../controllers/reviewController.js';
+import {
+  createReview,
+  getApprovedReviews,
+  getMyReview,
+  updateMyReview,
+  deleteMyReview,
+} from '../controllers/reviewController.js';
 import protect from '../middleware/auth.js';
 
 const router = express.Router();
@@ -7,7 +13,10 @@ const router = express.Router();
 // Publicly view approved reviews
 router.get('/', getApprovedReviews);
 
-// Submitting a review requires student authentication
+// Authenticated student operations
+router.get('/my', protect, getMyReview);
 router.post('/', protect, createReview);
+router.put('/:id', protect, updateMyReview);
+router.delete('/:id', protect, deleteMyReview);
 
 export default router;

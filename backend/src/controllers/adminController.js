@@ -990,10 +990,22 @@ export const getAdminReviews = async (req, res, next) => {
       .limit(limitNum)
       .lean();
 
+    const [pendingCount, approvedCount, rejectedCount] = await Promise.all([
+      Review.countDocuments({ status: 'pending' }),
+      Review.countDocuments({ status: 'approved' }),
+      Review.countDocuments({ status: 'rejected' }),
+    ]);
+
     res.status(200).json({
       success: true,
       data: {
         reviews,
+        counts: {
+          pending: pendingCount,
+          approved: approvedCount,
+          rejected: rejectedCount,
+          all: pendingCount + approvedCount + rejectedCount,
+        },
         pagination: { total, page: pageNum, limit: limitNum, pages: Math.ceil(total / limitNum) || 1 },
       },
     });
@@ -1040,6 +1052,23 @@ export const rejectReview = async (req, res, next) => {
       success: true,
       message: 'Review rejected',
       data: { review },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteAdminReview = async (req, res, next) => {
+  try {
+    const review = await Review.findByIdAndDelete(req.params.id);
+
+    if (!review) {
+      return res.status(404).json({ success: false, message: 'Review not found' });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Review deleted permanently',
     });
   } catch (error) {
     next(error);

@@ -32,6 +32,7 @@ import {
   getAdminReviews,
   approveReview,
   rejectReview,
+  deleteAdminReview,
   getAdminAnalytics,
 } from '../controllers/adminController.js';
 import protect from '../middleware/auth.js';
@@ -90,5 +91,6 @@ router.patch('/mock-tests/:id/status', updateMockTestStatus);
 router.get('/reviews', getAdminReviews);
 router.patch('/reviews/:id/approve', approveReview);
 router.patch('/reviews/:id/reject', rejectReview);
+router.delete('/reviews/:id', deleteAdminReview);
 
 export default router;

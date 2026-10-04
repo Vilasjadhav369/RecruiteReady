@@ -207,6 +207,11 @@ export const rejectReview = async (id) => {
   return response.data?.data?.review;
 };
 
+export const deleteReview = async (id) => {
+  const response = await api.delete(`/admin/reviews/${id}`);
+  return response.data;
+};
+
 export default {
   getAdminDashboard,
   getAdminAnalytics,
@@ -241,4 +246,5 @@ export default {
   getAdminReviews,
   approveReview,
   rejectReview,
+  deleteReview,
 };

@@ -3,6 +3,7 @@ import {
   getAdminReviews,
   approveReview,
   rejectReview,
+  deleteReview,
 } from '../../services/adminService.js';
 import {
   PageHeader,
@@ -32,6 +33,7 @@ import {
   DocumentIcon,
   CheckCircleIcon,
   ClockIcon,
+  TrashIcon,
 } from '../../components/ui/Icons.jsx';
 import { formatDateTime, formatDate } from '../../utils/formatters.js';
 
@@ -120,10 +122,16 @@ export default function AdminReviewsPage() {
   // ── Moderation Action Confirmation Modal ──
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
-    action: null, // 'approve' | 'reject'
+    action: null, // 'approve' | 'reject' | 'delete'
     review: null,
   });
   const [actionLoading, setActionLoading] = useState(false);
+  const [statusCounts, setStatusCounts] = useState({
+    pending: 0,
+    approved: 0,
+    rejected: 0,
+    all: 0,
+  });
 
   // ── View Detail Modal ──
   const [viewReview, setViewReview] = useState(null);
@@ -166,6 +174,9 @@ export default function AdminReviewsPage() {
 
       const data = await getAdminReviews(params);
       setReviews(data?.reviews || []);
+      if (data?.counts) {
+        setStatusCounts(data.counts);
+      }
       setPagination(
         data?.pagination || { total: 0, page: 1, limit: 10, pages: 1 }
       );
@@ -267,10 +278,22 @@ export default function AdminReviewsPage() {
           'Review Rejected',
           'Review marked as rejected and hidden from public display.'
         );
+      } else if (action === 'delete') {
+        await deleteReview(review._id);
+        setReviews((prev) => prev.filter((r) => r._id !== review._id));
+        showToast(
+          'info',
+          'Review Deleted',
+          'Review permanently removed from the database.'
+        );
+        if (viewReview && viewReview._id === review._id) {
+          setIsViewModalOpen(false);
+          setViewReview(null);
+        }
       }
 
       // If view modal was open for this review, update its status
-      if (viewReview && viewReview._id === review._id) {
+      if (viewReview && viewReview._id === review._id && action !== 'delete') {
         setViewReview((prev) => ({
           ...prev,
           status: action === 'approve' ? 'approved' : 'rejected',
@@ -377,6 +400,15 @@ export default function AdminReviewsPage() {
       <div className="flex flex-wrap items-center gap-1 bg-white border border-slate-200/80 rounded-xl p-1 shadow-xs w-fit">
         {STATUS_TABS.map((tab) => {
           const isActive = activeTab === tab.key;
+          const count =
+            tab.key === 'pending'
+              ? statusCounts.pending
+              : tab.key === 'approved'
+              ? statusCounts.approved
+              : tab.key === 'rejected'
+              ? statusCounts.rejected
+              : statusCounts.all;
+
           return (
             <button
               key={tab.key}
@@ -385,13 +417,22 @@ export default function AdminReviewsPage() {
                 setActiveTab(tab.key);
                 setPagination((p) => ({ ...p, page: 1 }));
               }}
-              className={`px-4 py-2 text-xs font-semibold rounded-lg transition-colors ${
+              className={`px-4 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 ${
                 isActive
-                  ? 'bg-blue-600 text-white shadow-xs'
+                  ? 'bg-[#166534] text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
               }`}
             >
-              {tab.label}
+              <span>{tab.label}</span>
+              {count > 0 && (
+                <span
+                  className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
+                    isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'
+                  }`}
+                >
+                  {count}
+                </span>
+              )}
             </button>
           );
         })}
@@ -424,7 +465,7 @@ export default function AdminReviewsPage() {
             <button
               type="button"
               onClick={clearAllFilters}
-              className="text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors"
+              className="text-xs font-medium text-[#166534] hover:text-[#14532D] transition-colors"
             >
               Clear all filters
             </button>
@@ -577,6 +618,16 @@ export default function AdminReviewsPage() {
                                 Reject
                               </Button>
                             )}
+
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleOpenConfirm('delete', review)}
+                              className="text-slate-400 hover:text-rose-600 hover:bg-rose-50"
+                              title="Delete review permanently"
+                            >
+                              <TrashIcon className="w-3.5 h-3.5" />
+                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -709,6 +760,16 @@ export default function AdminReviewsPage() {
                         Reject
                       </Button>
                     )}
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-rose-600 hover:bg-rose-50 px-2.5"
+                      onClick={() => handleOpenConfirm('delete', review)}
+                      title="Delete review permanently"
+                    >
+                      <TrashIcon className="w-3.5 h-3.5" />
+                    </Button>
                   </div>
                 </div>
               );
@@ -768,6 +829,18 @@ export default function AdminReviewsPage() {
             >
               Close
             </Button>
+            {viewReview && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+                onClick={() => {
+                  handleOpenConfirm('delete', viewReview);
+                }}
+              >
+                Delete Permanently
+              </Button>
+            )}
             {viewReview && viewReview.status !== 'approved' && (
               <Button
                 variant="primary"
@@ -856,12 +929,16 @@ export default function AdminReviewsPage() {
         title={
           confirmModal.action === 'approve'
             ? 'Approve Student Review?'
-            : 'Reject Student Review?'
+            : confirmModal.action === 'reject'
+            ? 'Reject Student Review?'
+            : 'Delete Review Permanently?'
         }
         description={
           confirmModal.action === 'approve'
             ? 'This review will become publicly visible to all students on the platform.'
-            : 'This review will be marked as rejected and hidden from public display.'
+            : confirmModal.action === 'reject'
+            ? 'This review will be marked as rejected and hidden from public display.'
+            : 'This review will be permanently deleted from the database. This action cannot be undone.'
         }
         maxWidth="max-w-md"
         footer={
@@ -882,7 +959,9 @@ export default function AdminReviewsPage() {
             >
               {confirmModal.action === 'approve'
                 ? 'Approve & Publish'
-                : 'Reject Review'}
+                : confirmModal.action === 'reject'
+                ? 'Reject Review'
+                : 'Delete Permanently'}
             </Button>
           </>
         }
