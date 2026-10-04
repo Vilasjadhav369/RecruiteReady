@@ -1,7 +1,17 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
-import { EyeIcon, EyeOffIcon } from "../components/ui/Icons.jsx";
+import { EyeIcon, EyeOffIcon, CheckIcon, ArrowRightIcon } from "../components/ui/Icons.jsx";
+import { Button } from "../components/ui/Button.jsx";
+import { Card } from "../components/ui/Card.jsx";
+
+const JOURNEY_STEPS = [
+  { name: "Aptitude", detail: "Quantitative & logical foundation" },
+  { name: "Coding", detail: "Core data structures & algorithms" },
+  { name: "Mock Tests", detail: "Timed assessment practice" },
+  { name: "Interviews", detail: "Company-specific tracks" },
+  { name: "Placement", detail: "Verified campus offers" },
+];
 
 function LoginPage() {
   const [email, setEmail] = useState("");
@@ -21,9 +31,9 @@ function LoginPage() {
     e.preventDefault();
     setErrorMessage("");
 
-    // Client validation
+    // Client-side validation
     if (!email.trim() || !password) {
-      setErrorMessage("Please fill in both email and password.");
+      setErrorMessage("Please enter both your email address and password.");
       return;
     }
 
@@ -39,7 +49,7 @@ function LoginPage() {
       }
     } catch (err) {
       const msg =
-        err.response?.data?.message || "Invalid email or password. Please try again.";
+        err.response?.data?.message || "Invalid email or password. Please verify and try again.";
       setErrorMessage(msg);
     } finally {
       setIsSubmitting(false);
@@ -47,111 +57,175 @@ function LoginPage() {
   };
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md">
-        {/* Header Branding */}
-        <div className="text-center mb-8">
-          <div className="w-10 h-10 bg-[#102A43] rounded-xl mx-auto flex items-center justify-center mb-3">
-            <svg width="22" height="22" viewBox="0 0 18 18" fill="none" aria-hidden="true">
-              <path d="M3 14L9 4L15 14" stroke="#E8F1FF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M5.5 10.5H12.5" stroke="#2563EB" strokeWidth="2" strokeLinecap="round"/>
-            </svg>
-          </div>
-          <h1 className="text-2xl font-bold text-[#172B4D] tracking-tight">Sign In to RecruitReady</h1>
-          <p className="text-xs text-[#52606D] mt-1">
-            Access your placement preparation account and resources
-          </p>
-        </div>
+    <div className="min-h-[85vh] flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
+      <div className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
 
-        {/* Card */}
-        <div className="bg-white border border-[#D9E2EC] rounded-2xl p-7 sm:p-8 shadow-sm">
-          {errorMessage && (
-            <div className="mb-5 p-3 rounded-lg bg-red-50 border border-red-100 flex items-start gap-2.5">
-              <svg className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
-              <span className="text-xs text-red-700 font-medium">{errorMessage}</span>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold text-[#172B4D] mb-1.5" htmlFor="email">
-                Email Address
-              </label>
-              <input
-                id="email"
-                type="email"
-                required
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="student@example.com"
-                className="w-full px-3.5 py-2.5 bg-[#F8FAFC] border border-[#D9E2EC] rounded-lg text-sm text-[#172B4D] placeholder-[#9FB3C8] focus:bg-white focus:outline-none focus:border-[#2563EB] focus:ring-1 focus:ring-[#2563EB] transition-all"
-              />
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-semibold text-[#172B4D]" htmlFor="password">
-                  Password
-                </label>
-              </div>
-              <div className="relative flex items-center">
-                <input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  required
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full pl-3.5 pr-10 py-2.5 bg-[#F8FAFC] border border-[#D9E2EC] rounded-lg text-sm text-[#172B4D] placeholder-[#9FB3C8] focus:bg-white focus:outline-none focus:border-[#2563EB] focus:ring-1 focus:ring-[#2563EB] transition-all"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                  className="absolute right-3 p-1 text-slate-400 hover:text-slate-600 rounded transition-colors cursor-pointer"
-                >
-                  {showPassword ? (
-                    <EyeOffIcon className="w-4 h-4 text-slate-500" />
-                  ) : (
-                    <EyeIcon className="w-4 h-4 text-slate-500" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full mt-2 inline-flex items-center justify-center gap-2 text-sm font-semibold text-white bg-[#2563EB] hover:bg-[#1d4ed8] active:bg-[#1e40af] disabled:opacity-60 px-5 py-2.5 rounded-lg transition-colors cursor-pointer shadow-sm"
-            >
-              {isSubmitting ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                  Signing In...
-                </>
-              ) : (
-                "Login"
-              )}
-            </button>
-          </form>
-
-          {/* Footer link */}
-          <div className="mt-6 pt-5 border-t border-[#D9E2EC] text-center">
-            <span className="text-xs text-[#52606D]">
-              Don&apos;t have an account?{" "}
-              <Link
-                to="/register"
-                className="font-semibold text-[#2563EB] hover:text-[#1d4ed8] no-underline"
-              >
-                Register
-              </Link>
+        {/* ── LEFT COLUMN: Context & Journey ────────────── */}
+        <div className="lg:col-span-6 space-y-6 text-left">
+          <div className="inline-flex items-center gap-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#166534] bg-[#DCFCE7] px-2.5 py-0.5 rounded-full border border-[#BBF7D0]">
+              Account Access
             </span>
           </div>
+
+          <div className="space-y-2">
+            <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight">
+              Welcome Back.
+            </h1>
+            <p className="text-xl sm:text-2xl font-semibold text-[#166534] tracking-tight">
+              Continue Your Placement Journey.
+            </p>
+          </div>
+
+          <p className="text-sm text-slate-600 leading-relaxed max-w-md">
+            Sign in to access your authentic performance records, resume ongoing aptitude and coding modules, and attempt scheduled mock assessments.
+          </p>
+
+          {/* Value Highlights */}
+          <div className="space-y-2.5 pt-2 text-xs sm:text-sm text-slate-700">
+            <div className="flex items-center gap-2.5">
+              <div className="w-5 h-5 rounded-full bg-[#DCFCE7] text-[#166534] flex items-center justify-center shrink-0">
+                <CheckIcon className="w-3.5 h-3.5" />
+              </div>
+              <span>Practice with structured, difficulty-graded modules</span>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <div className="w-5 h-5 rounded-full bg-[#DCFCE7] text-[#166534] flex items-center justify-center shrink-0">
+                <CheckIcon className="w-3.5 h-3.5" />
+              </div>
+              <span>Track real test progress and accurate solution metrics</span>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <div className="w-5 h-5 rounded-full bg-[#DCFCE7] text-[#166534] flex items-center justify-center shrink-0">
+                <CheckIcon className="w-3.5 h-3.5" />
+              </div>
+              <span>Prepare for real campus recruiters and coding rounds</span>
+            </div>
+          </div>
+
+          {/* Abstract Placement Journey Stepper */}
+          <div className="pt-4 border-t border-slate-200">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block mb-2">
+              Systematic Milestones
+            </span>
+            <div className="grid grid-cols-5 gap-1.5 text-center">
+              {JOURNEY_STEPS.map((step, idx) => (
+                <div
+                  key={step.name}
+                  className={`p-2 rounded-lg border text-[11px] font-medium ${
+                    idx === 4
+                      ? "bg-[#F0FDF4] border-[#BBF7D0] text-[#166534] font-semibold"
+                      : "bg-white border-slate-200 text-slate-700"
+                  }`}
+                >
+                  <span className="block truncate">{step.name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
+
+        {/* ── RIGHT COLUMN: Sign In Form ────────────────── */}
+        <div className="lg:col-span-6 w-full max-w-md mx-auto">
+          <Card className="p-6 sm:p-8 shadow-xs border-slate-200">
+            <div className="mb-6">
+              <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+                Sign In to RecruitReady
+              </h2>
+              <p className="text-xs text-slate-500 mt-1">
+                Enter your registered credentials to access your portal.
+              </p>
+            </div>
+
+            {errorMessage && (
+              <div
+                className="mb-5 p-3 rounded-lg bg-red-50 border border-red-200 flex items-start gap-2.5 text-xs text-red-700"
+                role="alert"
+              >
+                <span className="font-semibold block">{errorMessage}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label
+                  htmlFor="email"
+                  className="block text-xs font-semibold text-slate-700 mb-1.5"
+                >
+                  Email Address
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  required
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="student@example.com"
+                  className="w-full min-h-[44px] sm:min-h-0 h-10 sm:h-9 px-3.5 text-sm bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#166534] focus:ring-2 focus:ring-[#166534]/20 transition-all"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="password"
+                  className="block text-xs font-semibold text-slate-700 mb-1.5"
+                >
+                  Password
+                </label>
+                <div className="relative flex items-center">
+                  <input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    required
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full min-h-[44px] sm:min-h-0 h-10 sm:h-9 pl-3.5 pr-10 text-sm bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#166534] focus:ring-2 focus:ring-[#166534]/20 transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    className="absolute right-2.5 p-1 text-slate-400 hover:text-slate-600 rounded transition-colors cursor-pointer"
+                  >
+                    {showPassword ? (
+                      <EyeOffIcon className="w-4 h-4 text-slate-500" />
+                    ) : (
+                      <EyeIcon className="w-4 h-4 text-slate-500" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="md"
+                  fullWidth
+                  loading={isSubmitting}
+                >
+                  Sign In
+                </Button>
+              </div>
+            </form>
+
+            <div className="mt-6 pt-5 border-t border-slate-100 text-center">
+              <span className="text-xs text-slate-600">
+                Don&apos;t have an account?{" "}
+                <Link
+                  to="/register"
+                  className="font-semibold text-[#166534] hover:text-[#14532D] hover:underline no-underline"
+                >
+                  Create Account
+                </Link>
+              </span>
+            </div>
+          </Card>
+        </div>
+
       </div>
     </div>
   );

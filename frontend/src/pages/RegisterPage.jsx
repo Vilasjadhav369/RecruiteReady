@@ -1,7 +1,9 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
-import { EyeIcon, EyeOffIcon } from "../components/ui/Icons.jsx";
+import { EyeIcon, EyeOffIcon, CheckIcon } from "../components/ui/Icons.jsx";
+import { Button } from "../components/ui/Button.jsx";
+import { Card } from "../components/ui/Card.jsx";
 
 function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -49,7 +51,7 @@ function RegisterPage() {
       return;
     }
 
-    if (!email.trim()) {
+    if (!email.trim() || !email.includes("@")) {
       setErrorMessage("Please enter a valid email address.");
       return;
     }
@@ -77,7 +79,7 @@ function RegisterPage() {
         graduationYear: graduationYear ? Number(graduationYear) : undefined,
       });
 
-      // Redirect to authenticated student dashboard area
+      // Redirect to authenticated student dashboard
       navigate("/dashboard", { replace: true });
     } catch (err) {
       const msg =
@@ -90,236 +92,310 @@ function RegisterPage() {
   };
 
   return (
-    <div className="min-h-[85vh] flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-lg">
-        {/* Branding Header */}
-        <div className="text-center mb-8">
-          <div className="w-10 h-10 bg-[#102A43] rounded-xl mx-auto flex items-center justify-center mb-3">
-            <svg width="22" height="22" viewBox="0 0 18 18" fill="none" aria-hidden="true">
-              <path d="M3 14L9 4L15 14" stroke="#E8F1FF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M5.5 10.5H12.5" stroke="#2563EB" strokeWidth="2" strokeLinecap="round"/>
-            </svg>
-          </div>
-          <h1 className="text-2xl font-bold text-[#172B4D] tracking-tight">Create Your Account</h1>
-          <p className="text-xs text-[#52606D] mt-1">
-            Join RecruitReady to start your structured placement preparation
-          </p>
-        </div>
+    <div className="min-h-[85vh] flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
+      <div className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-start">
 
-        {/* Card */}
-        <div className="bg-white border border-[#D9E2EC] rounded-2xl p-7 sm:p-8 shadow-sm">
-          {errorMessage && (
-            <div className="mb-5 p-3 rounded-lg bg-red-50 border border-red-100 flex items-start gap-2.5">
-              <svg className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
-              <span className="text-xs text-red-700 font-medium">{errorMessage}</span>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Name Fields */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              <div>
-                <label className="block text-xs font-semibold text-[#172B4D] mb-1.5" htmlFor="firstName">
-                  First Name *
-                </label>
-                <input
-                  id="firstName"
-                  name="firstName"
-                  type="text"
-                  required
-                  value={formData.firstName}
-                  onChange={handleChange}
-                  placeholder="e.g. Anand"
-                  className="w-full px-3.5 py-2.5 bg-[#F8FAFC] border border-[#D9E2EC] rounded-lg text-sm text-[#172B4D] placeholder-[#9FB3C8] focus:bg-white focus:outline-none focus:border-[#2563EB] focus:ring-1 focus:ring-[#2563EB] transition-all"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-[#172B4D] mb-1.5" htmlFor="lastName">
-                  Last Name *
-                </label>
-                <input
-                  id="lastName"
-                  name="lastName"
-                  type="text"
-                  required
-                  value={formData.lastName}
-                  onChange={handleChange}
-                  placeholder="e.g. Sharma"
-                  className="w-full px-3.5 py-2.5 bg-[#F8FAFC] border border-[#D9E2EC] rounded-lg text-sm text-[#172B4D] placeholder-[#9FB3C8] focus:bg-white focus:outline-none focus:border-[#2563EB] focus:ring-1 focus:ring-[#2563EB] transition-all"
-                />
-              </div>
-            </div>
-
-            {/* Email */}
-            <div>
-              <label className="block text-xs font-semibold text-[#172B4D] mb-1.5" htmlFor="email">
-                Email Address *
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                autoComplete="email"
-                value={formData.email}
-                onChange={handleChange}
-                placeholder="student@example.com"
-                className="w-full px-3.5 py-2.5 bg-[#F8FAFC] border border-[#D9E2EC] rounded-lg text-sm text-[#172B4D] placeholder-[#9FB3C8] focus:bg-white focus:outline-none focus:border-[#2563EB] focus:ring-1 focus:ring-[#2563EB] transition-all"
-              />
-            </div>
-
-            {/* Password Fields */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              <div>
-                <label className="block text-xs font-semibold text-[#172B4D] mb-1.5" htmlFor="password">
-                  Password (min 8 chars) *
-                </label>
-                <div className="relative flex items-center">
-                  <input
-                    id="password"
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    required
-                    autoComplete="new-password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    placeholder="••••••••"
-                    className="w-full pl-3.5 pr-10 py-2.5 bg-[#F8FAFC] border border-[#D9E2EC] rounded-lg text-sm text-[#172B4D] placeholder-[#9FB3C8] focus:bg-white focus:outline-none focus:border-[#2563EB] focus:ring-1 focus:ring-[#2563EB] transition-all"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                    className="absolute right-3 p-1 text-slate-400 hover:text-slate-600 rounded transition-colors cursor-pointer"
-                  >
-                    {showPassword ? (
-                      <EyeOffIcon className="w-4 h-4 text-slate-500" />
-                    ) : (
-                      <EyeIcon className="w-4 h-4 text-slate-500" />
-                    )}
-                  </button>
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-[#172B4D] mb-1.5" htmlFor="confirmPassword">
-                  Confirm Password *
-                </label>
-                <div className="relative flex items-center">
-                  <input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type={showConfirmPassword ? "text" : "password"}
-                    required
-                    autoComplete="new-password"
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                    placeholder="••••••••"
-                    className="w-full pl-3.5 pr-10 py-2.5 bg-[#F8FAFC] border border-[#D9E2EC] rounded-lg text-sm text-[#172B4D] placeholder-[#9FB3C8] focus:bg-white focus:outline-none focus:border-[#2563EB] focus:ring-1 focus:ring-[#2563EB] transition-all"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
-                    className="absolute right-3 p-1 text-slate-400 hover:text-slate-600 rounded transition-colors cursor-pointer"
-                  >
-                    {showConfirmPassword ? (
-                      <EyeOffIcon className="w-4 h-4 text-slate-500" />
-                    ) : (
-                      <EyeIcon className="w-4 h-4 text-slate-500" />
-                    )}
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Academic Information */}
-            <div className="pt-2">
-              <span className="block text-[11px] font-semibold uppercase tracking-wider text-[#9FB3C8] mb-3">
-                Academic Details (Optional)
-              </span>
-
-              <div className="space-y-3.5">
-                <div>
-                  <label className="block text-xs font-medium text-[#52606D] mb-1" htmlFor="college">
-                    College / University
-                  </label>
-                  <input
-                    id="college"
-                    name="college"
-                    type="text"
-                    value={formData.college}
-                    onChange={handleChange}
-                    placeholder="e.g. Pune Institute of Computer Technology"
-                    className="w-full px-3.5 py-2.5 bg-[#F8FAFC] border border-[#D9E2EC] rounded-lg text-sm text-[#172B4D] placeholder-[#9FB3C8] focus:bg-white focus:outline-none focus:border-[#2563EB] focus:ring-1 focus:ring-[#2563EB] transition-all"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                  <div>
-                    <label className="block text-xs font-medium text-[#52606D] mb-1" htmlFor="branch">
-                      Branch / Stream
-                    </label>
-                    <input
-                      id="branch"
-                      name="branch"
-                      type="text"
-                      value={formData.branch}
-                      onChange={handleChange}
-                      placeholder="e.g. Computer Science"
-                      className="w-full px-3.5 py-2.5 bg-[#F8FAFC] border border-[#D9E2EC] rounded-lg text-sm text-[#172B4D] placeholder-[#9FB3C8] focus:bg-white focus:outline-none focus:border-[#2563EB] focus:ring-1 focus:ring-[#2563EB] transition-all"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-[#52606D] mb-1" htmlFor="graduationYear">
-                      Graduation Year
-                    </label>
-                    <input
-                      id="graduationYear"
-                      name="graduationYear"
-                      type="number"
-                      min="2020"
-                      max="2035"
-                      value={formData.graduationYear}
-                      onChange={handleChange}
-                      placeholder="e.g. 2026"
-                      className="w-full px-3.5 py-2.5 bg-[#F8FAFC] border border-[#D9E2EC] rounded-lg text-sm text-[#172B4D] placeholder-[#9FB3C8] focus:bg-white focus:outline-none focus:border-[#2563EB] focus:ring-1 focus:ring-[#2563EB] transition-all"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full mt-4 inline-flex items-center justify-center gap-2 text-sm font-semibold text-white bg-[#2563EB] hover:bg-[#1d4ed8] active:bg-[#1e40af] disabled:opacity-60 px-5 py-2.5 rounded-lg transition-colors cursor-pointer shadow-sm"
-            >
-              {isSubmitting ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                  Creating Account...
-                </>
-              ) : (
-                "Create Account"
-              )}
-            </button>
-          </form>
-
-          {/* Footer link */}
-          <div className="mt-6 pt-5 border-t border-[#D9E2EC] text-center">
-            <span className="text-xs text-[#52606D]">
-              Already have an account?{" "}
-              <Link
-                to="/login"
-                className="font-semibold text-[#2563EB] hover:text-[#1d4ed8] no-underline"
-              >
-                Sign In
-              </Link>
+        {/* ── LEFT COLUMN: Context & Highlights ─────────── */}
+        <div className="lg:col-span-5 space-y-6 text-left pt-2 lg:sticky lg:top-24">
+          <div className="inline-flex items-center gap-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#166534] bg-[#DCFCE7] px-2.5 py-0.5 rounded-full border border-[#BBF7D0]">
+              New Student Registration
             </span>
           </div>
+
+          <div className="space-y-2">
+            <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight leading-tight">
+              Start Your Placement Journey.
+            </h1>
+            <p className="text-lg font-semibold text-[#166534]">
+              Structured, Centralized Preparation.
+            </p>
+          </div>
+
+          <p className="text-sm text-slate-600 leading-relaxed">
+            Create your account to unlock curated problem sets, company recruitment archives, and timed mock tests customized for college placements.
+          </p>
+
+          <div className="space-y-3 pt-2 text-xs sm:text-sm text-slate-700">
+            <div className="flex items-start gap-2.5">
+              <div className="w-5 h-5 rounded-full bg-[#DCFCE7] text-[#166534] flex items-center justify-center shrink-0 mt-0.5">
+                <CheckIcon className="w-3.5 h-3.5" />
+              </div>
+              <div>
+                <span className="font-semibold block text-slate-900">Comprehensive Modules</span>
+                <span className="text-slate-500 text-xs">Quantitative, logical, DSA, and technical tracks.</span>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-2.5">
+              <div className="w-5 h-5 rounded-full bg-[#DCFCE7] text-[#166534] flex items-center justify-center shrink-0 mt-0.5">
+                <CheckIcon className="w-3.5 h-3.5" />
+              </div>
+              <div>
+                <span className="font-semibold block text-slate-900">Simulated Testing</span>
+                <span className="text-slate-500 text-xs">Accurate timers, sectional cuts, and detailed reviews.</span>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-2.5">
+              <div className="w-5 h-5 rounded-full bg-[#DCFCE7] text-[#166534] flex items-center justify-center shrink-0 mt-0.5">
+                <CheckIcon className="w-3.5 h-3.5" />
+              </div>
+              <div>
+                <span className="font-semibold block text-slate-900">Honest Progress Records</span>
+                <span className="text-slate-500 text-xs">Real metric tracking backed directly by your submissions.</span>
+              </div>
+            </div>
+          </div>
         </div>
+
+        {/* ── RIGHT COLUMN: Registration Form ───────────── */}
+        <div className="lg:col-span-7 w-full">
+          <Card className="p-6 sm:p-8 shadow-xs border-slate-200">
+            <div className="mb-6">
+              <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+                Create Your Account
+              </h2>
+              <p className="text-xs text-slate-500 mt-1">
+                Fill in your academic details to get started with RecruitReady.
+              </p>
+            </div>
+
+            {errorMessage && (
+              <div
+                className="mb-5 p-3 rounded-lg bg-red-50 border border-red-200 flex items-start gap-2.5 text-xs text-red-700"
+                role="alert"
+              >
+                <span className="font-semibold block">{errorMessage}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Name Fields */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label
+                    htmlFor="firstName"
+                    className="block text-xs font-semibold text-slate-700 mb-1.5"
+                  >
+                    First Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="firstName"
+                    name="firstName"
+                    type="text"
+                    required
+                    value={formData.firstName}
+                    onChange={handleChange}
+                    placeholder="e.g. Anand"
+                    className="w-full min-h-[44px] sm:min-h-0 h-10 sm:h-9 px-3.5 text-sm bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#166534] focus:ring-2 focus:ring-[#166534]/20 transition-all"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="lastName"
+                    className="block text-xs font-semibold text-slate-700 mb-1.5"
+                  >
+                    Last Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="lastName"
+                    name="lastName"
+                    type="text"
+                    required
+                    value={formData.lastName}
+                    onChange={handleChange}
+                    placeholder="e.g. Sharma"
+                    className="w-full min-h-[44px] sm:min-h-0 h-10 sm:h-9 px-3.5 text-sm bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#166534] focus:ring-2 focus:ring-[#166534]/20 transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Email Address */}
+              <div>
+                <label
+                  htmlFor="email"
+                  className="block text-xs font-semibold text-slate-700 mb-1.5"
+                >
+                  Email Address <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  autoComplete="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="student@example.com"
+                  className="w-full min-h-[44px] sm:min-h-0 h-10 sm:h-9 px-3.5 text-sm bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#166534] focus:ring-2 focus:ring-[#166534]/20 transition-all"
+                />
+              </div>
+
+              {/* Password Fields */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label
+                    htmlFor="password"
+                    className="block text-xs font-semibold text-slate-700 mb-1.5"
+                  >
+                    Password (min 8 chars) <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative flex items-center">
+                    <input
+                      id="password"
+                      name="password"
+                      type={showPassword ? "text" : "password"}
+                      required
+                      autoComplete="new-password"
+                      value={formData.password}
+                      onChange={handleChange}
+                      placeholder="••••••••"
+                      className="w-full min-h-[44px] sm:min-h-0 h-10 sm:h-9 pl-3.5 pr-10 text-sm bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#166534] focus:ring-2 focus:ring-[#166534]/20 transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                      className="absolute right-2.5 p-1 text-slate-400 hover:text-slate-600 rounded transition-colors cursor-pointer"
+                    >
+                      {showPassword ? (
+                        <EyeOffIcon className="w-4 h-4 text-slate-500" />
+                      ) : (
+                        <EyeIcon className="w-4 h-4 text-slate-500" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="confirmPassword"
+                    className="block text-xs font-semibold text-slate-700 mb-1.5"
+                  >
+                    Confirm Password <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative flex items-center">
+                    <input
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      type={showConfirmPassword ? "text" : "password"}
+                      required
+                      autoComplete="new-password"
+                      value={formData.confirmPassword}
+                      onChange={handleChange}
+                      placeholder="••••••••"
+                      className="w-full min-h-[44px] sm:min-h-0 h-10 sm:h-9 pl-3.5 pr-10 text-sm bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#166534] focus:ring-2 focus:ring-[#166534]/20 transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                      className="absolute right-2.5 p-1 text-slate-400 hover:text-slate-600 rounded transition-colors cursor-pointer"
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOffIcon className="w-4 h-4 text-slate-500" />
+                      ) : (
+                        <EyeIcon className="w-4 h-4 text-slate-500" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Academic Information (Optional) */}
+              <div className="pt-2">
+                <span className="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-3 border-t border-slate-100 pt-3">
+                  Academic Information (Optional)
+                </span>
+
+                <div className="space-y-3">
+                  <div>
+                    <label
+                      htmlFor="college"
+                      className="block text-xs font-semibold text-slate-700 mb-1.5"
+                    >
+                      College / University
+                    </label>
+                    <input
+                      id="college"
+                      name="college"
+                      type="text"
+                      value={formData.college}
+                      onChange={handleChange}
+                      placeholder="e.g. Pune Institute of Computer Technology"
+                      className="w-full min-h-[44px] sm:min-h-0 h-10 sm:h-9 px-3.5 text-sm bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#166534] focus:ring-2 focus:ring-[#166534]/20 transition-all"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div>
+                      <label
+                        htmlFor="branch"
+                        className="block text-xs font-semibold text-slate-700 mb-1.5"
+                      >
+                        Branch / Stream
+                      </label>
+                      <input
+                        id="branch"
+                        name="branch"
+                        type="text"
+                        value={formData.branch}
+                        onChange={handleChange}
+                        placeholder="e.g. Computer Science"
+                        className="w-full min-h-[44px] sm:min-h-0 h-10 sm:h-9 px-3.5 text-sm bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#166534] focus:ring-2 focus:ring-[#166534]/20 transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="graduationYear"
+                        className="block text-xs font-semibold text-slate-700 mb-1.5"
+                      >
+                        Graduation Year
+                      </label>
+                      <input
+                        id="graduationYear"
+                        name="graduationYear"
+                        type="number"
+                        min="2020"
+                        max="2035"
+                        value={formData.graduationYear}
+                        onChange={handleChange}
+                        placeholder="e.g. 2026"
+                        className="w-full min-h-[44px] sm:min-h-0 h-10 sm:h-9 px-3.5 text-sm bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#166534] focus:ring-2 focus:ring-[#166534]/20 transition-all"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="md"
+                  fullWidth
+                  loading={isSubmitting}
+                >
+                  Create Account
+                </Button>
+              </div>
+            </form>
+
+            <div className="mt-6 pt-5 border-t border-slate-100 text-center">
+              <span className="text-xs text-slate-600">
+                Already have an account?{" "}
+                <Link
+                  to="/login"
+                  className="font-semibold text-[#166534] hover:text-[#14532D] hover:underline no-underline"
+                >
+                  Sign In
+                </Link>
+              </span>
+            </div>
+          </Card>
+        </div>
+
       </div>
     </div>
   );
