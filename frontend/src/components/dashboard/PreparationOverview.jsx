@@ -25,9 +25,9 @@ function PreparationOverview({ preparation }) {
           icon={AptitudeIcon}
           attempted={apt.attempted}
           completed={apt.completed}
-          unit="questions"
+          unit="sessions"
           to="/aptitude"
-          emptyMessage="No questions practiced yet. Begin with quantitative or logical topics."
+          emptyMessage="No practice sessions completed yet. Begin with quantitative or logical topics."
         />
         <PreparationMetricCard
           title="Coding"

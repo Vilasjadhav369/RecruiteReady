@@ -161,7 +161,9 @@ export function StatCard({
                 <span className="text-2xl font-bold text-slate-900 font-mono tracking-tight">
                   {Number(completed || 0).toLocaleString()}
                 </span>
-                <span className="text-xs text-slate-500">{unit} completed</span>
+                <span className="text-xs text-slate-500">
+                  {Number(completed || 0) === 1 ? unit.replace(/s$/, '') : unit} completed
+                </span>
               </div>
             </div>
           ) : (
