@@ -4,59 +4,118 @@ import CodingSubmission from '../models/CodingSubmission.js';
 import MockTestAttempt from '../models/MockTestAttempt.js';
 
 /**
+ * Scoring weights for verified completed activities.
+ * Transparent and proportional to assessment effort.
+ */
+const SCORING_WEIGHTS = {
+  aptitudeSession: 10,
+  codingProblem: 25,
+  mockTest: 30,
+};
+
+/**
  * GET /api/leaderboard
- * Computes platform leaderboard from actual student activity.
- * Transparent formula:
- * Score = (Aptitude Correct * 10) + (Mock Test Points) + (Accepted Coding Problems * 25)
- * Zero fabricated students or phantom points.
+ * Computes platform campus leaderboard strictly from verified student database records.
+ *
+ * Rules:
+ * - Aptitude: completed session (status: submitted or expired)
+ * - Coding: distinct problems solved (status: accepted) — duplicates never inflate score
+ * - Mock Tests: completed assessments (status: submitted) — expired/in-progress excluded
+ * - Ranking: Standard competition ranking (1, 2, 2, 4) with deterministic tie-breaking
+ * - Privacy: No emails, passwords, or private fields exposed. Name formatted as "First L."
+ * - Zero fabricated students, schools, or phantom points.
  */
 export const getLeaderboard = async (req, res, next) => {
   try {
-    const students = await User.find({ role: 'student', isActive: true })
-      .select('firstName lastName college createdAt')
+    const currentUserId = req.user?._id?.toString();
+
+    // 1. Fetch all active student accounts
+    const students = await User.find({ role: 'student', isActive: { $ne: false } })
+      .select('firstName lastName profilePhoto createdAt')
       .lean();
 
-    if (students.length === 0) {
+    if (!students || students.length === 0) {
       return res.status(200).json({
         success: true,
         data: {
           leaderboard: [],
-          formula: 'Score = (Aptitude Correct * 10) + (Mock Test Points) + (Accepted Coding Solved * 25)',
-          message: 'Leaderboard will appear once enough activity is available.',
+          currentUser: {
+            isRanked: false,
+            rank: null,
+            score: 0,
+            completedActivities: 0,
+            aptitudeCompleted: 0,
+            mockTestsCompleted: 0,
+            codingProblemsSolved: 0,
+          },
+          scoringRules: {
+            aptitudeWeight: SCORING_WEIGHTS.aptitudeSession,
+            codingWeight: SCORING_WEIGHTS.codingProblem,
+            mockTestWeight: SCORING_WEIGHTS.mockTest,
+            formula: `Score = (Aptitude Sessions × ${SCORING_WEIGHTS.aptitudeSession}) + (Coding Problems Solved × ${SCORING_WEIGHTS.codingProblem}) + (Mock Tests × ${SCORING_WEIGHTS.mockTest})`,
+          },
+          totalRankedStudents: 0,
         },
       });
     }
 
     const studentIds = students.map((s) => s._id);
 
-    // Aggregate aptitude correct answers by user
+    // 2. Perform authentic aggregations matching M11 source of truth
     const [aptitudeAgg, codingAgg, mockAgg] = await Promise.all([
+      // Aptitude completed sessions (status: submitted or expired)
       AptitudeAttempt.aggregate([
-        { $match: { user: { $in: studentIds }, status: { $in: ['submitted', 'expired'] } } },
+        {
+          $match: {
+            user: { $in: studentIds },
+            status: { $in: ['submitted', 'expired'] },
+          },
+        },
         {
           $group: {
             _id: '$user',
-            totalCorrect: { $sum: '$correctAnswers' },
-            attemptsCount: { $sum: 1 },
+            completedSessions: { $sum: 1 },
+            correctTotal: { $sum: '$correctAnswers' },
+            questionsAttempted: { $sum: '$totalQuestions' },
           },
         },
       ]),
+
+      // Coding problems solved: DISTINCT problems per user with status: accepted
+      // Grouping by { user, problem } first guarantees duplicates never inflate count
       CodingSubmission.aggregate([
-        { $match: { user: { $in: studentIds }, status: 'accepted' } },
+        {
+          $match: {
+            user: { $in: studentIds },
+            status: 'accepted',
+          },
+        },
         {
           $group: {
-            _id: '$user',
-            acceptedCount: { $sum: 1 },
+            _id: { user: '$user', problem: '$problem' },
+          },
+        },
+        {
+          $group: {
+            _id: '$_id.user',
+            distinctSolved: { $sum: 1 },
           },
         },
       ]),
+
+      // Mock tests completed: status strictly submitted (expired/abandoned excluded)
       MockTestAttempt.aggregate([
-        { $match: { user: { $in: studentIds }, status: { $in: ['submitted', 'expired'] } } },
+        {
+          $match: {
+            user: { $in: studentIds },
+            status: 'submitted',
+          },
+        },
         {
           $group: {
             _id: '$user',
-            totalMockScore: { $sum: '$score' },
-            testsCount: { $sum: 1 },
+            completedTests: { $sum: 1 },
+            correctTotal: { $sum: '$correctAnswers' },
           },
         },
       ]),
@@ -66,46 +125,145 @@ export const getLeaderboard = async (req, res, next) => {
     const codeMap = new Map(codingAgg.map((c) => [c._id.toString(), c]));
     const mockMap = new Map(mockAgg.map((m) => [m._id.toString(), m]));
 
-    const scoredStudents = [];
+    // 3. Compute verified metrics & scores for each student
+    const candidateList = [];
 
     students.forEach((student) => {
       const sId = student._id.toString();
-      const apt = aptMap.get(sId) || { totalCorrect: 0, attemptsCount: 0 };
-      const code = codeMap.get(sId) || { acceptedCount: 0 };
-      const mock = mockMap.get(sId) || { totalMockScore: 0, testsCount: 0 };
+      const apt = aptMap.get(sId) || { completedSessions: 0, correctTotal: 0, questionsAttempted: 0 };
+      const code = codeMap.get(sId) || { distinctSolved: 0 };
+      const mock = mockMap.get(sId) || { completedTests: 0, correctTotal: 0 };
 
-      const points = (apt.totalCorrect * 10) + (mock.totalMockScore) + (code.acceptedCount * 25);
+      const aptitudeCompleted = apt.completedSessions || 0;
+      const codingProblemsSolved = code.distinctSolved || 0;
+      const mockTestsCompleted = mock.completedTests || 0;
+      const completedActivities = aptitudeCompleted + codingProblemsSolved + mockTestsCompleted;
 
-      if (points > 0 || apt.attemptsCount > 0) {
-        scoredStudents.push({
-          id: student._id,
-          displayName: `${student.firstName} ${student.lastName ? student.lastName.charAt(0) + '.' : ''}`,
-          college: student.college || '',
-          score: points,
-          stats: {
-            aptitudeCorrect: apt.totalCorrect,
-            codingAccepted: code.acceptedCount,
-            testsCompleted: mock.testsCount,
-          },
-        });
-      }
+      const score =
+        (aptitudeCompleted * SCORING_WEIGHTS.aptitudeSession) +
+        (codingProblemsSolved * SCORING_WEIGHTS.codingProblem) +
+        (mockTestsCompleted * SCORING_WEIGHTS.mockTest);
+
+      // Privacy-safe student display formatting
+      const first = (student.firstName || '').trim();
+      const last = (student.lastName || '').trim();
+      const lastInitial = last ? `${last.charAt(0).toUpperCase()}.` : '';
+      const displayName = first ? `${first} ${lastInitial}`.trim() : 'Student';
+
+      const initial1 = first ? first.charAt(0).toUpperCase() : 'S';
+      const initial2 = last ? last.charAt(0).toUpperCase() : '';
+      const initials = `${initial1}${initial2}`;
+
+      candidateList.push({
+        id: sId,
+        displayName,
+        initials,
+        profilePhoto: student.profilePhoto || null,
+        score,
+        completedActivities,
+        aptitudeCompleted,
+        codingProblemsSolved,
+        mockTestsCompleted,
+        stats: {
+          aptitudeSessions: aptitudeCompleted,
+          aptitudeCorrect: apt.correctTotal || 0,
+          codingSolved: codingProblemsSolved,
+          mockTestsCompleted,
+        },
+      });
     });
 
-    // Sort descending by score
-    scoredStudents.sort((a, b) => b.score - a.score);
+    // 4. Filter for active participants: only students with real activity (score > 0) qualify
+    const rankedParticipants = candidateList.filter((c) => c.completedActivities > 0);
 
-    // Assign rank
-    const rankedLeaderboard = scoredStudents.map((item, index) => ({
-      rank: index + 1,
-      ...item,
+    // 5. Deterministic sorting:
+    // Primary: Score descending
+    // Secondary: Completed activities descending
+    // Tertiary: Stable student ID string ascending
+    rankedParticipants.sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      if (b.completedActivities !== a.completedActivities) return b.completedActivities - a.completedActivities;
+      return a.id.localeCompare(b.id);
+    });
+
+    // 6. Assign competition ranking (1, 2, 2, 4)
+    let currentRank = 1;
+    for (let i = 0; i < rankedParticipants.length; i++) {
+      if (i > 0 && rankedParticipants[i].score < rankedParticipants[i - 1].score) {
+        currentRank = i + 1;
+      }
+      rankedParticipants[i].rank = currentRank;
+    }
+
+    // 7. Extract current user's ranking context
+    let currentUserContext = {
+      isRanked: false,
+      rank: null,
+      score: 0,
+      completedActivities: 0,
+      aptitudeCompleted: 0,
+      mockTestsCompleted: 0,
+      codingProblemsSolved: 0,
+    };
+
+    if (currentUserId) {
+      const userInRanked = rankedParticipants.find((p) => p.id === currentUserId);
+      if (userInRanked) {
+        currentUserContext = {
+          isRanked: true,
+          rank: userInRanked.rank,
+          score: userInRanked.score,
+          completedActivities: userInRanked.completedActivities,
+          aptitudeCompleted: userInRanked.aptitudeCompleted,
+          mockTestsCompleted: userInRanked.mockTestsCompleted,
+          codingProblemsSolved: userInRanked.codingProblemsSolved,
+        };
+      } else {
+        // User has 0 qualifying activity
+        const userCandidate = candidateList.find((c) => c.id === currentUserId);
+        if (userCandidate) {
+          currentUserContext = {
+            isRanked: false,
+            rank: null,
+            score: userCandidate.score,
+            completedActivities: userCandidate.completedActivities,
+            aptitudeCompleted: userCandidate.aptitudeCompleted,
+            mockTestsCompleted: userCandidate.mockTestsCompleted,
+            codingProblemsSolved: userCandidate.codingProblemsSolved,
+          };
+        }
+      }
+    }
+
+    // 8. Public payload stripping any internal/unneeded data
+    const publicLeaderboard = rankedParticipants.map((p) => ({
+      rank: p.rank,
+      student: {
+        id: p.id,
+        displayName: p.displayName,
+        initials: p.initials,
+        profilePhoto: p.profilePhoto,
+      },
+      score: p.score,
+      completedActivities: p.completedActivities,
+      aptitudeCompleted: p.aptitudeCompleted,
+      codingProblemsSolved: p.codingProblemsSolved,
+      mockTestsCompleted: p.mockTestsCompleted,
+      stats: p.stats,
     }));
 
     res.status(200).json({
       success: true,
       data: {
-        leaderboard: rankedLeaderboard,
-        formula: 'Points = (Aptitude Correct * 10) + (Mock Test Score) + (Accepted Coding Problems * 25)',
-        totalActiveParticipants: rankedLeaderboard.length,
+        leaderboard: publicLeaderboard,
+        currentUser: currentUserContext,
+        scoringRules: {
+          aptitudeWeight: SCORING_WEIGHTS.aptitudeSession,
+          codingWeight: SCORING_WEIGHTS.codingProblem,
+          mockTestWeight: SCORING_WEIGHTS.mockTest,
+          formula: `Score = (Aptitude Sessions × ${SCORING_WEIGHTS.aptitudeSession}) + (Coding Problems Solved × ${SCORING_WEIGHTS.codingProblem}) + (Mock Tests × ${SCORING_WEIGHTS.mockTest})`,
+        },
+        totalRankedStudents: publicLeaderboard.length,
       },
     });
   } catch (error) {
