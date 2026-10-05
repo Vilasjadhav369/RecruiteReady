@@ -720,7 +720,7 @@ function AdminStudentsPage() {
                 <ul className="space-y-1.5 text-xs text-slate-700">
                   {selectedStudent.preparationGoals.map((g, i) => (
                     <li key={i} className="flex items-start gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-1.5 shrink-0" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#166534] mt-1.5 shrink-0" />
                       <span>{g}</span>
                     </li>
                   ))}

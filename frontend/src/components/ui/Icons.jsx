@@ -500,4 +500,15 @@ export function BookmarkIcon({ className = 'w-4 h-4' }) {
   );
 }
 
+export function SettingsIcon({ className = 'w-5 h-5' }) {
+  return (
+    <svg className={className} {...defaultProps}>
+      <circle cx="10" cy="10" r="2.5" />
+      <path d="M10 2v2m0 12v2M2 10h2m12 0h2M4.34 4.34l1.42 1.42m8.48 8.48l1.42 1.42M4.34 15.66l1.42-1.42m8.48-8.48l1.42-1.42" />
+    </svg>
+  );
+}
+
+
+
 

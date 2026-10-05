@@ -1,45 +1,59 @@
 import React, { useEffect, useRef } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext.jsx";
+import { Link, useLocation } from "react-router-dom";
 import {
   DashboardIcon,
-  ProfileIcon,
+  UsersIcon,
   AptitudeIcon,
   CodingIcon,
   CompanyIcon,
   ResourcesIcon,
   MockTestIcon,
   ProgressIcon,
-  LogoutIcon,
   CloseIcon,
   StarIcon,
+  SettingsIcon,
+  ShieldCheckIcon,
 } from "../ui/Icons.jsx";
-import { Avatar } from "../ui/Avatar.jsx";
 
 const NAV_SECTIONS = [
   {
-    title: "Core",
+    title: "Overview",
     items: [
-      { label: "Overview", to: "/admin", icon: DashboardIcon },
+      { label: "Dashboard", to: "/admin", icon: DashboardIcon },
     ],
   },
   {
-    title: "Catalog Management",
+    title: "Users",
     items: [
-      { label: "Students", to: "/admin/students", icon: ProfileIcon },
-      { label: "Aptitude Questions", to: "/admin/aptitude", icon: AptitudeIcon },
-      { label: "Coding Challenges", to: "/admin/coding", icon: CodingIcon },
-      { label: "Company Archives", to: "/admin/companies", icon: CompanyIcon },
+      { label: "Students", to: "/admin/students", icon: UsersIcon },
+    ],
+  },
+  {
+    title: "Content",
+    items: [
+      { label: "Aptitude", to: "/admin/aptitude", icon: AptitudeIcon },
+      { label: "Coding Problems", to: "/admin/coding", icon: CodingIcon },
+      { label: "Companies", to: "/admin/companies", icon: CompanyIcon },
       { label: "Study Materials", to: "/admin/resources", icon: ResourcesIcon },
-      { label: "Mock Assessments", to: "/admin/mock-tests", icon: MockTestIcon },
+      { label: "Mock Tests", to: "/admin/mock-tests", icon: MockTestIcon },
     ],
   },
   {
-    title: "Insights & Moderation",
+    title: "Engagement",
     items: [
-      { label: "Student Reviews", to: "/admin/reviews", icon: StarIcon },
-      { label: "System Analytics", to: "/admin/analytics", icon: ProgressIcon },
-      { label: "Platform Settings", to: "/admin/settings", icon: DashboardIcon },
+      { label: "Reviews", to: "/admin/reviews", icon: StarIcon },
+    ],
+  },
+  {
+    title: "Analytics",
+    items: [
+      { label: "Progress Analytics", to: "/admin/analytics", icon: ProgressIcon },
+    ],
+  },
+  {
+    title: "System",
+    items: [
+      { label: "Settings", to: "/admin/settings", icon: SettingsIcon },
     ],
   },
 ];
@@ -55,20 +69,20 @@ function isAdminNavActive(pathname, itemPath) {
 }
 
 /**
- * AdminSidebar — Professional content management sidebar for administrators.
+ * AdminSidebar — Professional hierarchical navigation sidebar for administrators.
+ * Direction: Apple + Linear + Premium University
+ * Full viewport height, stable width, clean borders, zero clipping.
  */
 function AdminSidebar({ mobileOpen, setMobileOpen }) {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
   const location = useLocation();
   const drawerRef = useRef(null);
 
-  // Close on route change
+  // Close mobile drawer on route change
   useEffect(() => {
     if (setMobileOpen) setMobileOpen(false);
-  }, [location.pathname]);
+  }, [location.pathname, setMobileOpen]);
 
-  // Handle Escape key and body scroll lock
+  // Handle Escape key and body scroll lock for mobile drawer
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === "Escape" && mobileOpen && setMobileOpen) {
@@ -86,14 +100,8 @@ function AdminSidebar({ mobileOpen, setMobileOpen }) {
     };
   }, [mobileOpen, setMobileOpen]);
 
-  const handleSignOut = async () => {
-    if (setMobileOpen) setMobileOpen(false);
-    await logout();
-    navigate("/", { replace: true });
-  };
-
   const navContent = (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full bg-white select-none">
       {/* ── Brand / Header ───────────────────────── */}
       <div className="p-4 sm:p-5 border-b border-slate-200 flex items-center justify-between shrink-0">
         <Link
@@ -144,7 +152,7 @@ function AdminSidebar({ mobileOpen, setMobileOpen }) {
           <button
             type="button"
             onClick={() => setMobileOpen(false)}
-            className="md:hidden min-w-[44px] min-h-[44px] p-2 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 flex items-center justify-center transition-colors focus-visible:outline-2 focus-visible:outline-[#166534]"
+            className="md:hidden min-w-[44px] min-h-[44px] p-2 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 flex items-center justify-center transition-colors focus-visible:outline-2 focus-visible:outline-[#166534] cursor-pointer"
             aria-label="Close navigation drawer"
           >
             <CloseIcon className="w-5 h-5" />
@@ -152,9 +160,9 @@ function AdminSidebar({ mobileOpen, setMobileOpen }) {
         )}
       </div>
 
-      {/* ── Navigation Links ─────────────────────── */}
+      {/* ── Hierarchical Navigation Links ────────── */}
       <nav
-        className="flex-1 px-3 py-3.5 space-y-4 overflow-y-auto"
+        className="flex-1 px-3 py-3 space-y-3.5 overflow-y-auto"
         aria-label="Admin portal navigation"
       >
         {NAV_SECTIONS.map((section) => (
@@ -170,10 +178,10 @@ function AdminSidebar({ mobileOpen, setMobileOpen }) {
                   key={item.to}
                   to={item.to}
                   onClick={() => setMobileOpen && setMobileOpen(false)}
-                  className={`min-h-[40px] flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all no-underline ${
+                  className={`min-h-[38px] flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all no-underline ${
                     active
-                      ? "bg-[#DCFCE7] text-[#166534] font-semibold border-l-4 border-[#166534] shadow-xs"
-                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 border-l-4 border-transparent"
+                      ? "bg-[#DCFCE7] text-[#166534] font-semibold border-l-3 border-[#166534] shadow-xs"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 border-l-3 border-transparent"
                   }`}
                   aria-current={active ? "page" : undefined}
                 >
@@ -190,28 +198,20 @@ function AdminSidebar({ mobileOpen, setMobileOpen }) {
         ))}
       </nav>
 
-      {/* ── Admin User Card & Sign Out ───────────── */}
-      <div className="p-3 border-t border-slate-200 bg-slate-50/70 shrink-0">
-        <div className="flex items-center gap-2.5 p-1.5 rounded-lg mb-1">
-          <Avatar name={user?.firstName || "Admin"} size="sm" />
+      {/* ── System Status Footer (Single clean indicator, no duplicate signout) ── */}
+      <div className="p-3 border-t border-slate-200 bg-slate-50/80 shrink-0">
+        <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-white border border-slate-200/80 shadow-2xs">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" aria-hidden="true" />
           <div className="min-w-0 flex-1">
-            <span className="text-xs font-semibold text-slate-900 truncate block">
-              {user?.firstName ? `${user.firstName} ${user?.lastName || ""}`.trim() : "Administrator"}
+            <span className="text-[11px] font-semibold text-slate-800 block leading-tight truncate">
+              Platform Online
             </span>
-            <span className="text-[10px] text-slate-500 truncate block font-mono">
-              {user?.email || "admin@recruitready.edu"}
+            <span className="text-[10px] text-slate-400 block leading-tight font-mono truncate">
+              Academic Portal v1.0
             </span>
           </div>
+          <ShieldCheckIcon className="w-3.5 h-3.5 text-slate-400 shrink-0" />
         </div>
-
-        <button
-          type="button"
-          onClick={handleSignOut}
-          className="min-h-[38px] w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer text-left"
-        >
-          <LogoutIcon className="w-3.5 h-3.5 text-red-500" />
-          <span>Sign Out</span>
-        </button>
       </div>
     </div>
   );

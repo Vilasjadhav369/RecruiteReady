@@ -49,11 +49,11 @@ export function Modal({
 
       {/* Dialog Surface */}
       <div
-        className={`relative w-full ${maxWidth} bg-white rounded-xl sm:rounded-2xl shadow-xl border border-slate-200/80 overflow-hidden my-6 sm:my-8 z-10 transition-all transform duration-200 scale-100 ${className}`}
+        className={`relative w-full ${maxWidth} bg-white rounded-xl sm:rounded-2xl shadow-xl border border-slate-200/80 overflow-hidden my-4 sm:my-8 z-10 transition-all transform duration-200 scale-100 flex flex-col max-h-[90vh] ${className}`}
       >
         {/* Header */}
         {(title || onClose) && (
-          <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between gap-4">
+          <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-100 flex items-center justify-between gap-4 shrink-0">
             <div>
               {title && (
                 <h3 id="modal-title" className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
@@ -78,13 +78,13 @@ export function Modal({
         )}
 
         {/* Content Body */}
-        <div className="p-6 max-h-[calc(85vh-120px)] overflow-y-auto">
+        <div className="p-4 sm:p-6 flex-1 overflow-y-auto min-h-0">
           {children}
         </div>
 
         {/* Optional Footer */}
         {footer && (
-          <div className="px-6 py-3.5 bg-slate-50/75 border-t border-slate-100 flex items-center justify-end gap-2.5">
+          <div className="px-4 sm:px-6 py-3 sm:py-3.5 bg-slate-50/75 border-t border-slate-100 flex items-center justify-end gap-2.5 shrink-0">
             {footer}
           </div>
         )}

@@ -23,6 +23,7 @@ import {
 } from "../../components/ui/index.js";
 import {
   ProfileIcon,
+  UsersIcon,
   AptitudeIcon,
   CodingIcon,
   CompanyIcon,
@@ -305,13 +306,13 @@ function AdminDashboardPage() {
                 {/* Aptitude */}
                 <Link
                   to="/admin/aptitude"
-                  className="p-3.5 rounded-lg border border-slate-200/90 bg-slate-50/50 hover:bg-blue-50/40 hover:border-blue-200 transition-all text-left no-underline group block"
+                  className="p-3.5 rounded-lg border border-slate-200/90 bg-slate-50/50 hover:bg-[#F0FDF4] hover:border-[#BBF7D0] transition-all text-left no-underline group block"
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[11px] font-semibold uppercase text-slate-500 group-hover:text-blue-700 tracking-wider">
+                    <span className="text-[11px] font-semibold uppercase text-slate-500 group-hover:text-[#166534] tracking-wider">
                       Aptitude
                     </span>
-                    <AptitudeIcon className="w-4 h-4 text-slate-400 group-hover:text-blue-600" />
+                    <AptitudeIcon className="w-4 h-4 text-slate-400 group-hover:text-[#166534]" />
                   </div>
                   <div className="text-xl font-bold text-slate-900 tracking-tight font-mono">
                     {aptitudeQuestions.toLocaleString()}
@@ -324,13 +325,13 @@ function AdminDashboardPage() {
                 {/* Coding */}
                 <Link
                   to="/admin/coding"
-                  className="p-3.5 rounded-lg border border-slate-200/90 bg-slate-50/50 hover:bg-blue-50/40 hover:border-blue-200 transition-all text-left no-underline group block"
+                  className="p-3.5 rounded-lg border border-slate-200/90 bg-slate-50/50 hover:bg-[#F0FDF4] hover:border-[#BBF7D0] transition-all text-left no-underline group block"
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[11px] font-semibold uppercase text-slate-500 group-hover:text-blue-700 tracking-wider">
+                    <span className="text-[11px] font-semibold uppercase text-slate-500 group-hover:text-[#166534] tracking-wider">
                       Coding
                     </span>
-                    <CodingIcon className="w-4 h-4 text-slate-400 group-hover:text-blue-600" />
+                    <CodingIcon className="w-4 h-4 text-slate-400 group-hover:text-[#166534]" />
                   </div>
                   <div className="text-xl font-bold text-slate-900 tracking-tight font-mono">
                     {codingProblems.toLocaleString()}
@@ -343,13 +344,13 @@ function AdminDashboardPage() {
                 {/* Companies */}
                 <Link
                   to="/admin/companies"
-                  className="p-3.5 rounded-lg border border-slate-200/90 bg-slate-50/50 hover:bg-blue-50/40 hover:border-blue-200 transition-all text-left no-underline group block"
+                  className="p-3.5 rounded-lg border border-slate-200/90 bg-slate-50/50 hover:bg-[#F0FDF4] hover:border-[#BBF7D0] transition-all text-left no-underline group block"
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[11px] font-semibold uppercase text-slate-500 group-hover:text-blue-700 tracking-wider">
+                    <span className="text-[11px] font-semibold uppercase text-slate-500 group-hover:text-[#166534] tracking-wider">
                       Companies
                     </span>
-                    <CompanyIcon className="w-4 h-4 text-slate-400 group-hover:text-blue-600" />
+                    <CompanyIcon className="w-4 h-4 text-slate-400 group-hover:text-[#166534]" />
                   </div>
                   <div className="text-xl font-bold text-slate-900 tracking-tight font-mono">
                     {companiesTotal.toLocaleString()}
@@ -362,13 +363,13 @@ function AdminDashboardPage() {
                 {/* Study Materials */}
                 <Link
                   to="/admin/resources"
-                  className="p-3.5 rounded-lg border border-slate-200/90 bg-slate-50/50 hover:bg-blue-50/40 hover:border-blue-200 transition-all text-left no-underline group block"
+                  className="p-3.5 rounded-lg border border-slate-200/90 bg-slate-50/50 hover:bg-[#F0FDF4] hover:border-[#BBF7D0] transition-all text-left no-underline group block"
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[11px] font-semibold uppercase text-slate-500 group-hover:text-blue-700 tracking-wider">
+                    <span className="text-[11px] font-semibold uppercase text-slate-500 group-hover:text-[#166534] tracking-wider">
                       Materials
                     </span>
-                    <ResourcesIcon className="w-4 h-4 text-slate-400 group-hover:text-blue-600" />
+                    <ResourcesIcon className="w-4 h-4 text-slate-400 group-hover:text-[#166534]" />
                   </div>
                   <div className="text-xl font-bold text-slate-900 tracking-tight font-mono">
                     {resourcesTotal.toLocaleString()}
@@ -381,13 +382,13 @@ function AdminDashboardPage() {
                 {/* Mock Tests */}
                 <Link
                   to="/admin/mock-tests"
-                  className="p-3.5 rounded-lg border border-slate-200/90 bg-slate-50/50 hover:bg-blue-50/40 hover:border-blue-200 transition-all text-left no-underline group block"
+                  className="p-3.5 rounded-lg border border-slate-200/90 bg-slate-50/50 hover:bg-[#F0FDF4] hover:border-[#BBF7D0] transition-all text-left no-underline group block"
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[11px] font-semibold uppercase text-slate-500 group-hover:text-blue-700 tracking-wider">
+                    <span className="text-[11px] font-semibold uppercase text-slate-500 group-hover:text-[#166534] tracking-wider">
                       Mock Tests
                     </span>
-                    <MockTestIcon className="w-4 h-4 text-slate-400 group-hover:text-blue-600" />
+                    <MockTestIcon className="w-4 h-4 text-slate-400 group-hover:text-[#166534]" />
                   </div>
                   <div className="text-xl font-bold text-slate-900 tracking-tight font-mono">
                     {mockTestsTotal.toLocaleString()}
@@ -400,13 +401,13 @@ function AdminDashboardPage() {
                 {/* Reviews */}
                 <Link
                   to="/admin/reviews"
-                  className="p-3.5 rounded-lg border border-slate-200/90 bg-slate-50/50 hover:bg-blue-50/40 hover:border-blue-200 transition-all text-left no-underline group block"
+                  className="p-3.5 rounded-lg border border-slate-200/90 bg-slate-50/50 hover:bg-[#F0FDF4] hover:border-[#BBF7D0] transition-all text-left no-underline group block"
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[11px] font-semibold uppercase text-slate-500 group-hover:text-blue-700 tracking-wider">
+                    <span className="text-[11px] font-semibold uppercase text-slate-500 group-hover:text-[#166534] tracking-wider">
                       Reviews
                     </span>
-                    <StarIcon className="w-4 h-4 text-slate-400 group-hover:text-blue-600" />
+                    <StarIcon className="w-4 h-4 text-slate-400 group-hover:text-[#166534]" />
                   </div>
                   <div className="text-xl font-bold text-slate-900 tracking-tight font-mono">
                     {reviewsTotal.toLocaleString()}
@@ -493,95 +494,62 @@ function AdminDashboardPage() {
           {/* Quick Management Shortcuts */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm">Management Shortcuts</CardTitle>
+              <CardTitle className="text-sm">Quick Management</CardTitle>
             </CardHeader>
             <CardContent className="space-y-1.5 p-3">
               <Link
                 to="/admin/students"
-                className="flex items-center justify-between p-2.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-700 hover:text-slate-900 transition-colors no-underline group"
+                className="flex items-center justify-between p-2.5 rounded-lg hover:bg-[#F0FDF4] text-xs font-semibold text-slate-700 hover:text-[#166534] transition-colors no-underline group"
               >
                 <div className="flex items-center gap-2.5">
-                  <ProfileIcon className="w-4 h-4 text-slate-400 group-hover:text-blue-600 transition-colors" />
+                  <UsersIcon className="w-4 h-4 text-slate-400 group-hover:text-[#166534] transition-colors" />
                   <span>Student Directory</span>
                 </div>
-                <ArrowRightIcon className="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-600" />
+                <ArrowRightIcon className="w-3.5 h-3.5 text-slate-300 group-hover:text-[#166534]" />
               </Link>
 
               <Link
                 to="/admin/aptitude"
-                className="flex items-center justify-between p-2.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-700 hover:text-slate-900 transition-colors no-underline group"
+                className="flex items-center justify-between p-2.5 rounded-lg hover:bg-[#F0FDF4] text-xs font-semibold text-slate-700 hover:text-[#166534] transition-colors no-underline group"
               >
                 <div className="flex items-center gap-2.5">
-                  <AptitudeIcon className="w-4 h-4 text-slate-400 group-hover:text-blue-600 transition-colors" />
+                  <AptitudeIcon className="w-4 h-4 text-slate-400 group-hover:text-[#166534] transition-colors" />
                   <span>Aptitude Questions</span>
                 </div>
-                <ArrowRightIcon className="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-600" />
+                <ArrowRightIcon className="w-3.5 h-3.5 text-slate-300 group-hover:text-[#166534]" />
               </Link>
 
               <Link
                 to="/admin/coding"
-                className="flex items-center justify-between p-2.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-700 hover:text-slate-900 transition-colors no-underline group"
+                className="flex items-center justify-between p-2.5 rounded-lg hover:bg-[#F0FDF4] text-xs font-semibold text-slate-700 hover:text-[#166534] transition-colors no-underline group"
               >
                 <div className="flex items-center gap-2.5">
-                  <CodingIcon className="w-4 h-4 text-slate-400 group-hover:text-blue-600 transition-colors" />
+                  <CodingIcon className="w-4 h-4 text-slate-400 group-hover:text-[#166534] transition-colors" />
                   <span>Coding Problem Bank</span>
                 </div>
-                <ArrowRightIcon className="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-600" />
+                <ArrowRightIcon className="w-3.5 h-3.5 text-slate-300 group-hover:text-[#166534]" />
               </Link>
 
               <Link
                 to="/admin/companies"
-                className="flex items-center justify-between p-2.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-700 hover:text-slate-900 transition-colors no-underline group"
+                className="flex items-center justify-between p-2.5 rounded-lg hover:bg-[#F0FDF4] text-xs font-semibold text-slate-700 hover:text-[#166534] transition-colors no-underline group"
               >
                 <div className="flex items-center gap-2.5">
-                  <CompanyIcon className="w-4 h-4 text-slate-400 group-hover:text-blue-600 transition-colors" />
-                  <span>Companies Directory</span>
+                  <CompanyIcon className="w-4 h-4 text-slate-400 group-hover:text-[#166534] transition-colors" />
+                  <span>Company Profiles</span>
                 </div>
-                <ArrowRightIcon className="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-600" />
-              </Link>
-
-              <Link
-                to="/admin/resources"
-                className="flex items-center justify-between p-2.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-700 hover:text-slate-900 transition-colors no-underline group"
-              >
-                <div className="flex items-center gap-2.5">
-                  <ResourcesIcon className="w-4 h-4 text-slate-400 group-hover:text-blue-600 transition-colors" />
-                  <span>Study Resources</span>
-                </div>
-                <ArrowRightIcon className="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-600" />
-              </Link>
-
-              <Link
-                to="/admin/mock-tests"
-                className="flex items-center justify-between p-2.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-700 hover:text-slate-900 transition-colors no-underline group"
-              >
-                <div className="flex items-center gap-2.5">
-                  <MockTestIcon className="w-4 h-4 text-slate-400 group-hover:text-blue-600 transition-colors" />
-                  <span>Mock Assessments</span>
-                </div>
-                <ArrowRightIcon className="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-600" />
+                <ArrowRightIcon className="w-3.5 h-3.5 text-slate-300 group-hover:text-[#166534]" />
               </Link>
 
               <Link
                 to="/admin/reviews"
-                className="flex items-center justify-between p-2.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-700 hover:text-slate-900 transition-colors no-underline group"
+                className="flex items-center justify-between p-2.5 rounded-lg hover:bg-[#F0FDF4] text-xs font-semibold text-slate-700 hover:text-[#166534] transition-colors no-underline group"
               >
                 <div className="flex items-center gap-2.5">
-                  <StarIcon className="w-4 h-4 text-slate-400 group-hover:text-blue-600 transition-colors" />
+                  <StarIcon className="w-4 h-4 text-slate-400 group-hover:text-[#166534] transition-colors" />
                   <span>Review Moderation</span>
                 </div>
-                <ArrowRightIcon className="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-600" />
-              </Link>
-
-              <Link
-                to="/admin/analytics"
-                className="flex items-center justify-between p-2.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-700 hover:text-slate-900 transition-colors no-underline group"
-              >
-                <div className="flex items-center gap-2.5">
-                  <ClockIcon className="w-4 h-4 text-slate-400 group-hover:text-blue-600 transition-colors" />
-                  <span>Placement Analytics</span>
-                </div>
-                <ArrowRightIcon className="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-600" />
+                <ArrowRightIcon className="w-3.5 h-3.5 text-slate-300 group-hover:text-[#166534]" />
               </Link>
             </CardContent>
           </Card>
@@ -614,7 +582,7 @@ function AdminDashboardPage() {
                         <div className="flex items-start gap-2.5 min-w-0">
                           <div className="w-7 h-7 rounded-md bg-slate-100 text-slate-600 flex items-center justify-center shrink-0 mt-0.5">
                             {isRegistration ? (
-                              <ProfileIcon className="w-3.5 h-3.5 text-blue-600" />
+                              <ProfileIcon className="w-3.5 h-3.5 text-[#166534]" />
                             ) : isQuestion ? (
                               <DocumentIcon className="w-3.5 h-3.5 text-slate-600" />
                             ) : (
