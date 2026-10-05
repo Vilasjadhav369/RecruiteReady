@@ -1,9 +1,10 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.jsx";
-import { MenuIcon, LogoutIcon, SettingsIcon } from "../ui/Icons.jsx";
+import { MenuIcon, LogoutIcon, SettingsIcon, SearchIcon } from "../ui/Icons.jsx";
 import { Avatar } from "../ui/Avatar.jsx";
 import NotificationDropdown from "../notifications/NotificationDropdown.jsx";
+import GlobalSearchModal from "../search/GlobalSearchModal.jsx";
 
 /**
  * AdminHeader — Single authoritative top header for administrator workspace.
@@ -11,6 +12,7 @@ import NotificationDropdown from "../notifications/NotificationDropdown.jsx";
  */
 function AdminHeader({ onMenuClick }) {
   const { user, logout } = useAuth();
+  const [isSearchOpen, setIsSearchOpen] = React.useState(false);
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -67,6 +69,18 @@ function AdminHeader({ onMenuClick }) {
           </span>
         </div>
 
+        {/* Global Search Button */}
+        <button
+          type="button"
+          onClick={() => setIsSearchOpen(true)}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-500 hover:text-slate-800 transition-all text-xs cursor-pointer shadow-2xs focus-visible:outline-2 focus-visible:outline-[#166534]"
+          aria-label="Search RecruitReady"
+          title="Search RecruitReady"
+        >
+          <SearchIcon className="w-3.5 h-3.5 text-slate-400" />
+          <span className="hidden md:inline">Search...</span>
+        </button>
+
         {/* Notifications */}
         <NotificationDropdown />
 
@@ -90,6 +104,9 @@ function AdminHeader({ onMenuClick }) {
           <span className="hidden sm:inline">Sign Out</span>
         </button>
       </div>
+
+      {/* Global Search Modal */}
+      <GlobalSearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
     </header>
   );
 }

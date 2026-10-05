@@ -13,7 +13,7 @@ export function Breadcrumbs({ items = [], className = '' }) {
       {items.map((item, index) => {
         const isLast = index === items.length - 1;
         const label = typeof item === 'object' ? item.label : item;
-        const to = typeof item === 'object' ? item.to : undefined;
+        const to = typeof item === 'object' ? (item.to || item.href) : undefined;
 
         return (
           <React.Fragment key={index}>

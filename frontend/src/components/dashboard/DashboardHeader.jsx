@@ -1,19 +1,33 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.jsx";
-import { MenuIcon, ProfileIcon, LogoutIcon, ChevronDownIcon } from "../ui/Icons.jsx";
+import { MenuIcon, ProfileIcon, LogoutIcon, ChevronDownIcon, SearchIcon } from "../ui/Icons.jsx";
 import { Avatar } from "../ui/Avatar.jsx";
 import NotificationDropdown from "../notifications/NotificationDropdown.jsx";
+import GlobalSearchModal from "../search/GlobalSearchModal.jsx";
 
 /**
  * DashboardHeader — Standardized header for student workspace.
- * Clean, compact, accessible, with real authenticated student details.
+ * Clean, compact, accessible, with real authenticated student details and global search.
  */
 function DashboardHeader({ onMenuClick }) {
   const { user, logout } = useAuth();
   const [profileDropdown, setProfileDropdown] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
+
+  // Global Ctrl+K / Cmd+K listener
+  useEffect(() => {
+    const handleGlobalKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsSearchOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, []);
 
   // Close dropdown on outside click or Escape
   useEffect(() => {
@@ -72,8 +86,23 @@ function DashboardHeader({ onMenuClick }) {
         </div>
       </div>
 
-      {/* Right: Notifications & Profile Control */}
+      {/* Right: Search, Notifications & Profile Control */}
       <div className="flex items-center gap-2 sm:gap-3">
+        {/* Search Trigger Button */}
+        <button
+          type="button"
+          onClick={() => setIsSearchOpen(true)}
+          className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-lg border border-slate-200 hover:border-slate-300 bg-slate-50 hover:bg-white text-slate-500 hover:text-slate-800 transition-all text-xs cursor-pointer shadow-2xs focus-visible:outline-2 focus-visible:outline-[#166534]"
+          aria-label="Search RecruitReady (Ctrl+K)"
+          title="Search RecruitReady (Ctrl+K)"
+        >
+          <SearchIcon className="w-3.5 h-3.5 text-slate-400" />
+          <span className="hidden md:inline">Search...</span>
+          <kbd className="hidden md:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono text-slate-400 bg-white border border-slate-200 rounded">
+            ⌘K
+          </kbd>
+        </button>
+
         {/* Active Notification Center */}
         <NotificationDropdown />
 
@@ -136,6 +165,9 @@ function DashboardHeader({ onMenuClick }) {
           )}
         </div>
       </div>
+
+      {/* Global Search Command Palette Modal */}
+      <GlobalSearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
     </header>
   );
 }
