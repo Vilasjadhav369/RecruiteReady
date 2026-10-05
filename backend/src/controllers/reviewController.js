@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import Review from '../models/Review.js';
+import notificationService from '../services/notificationService.js';
 
 /**
  * POST /api/reviews
@@ -38,6 +39,15 @@ export const createReview = async (req, res, next) => {
       title: (title || '').trim(),
       comment: comment.trim(),
       status: 'pending',
+    });
+
+    // Notify administrators about pending review submission
+    await notificationService.createAdminNotification({
+      type: 'admin_review_pending',
+      title: 'New Review Pending Moderation',
+      message: `${req.user.firstName || 'A student'} submitted a ${review.rating}-star review awaiting approval.`,
+      link: '/admin/reviews',
+      metadata: { entityId: review._id.toString() },
     });
 
     res.status(201).json({

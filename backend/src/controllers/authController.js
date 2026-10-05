@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import User from '../models/User.js';
 import { generateToken } from '../utils/jwt.js';
+import notificationService from '../services/notificationService.js';
 
 /**
  * POST /api/auth/register
@@ -302,6 +303,16 @@ export const changePassword = async (req, res, next) => {
     const salt = await bcrypt.genSalt(12);
     user.password = await bcrypt.hash(newPassword, salt);
     await user.save();
+
+    // Generate security notification for the user
+    await notificationService.createNotification({
+      recipient: user._id,
+      type: 'security_alert',
+      title: 'Password Changed',
+      message: 'Your account password was successfully updated.',
+      link: '/profile',
+      metadata: { action: 'password_change' },
+    });
 
     res.status(200).json({
       success: true,

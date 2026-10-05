@@ -10,6 +10,7 @@ import LoginPage from "../pages/LoginPage.jsx";
 import RegisterPage from "../pages/RegisterPage.jsx";
 import DashboardPage from "../pages/DashboardPage.jsx";
 import ProfilePage from "../pages/ProfilePage.jsx";
+import NotificationsPage from "../pages/NotificationsPage.jsx";
 import NotFoundPage from "../pages/NotFoundPage.jsx";
 
 // Phase 7 — Aptitude Practice
@@ -83,6 +84,7 @@ function AppRoutes() {
       >
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/notifications" element={<NotificationsPage />} />
 
         {/* Phase 7 — Aptitude Practice */}
         <Route path="/aptitude" element={<AptitudePracticePage />} />
@@ -139,6 +141,7 @@ function AppRoutes() {
         <Route path="/admin/reviews" element={<AdminReviewsPage />} />
         <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
         <Route path="/admin/settings" element={<AdminSettingsPage />} />
+        <Route path="/admin/notifications" element={<NotificationsPage />} />
       </Route>
 
       {/* ── 404 Catch-All ─────────────────────────────── */}

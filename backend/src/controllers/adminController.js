@@ -9,6 +9,7 @@ import StudyMaterial from '../models/StudyMaterial.js';
 import MockTest from '../models/MockTest.js';
 import MockTestAttempt from '../models/MockTestAttempt.js';
 import Review from '../models/Review.js';
+import notificationService from '../services/notificationService.js';
 
 // ─── ADMIN DASHBOARD ──────────────────────────────────────────────────────────
 
@@ -282,17 +283,28 @@ export const createAptitudeQuestion = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'All required question fields must be provided' });
     }
 
-    if (Array.isArray(options)) {
-      const texts = options.map(o => (o.text || '').trim().toLowerCase());
-      if (new Set(texts).size < options.length) {
-        return res.status(400).json({ success: false, message: 'All option choices must be mutually distinct' });
-      }
+    if (!Array.isArray(options) || options.length !== 4) {
+      return res.status(400).json({ success: false, message: 'Exactly four options (A, B, C, D) are required' });
+    }
+
+    const validKeys = ['A', 'B', 'C', 'D'];
+    const normalizedCorrect = String(correctOption).trim().toUpperCase();
+    if (!validKeys.includes(normalizedCorrect)) {
+      return res.status(400).json({ success: false, message: 'Correct option must be A, B, C, or D' });
+    }
+
+    const texts = options.map((o) => (o.text || '').trim().toLowerCase());
+    if (texts.some((t) => !t)) {
+      return res.status(400).json({ success: false, message: 'All four option choices must contain text' });
+    }
+    if (new Set(texts).size < options.length) {
+      return res.status(400).json({ success: false, message: 'All option choices must be mutually distinct' });
     }
 
     const newQuestion = await AptitudeQuestion.create({
       question: question.trim(),
-      options,
-      correctOption: correctOption.toUpperCase(),
+      options: options.map((o) => ({ key: String(o.key || '').trim().toUpperCase(), text: String(o.text || '').trim() })),
+      correctOption: normalizedCorrect,
       category: category.trim(),
       topic: topic.trim(),
       difficulty: difficulty ? difficulty.toLowerCase() : 'medium',
@@ -329,6 +341,32 @@ export const updateAptitudeQuestion = async (req, res, next) => {
   try {
     const updates = { ...req.body };
     delete updates.createdBy;
+
+    if (updates.options !== undefined) {
+      if (!Array.isArray(updates.options) || updates.options.length !== 4) {
+        return res.status(400).json({ success: false, message: 'Exactly four options (A, B, C, D) are required' });
+      }
+      const texts = updates.options.map((o) => (o.text || '').trim().toLowerCase());
+      if (texts.some((t) => !t)) {
+        return res.status(400).json({ success: false, message: 'All four option choices must contain text' });
+      }
+      if (new Set(texts).size < updates.options.length) {
+        return res.status(400).json({ success: false, message: 'All option choices must be mutually distinct' });
+      }
+      updates.options = updates.options.map((o) => ({
+        key: String(o.key || '').trim().toUpperCase(),
+        text: String(o.text || '').trim(),
+      }));
+    }
+
+    if (updates.correctOption !== undefined) {
+      const validKeys = ['A', 'B', 'C', 'D'];
+      const normalizedCorrect = String(updates.correctOption).trim().toUpperCase();
+      if (!validKeys.includes(normalizedCorrect)) {
+        return res.status(400).json({ success: false, message: 'Correct option must be A, B, C, or D' });
+      }
+      updates.correctOption = normalizedCorrect;
+    }
 
     const updated = await AptitudeQuestion.findByIdAndUpdate(
       req.params.id,
@@ -371,6 +409,45 @@ export const updateAptitudeQuestionStatus = async (req, res, next) => {
       success: true,
       message: `Question ${isActive ? 'activated' : 'deactivated'} successfully`,
       data: { question: updated },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteAptitudeQuestion = async (req, res, next) => {
+  try {
+    const question = await AptitudeQuestion.findById(req.params.id);
+    if (!question) {
+      return res.status(404).json({ success: false, message: 'Question not found' });
+    }
+
+    // Protect historical student attempt scorecards and mock tests
+    const [hasAttempts, inMockTest] = await Promise.all([
+      AptitudeAttempt.exists({
+        $or: [
+          { questionIds: req.params.id },
+          { 'answers.questionId': req.params.id },
+        ],
+      }),
+      MockTest.exists({ 'questions.questionId': req.params.id }),
+    ]);
+
+    if (hasAttempts || inMockTest) {
+      question.isActive = false;
+      await question.save();
+      return res.status(200).json({
+        success: true,
+        message: 'Question has historical student attempt records or mock test references and was deactivated rather than permanently deleted to preserve scorecard integrity.',
+        data: { question, softDeleted: true },
+      });
+    }
+
+    await AptitudeQuestion.findByIdAndDelete(req.params.id);
+    res.status(200).json({
+      success: true,
+      message: 'Question deleted permanently',
+      data: { softDeleted: false },
     });
   } catch (error) {
     next(error);
@@ -542,6 +619,40 @@ export const updateCodingProblemStatus = async (req, res, next) => {
   }
 };
 
+export const deleteCodingProblem = async (req, res, next) => {
+  try {
+    const problem = await CodingProblem.findById(req.params.id);
+    if (!problem) {
+      return res.status(404).json({ success: false, message: 'Coding problem not found' });
+    }
+
+    // Check student submissions or mock tests
+    const [hasSubmissions, inMockTest] = await Promise.all([
+      CodingSubmission.exists({ problem: req.params.id }),
+      MockTest.exists({ 'questions.questionId': req.params.id }),
+    ]);
+
+    if (hasSubmissions || inMockTest) {
+      problem.isActive = false;
+      await problem.save();
+      return res.status(200).json({
+        success: true,
+        message: 'Coding problem has historical student submissions or mock test references and was deactivated rather than permanently deleted to preserve history.',
+        data: { problem, softDeleted: true },
+      });
+    }
+
+    await CodingProblem.findByIdAndDelete(req.params.id);
+    res.status(200).json({
+      success: true,
+      message: 'Coding problem deleted permanently',
+      data: { softDeleted: false },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // ─── COMPANY MANAGEMENT (PHASE 9) ─────────────────────────────────────────────
 
 export const getAdminCompanies = async (req, res, next) => {
@@ -704,6 +815,35 @@ export const updateCompanyStatus = async (req, res, next) => {
   }
 };
 
+export const deleteCompany = async (req, res, next) => {
+  try {
+    const company = await Company.findById(req.params.id);
+    if (!company) {
+      return res.status(404).json({ success: false, message: 'Company not found' });
+    }
+
+    const hasStudentsTargeting = await User.exists({ targetCompanies: company.name });
+    if (hasStudentsTargeting) {
+      company.isActive = false;
+      await company.save();
+      return res.status(200).json({
+        success: true,
+        message: 'Company is targeted by students and was deactivated rather than permanently deleted to preserve student goal data.',
+        data: { company, softDeleted: true },
+      });
+    }
+
+    await Company.findByIdAndDelete(req.params.id);
+    res.status(200).json({
+      success: true,
+      message: 'Company deleted permanently',
+      data: { softDeleted: false },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // ─── STUDY RESOURCE MANAGEMENT (PHASE 10) ─────────────────────────────────────
 
 export const getAdminResources = async (req, res, next) => {
@@ -753,13 +893,27 @@ export const createResource = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Title, type, category, topic, and URL are required' });
     }
 
+    const trimmedUrl = String(url).trim();
+    const lowerUrl = trimmedUrl.toLowerCase();
+    if (
+      lowerUrl.startsWith('javascript:') ||
+      lowerUrl.startsWith('data:') ||
+      lowerUrl.startsWith('vbscript:') ||
+      (!lowerUrl.startsWith('http://') && !lowerUrl.startsWith('https://') && !lowerUrl.startsWith('/'))
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid URL. Only HTTP and HTTPS URLs are allowed.',
+      });
+    }
+
     const resource = await StudyMaterial.create({
       title: title.trim(),
       description: (description || '').trim(),
       type,
       category: category.trim(),
       topic: topic.trim(),
-      url: url.trim(),
+      url: trimmedUrl,
       fileUrl: fileUrl || '',
       thumbnailUrl: thumbnailUrl || '',
       isActive: isActive !== undefined ? isActive : true,
@@ -792,6 +946,23 @@ export const updateResource = async (req, res, next) => {
   try {
     const updates = { ...req.body };
     delete updates.uploadedBy;
+
+    if (updates.url !== undefined) {
+      const trimmedUrl = String(updates.url).trim();
+      const lowerUrl = trimmedUrl.toLowerCase();
+      if (
+        lowerUrl.startsWith('javascript:') ||
+        lowerUrl.startsWith('data:') ||
+        lowerUrl.startsWith('vbscript:') ||
+        (!lowerUrl.startsWith('http://') && !lowerUrl.startsWith('https://') && !lowerUrl.startsWith('/'))
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid URL. Only HTTP and HTTPS URLs are allowed.',
+        });
+      }
+      updates.url = trimmedUrl;
+    }
 
     const resource = await StudyMaterial.findByIdAndUpdate(
       req.params.id,
@@ -840,6 +1011,24 @@ export const updateResourceStatus = async (req, res, next) => {
   }
 };
 
+export const deleteResource = async (req, res, next) => {
+  try {
+    const resource = await StudyMaterial.findById(req.params.id);
+    if (!resource) {
+      return res.status(404).json({ success: false, message: 'Resource not found' });
+    }
+
+    await StudyMaterial.findByIdAndDelete(req.params.id);
+    res.status(200).json({
+      success: true,
+      message: 'Resource deleted permanently',
+      data: { softDeleted: false },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // ─── MOCK TEST MANAGEMENT (PHASE 11) ──────────────────────────────────────────
 
 export const getAdminMockTests = async (req, res, next) => {
@@ -872,14 +1061,37 @@ export const createMockTest = async (req, res, next) => {
   try {
     const { title, description, durationMinutes, categories, difficulty, instructions, questions, isPublished } = req.body;
 
-    if (!title || !durationMinutes) {
+    if (!title || durationMinutes === undefined || durationMinutes === null) {
       return res.status(400).json({ success: false, message: 'Title and duration in minutes are required' });
+    }
+
+    const dur = Number(durationMinutes);
+    if (!dur || dur <= 0 || isNaN(dur)) {
+      return res.status(400).json({ success: false, message: 'Duration must be greater than 0 minutes' });
+    }
+
+    if (Array.isArray(questions) && questions.length > 0) {
+      for (const q of questions) {
+        if (!q.questionId || !mongoose.Types.ObjectId.isValid(q.questionId)) {
+          return res.status(400).json({ success: false, message: `Invalid question ID format: ${q.questionId}` });
+        }
+        const qType = q.questionType || (q.questionTypeRef === 'CodingProblem' ? 'coding' : 'aptitude');
+        let exists = false;
+        if (qType === 'coding') {
+          exists = await CodingProblem.exists({ _id: q.questionId });
+        } else {
+          exists = await AptitudeQuestion.exists({ _id: q.questionId });
+        }
+        if (!exists) {
+          return res.status(400).json({ success: false, message: `Question with ID ${q.questionId} does not exist in database` });
+        }
+      }
     }
 
     const test = await MockTest.create({
       title: title.trim(),
       description: description || '',
-      durationMinutes: Number(durationMinutes),
+      durationMinutes: dur,
       categories: Array.isArray(categories) ? categories : ['General Aptitude'],
       difficulty: difficulty || 'medium',
       instructions: instructions || 'Read carefully and submit within time limit.',
@@ -916,7 +1128,30 @@ export const updateMockTest = async (req, res, next) => {
     const updates = { ...req.body };
     delete updates.createdBy;
 
+    if (updates.durationMinutes !== undefined) {
+      const dur = Number(updates.durationMinutes);
+      if (!dur || dur <= 0 || isNaN(dur)) {
+        return res.status(400).json({ success: false, message: 'Duration must be greater than 0 minutes' });
+      }
+      updates.durationMinutes = dur;
+    }
+
     if (updates.questions && Array.isArray(updates.questions)) {
+      for (const q of updates.questions) {
+        if (!q.questionId || !mongoose.Types.ObjectId.isValid(q.questionId)) {
+          return res.status(400).json({ success: false, message: `Invalid question ID format: ${q.questionId}` });
+        }
+        const qType = q.questionType || (q.questionTypeRef === 'CodingProblem' ? 'coding' : 'aptitude');
+        let exists = false;
+        if (qType === 'coding') {
+          exists = await CodingProblem.exists({ _id: q.questionId });
+        } else {
+          exists = await AptitudeQuestion.exists({ _id: q.questionId });
+        }
+        if (!exists) {
+          return res.status(400).json({ success: false, message: `Question with ID ${q.questionId} does not exist in database` });
+        }
+      }
       updates.totalQuestions = updates.questions.length;
     }
 
@@ -961,6 +1196,35 @@ export const updateMockTestStatus = async (req, res, next) => {
       success: true,
       message: `Mock test ${isPublished ? 'published' : 'unpublished'} successfully`,
       data: { mockTest },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteMockTest = async (req, res, next) => {
+  try {
+    const mockTest = await MockTest.findById(req.params.id);
+    if (!mockTest) {
+      return res.status(404).json({ success: false, message: 'Mock test not found' });
+    }
+
+    const hasAttempts = await MockTestAttempt.exists({ mockTest: req.params.id });
+    if (hasAttempts) {
+      mockTest.isPublished = false;
+      await mockTest.save();
+      return res.status(200).json({
+        success: true,
+        message: 'Mock test has historical student attempts and was unpublished rather than permanently deleted to preserve scorecard history.',
+        data: { mockTest, softDeleted: true },
+      });
+    }
+
+    await MockTest.findByIdAndDelete(req.params.id);
+    res.status(200).json({
+      success: true,
+      message: 'Mock test deleted permanently',
+      data: { softDeleted: false },
     });
   } catch (error) {
     next(error);
@@ -1026,6 +1290,18 @@ export const approveReview = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Review not found' });
     }
 
+    // Notify the student that their review was approved
+    if (review.user) {
+      await notificationService.createNotification({
+        recipient: review.user,
+        type: 'review_approved',
+        title: 'Review Approved',
+        message: 'Your RecruitReady review has been approved and is now visible to the community.',
+        link: '/reviews',
+        metadata: { entityId: review._id.toString() },
+      });
+    }
+
     res.status(200).json({
       success: true,
       message: 'Review approved successfully',
@@ -1046,6 +1322,18 @@ export const rejectReview = async (req, res, next) => {
 
     if (!review) {
       return res.status(404).json({ success: false, message: 'Review not found' });
+    }
+
+    // Notify the student that their review was not approved
+    if (review.user) {
+      await notificationService.createNotification({
+        recipient: review.user,
+        type: 'review_rejected',
+        title: 'Review Update',
+        message: 'Your review was not approved during moderation.',
+        link: '/reviews',
+        metadata: { entityId: review._id.toString() },
+      });
     }
 
     res.status(200).json({
@@ -1166,18 +1454,24 @@ export default {
   getAdminCompanyById,
   updateCompany,
   updateCompanyStatus,
+  deleteCompany,
   getAdminResources,
   createResource,
   getAdminResourceById,
   updateResource,
   updateResourceStatus,
+  deleteResource,
   getAdminMockTests,
   createMockTest,
   getAdminMockTestById,
   updateMockTest,
   updateMockTestStatus,
+  deleteMockTest,
   getAdminReviews,
   approveReview,
   rejectReview,
+  deleteAdminReview,
+  deleteAptitudeQuestion,
+  deleteCodingProblem,
   getAdminAnalytics,
 };

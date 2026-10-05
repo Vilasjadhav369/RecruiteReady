@@ -14,6 +14,7 @@ import {
   CloseIcon,
   StarIcon,
   TrophyIcon,
+  BellIcon,
 } from "../ui/Icons.jsx";
 import { Avatar } from "../ui/Avatar.jsx";
 
@@ -50,6 +51,7 @@ const NAV_GROUPS = [
   {
     title: "Account",
     items: [
+      { label: "Notifications", to: "/notifications", icon: BellIcon },
       { label: "My Profile", to: "/profile", icon: ProfileIcon },
     ],
   },

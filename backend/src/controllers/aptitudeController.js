@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import AptitudeQuestion from '../models/AptitudeQuestion.js';
 import AptitudeAttempt from '../models/AptitudeAttempt.js';
+import notificationService from '../services/notificationService.js';
 
 /**
  * Helper to sanitize question for active student session
@@ -296,6 +297,16 @@ export const submitSession = async (req, res, next) => {
     attempt.submittedAt = new Date();
 
     await attempt.save();
+
+    // Generate aptitude completion notification for student
+    await notificationService.createNotification({
+      recipient: attempt.user,
+      type: 'aptitude_completed',
+      title: 'Aptitude Practice Completed',
+      message: `Your aptitude practice result for "${attempt.subcategory || attempt.category || 'Practice Session'}" is ready. Score: ${attempt.percentage}%`,
+      link: `/aptitude/result/${attempt._id}`,
+      metadata: { entityId: attempt._id.toString() },
+    });
 
     res.status(200).json({
       success: true,

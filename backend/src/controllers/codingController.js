@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import CodingProblem from '../models/CodingProblem.js';
 import CodingSubmission from '../models/CodingSubmission.js';
 import codeExecutionService from '../services/codeExecutionService.js';
+import notificationService from '../services/notificationService.js';
 
 /**
  * Sanitize coding problem for student API
@@ -104,6 +105,64 @@ export const getProblemById = async (req, res, next) => {
 };
 
 /**
+ * POST /api/coding/problems/:id/run
+ * Execute code against public sample test cases (does not persist a submission).
+ */
+export const runProblemCode = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { language, code } = req.body;
+
+    if (!code || !code.trim()) {
+      return res.status(400).json({ success: false, message: 'Source code cannot be empty' });
+    }
+    if (!language || !['javascript', 'python', 'java', 'cpp'].includes(language.toLowerCase())) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid language specified. Supported languages: javascript, python, java, cpp',
+      });
+    }
+
+    let problem;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      problem = await CodingProblem.findOne({ _id: id, isActive: true });
+    } else {
+      problem = await CodingProblem.findOne({ slug: id, isActive: true });
+    }
+
+    if (!problem) {
+      return res.status(404).json({ success: false, message: 'Problem not found' });
+    }
+
+    // Only test against public/sample test cases, never hidden test cases
+    const sampleCases = (problem.testCases || []).filter((tc) => !tc.isHidden);
+
+    const execResult = await codeExecutionService.executeCode({
+      language,
+      code,
+      testCases: sampleCases,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: execResult.message || 'Execution completed',
+      data: {
+        runResult: {
+          status: execResult.status,
+          passedTests: execResult.passedTests,
+          totalTests: sampleCases.length,
+          runtime: execResult.runtime || 0,
+          memory: execResult.memory || 0,
+          executionMessage: execResult.message || '',
+        },
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
  * POST /api/coding/problems/:id/submit
  * Submit code for a problem.
  */
@@ -146,6 +205,27 @@ export const submitProblem = async (req, res, next) => {
       memory: execResult.memory || 0,
       executionMessage: execResult.message || '',
     });
+
+    // Generate notification only when execution result is definitive and reliable
+    if (submission.status === 'accepted') {
+      await notificationService.createNotification({
+        recipient: req.user._id,
+        type: 'coding_accepted',
+        title: 'Coding Solution Accepted',
+        message: `Your solution for "${problem.title}" was accepted!`,
+        link: `/coding/submission/${submission._id}`,
+        metadata: { entityId: submission._id.toString() },
+      });
+    } else if (['wrong_answer', 'time_limit_exceeded', 'runtime_error', 'compilation_error'].includes(submission.status)) {
+      await notificationService.createNotification({
+        recipient: req.user._id,
+        type: 'coding_rejected',
+        title: 'Coding Submission Evaluated',
+        message: `Your solution for "${problem.title}" was evaluated: ${submission.status.replace(/_/g, ' ')}.`,
+        link: `/coding/submission/${submission._id}`,
+        metadata: { entityId: submission._id.toString() },
+      });
+    }
 
     res.status(201).json({
       success: true,

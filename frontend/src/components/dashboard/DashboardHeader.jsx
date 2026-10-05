@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.jsx";
-import { MenuIcon, BellIcon, ProfileIcon, LogoutIcon, ChevronDownIcon } from "../ui/Icons.jsx";
+import { MenuIcon, ProfileIcon, LogoutIcon, ChevronDownIcon } from "../ui/Icons.jsx";
 import { Avatar } from "../ui/Avatar.jsx";
+import NotificationDropdown from "../notifications/NotificationDropdown.jsx";
 
 /**
  * DashboardHeader — Standardized header for student workspace.
@@ -73,15 +74,8 @@ function DashboardHeader({ onMenuClick }) {
 
       {/* Right: Notifications & Profile Control */}
       <div className="flex items-center gap-2 sm:gap-3">
-        {/* Notification Bell (Honest indicator) */}
-        <button
-          type="button"
-          className="min-w-[40px] min-h-[40px] p-2 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-[#166534]"
-          aria-label="Notifications"
-          title="Notifications"
-        >
-          <BellIcon className="w-4 h-4" />
-        </button>
+        {/* Active Notification Center */}
+        <NotificationDropdown />
 
         <div className="h-4 w-px bg-slate-200 hidden sm:block" aria-hidden="true" />
 

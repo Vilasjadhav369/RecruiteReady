@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { MenuIcon, LogoutIcon, SettingsIcon } from "../ui/Icons.jsx";
 import { Avatar } from "../ui/Avatar.jsx";
+import NotificationDropdown from "../notifications/NotificationDropdown.jsx";
 
 /**
  * AdminHeader — Single authoritative top header for administrator workspace.
@@ -65,6 +66,9 @@ function AdminHeader({ onMenuClick }) {
             ADMIN
           </span>
         </div>
+
+        {/* Notifications */}
+        <NotificationDropdown />
 
         {/* Settings Shortcut */}
         <Link

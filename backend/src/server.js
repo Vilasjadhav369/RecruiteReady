@@ -15,6 +15,7 @@ import progressRouter from './routes/progress.js';
 import reviewRouter from './routes/review.js';
 import leaderboardRouter from './routes/leaderboard.js';
 import profileRouter from './routes/profile.js';
+import notificationRouter from './routes/notification.js';
 import notFound from './middleware/notFound.js';
 import errorHandler from './middleware/errorHandler.js';
 
@@ -52,6 +53,7 @@ app.use('/api/mock-tests', mockTestRouter);
 app.use('/api/progress', progressRouter);
 app.use('/api/reviews', reviewRouter);
 app.use('/api/leaderboard', leaderboardRouter);
+app.use('/api/notifications', notificationRouter);
 
 // 5. Register 404 and global error handlers
 app.use(notFound);

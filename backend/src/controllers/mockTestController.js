@@ -3,6 +3,7 @@ import MockTest from '../models/MockTest.js';
 import MockTestAttempt from '../models/MockTestAttempt.js';
 import AptitudeQuestion from '../models/AptitudeQuestion.js';
 import CodingProblem from '../models/CodingProblem.js';
+import notificationService from '../services/notificationService.js';
 
 /**
  * Sanitize question for active mock test session
@@ -603,6 +604,16 @@ export const submitMockTestAttempt = async (req, res, next) => {
     const isExpired = elapsedSeconds > (attempt.timeLimitSeconds + 15);
 
     await evaluateAndFinalizeMockAttempt(attempt, isExpired);
+
+    // Generate completion notification for student
+    await notificationService.createNotification({
+      recipient: attempt.user,
+      type: 'mock_test_completed',
+      title: 'Mock Test Completed',
+      message: `Your mock test result for "${attempt.mockTest?.title || 'Mock Assessment'}" is ready. Score: ${attempt.percentage}%`,
+      link: `/mock-tests/result/${attempt._id}`,
+      metadata: { entityId: attempt._id.toString() },
+    });
 
     res.status(200).json({
       success: true,
