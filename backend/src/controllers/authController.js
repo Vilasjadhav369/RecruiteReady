@@ -159,10 +159,13 @@ export const login = async (req, res, next) => {
  * Retrieves current authenticated user.
  */
 export const getCurrentUser = async (req, res) => {
+  const userObj = req.user?.toObject ? req.user.toObject() : { ...req.user };
+  delete userObj.password;
+
   res.status(200).json({
     success: true,
     data: {
-      user: req.user,
+      user: userObj,
     },
   });
 };
@@ -228,12 +231,81 @@ export const updateProfile = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
+    const userResponse = updatedUser.toObject ? updatedUser.toObject() : { ...updatedUser };
+    delete userResponse.password;
+
     res.status(200).json({
       success: true,
       message: 'Profile updated successfully',
       data: {
-        user: updatedUser,
+        user: userResponse,
       },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * PATCH /api/auth/change-password
+ * Securely changes authenticated user password after verifying current password.
+ */
+export const changePassword = async (req, res, next) => {
+  try {
+    const userId = req.user._id;
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+
+    if (!currentPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Current password is required',
+      });
+    }
+
+    if (!newPassword || newPassword.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password must be at least 8 characters long',
+      });
+    }
+
+    if (confirmPassword !== undefined && newPassword !== confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password and confirm password do not match',
+      });
+    }
+
+    if (currentPassword === newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password must be different from current password',
+      });
+    }
+
+    const user = await User.findById(userId).select('+password');
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User account not found',
+      });
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({
+        success: false,
+        message: 'Your current password is incorrect',
+      });
+    }
+
+    const salt = await bcrypt.genSalt(12);
+    user.password = await bcrypt.hash(newPassword, salt);
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Password changed successfully',
     });
   } catch (error) {
     next(error);
@@ -256,5 +328,6 @@ export default {
   login,
   getCurrentUser,
   updateProfile,
+  changePassword,
   logout,
 };

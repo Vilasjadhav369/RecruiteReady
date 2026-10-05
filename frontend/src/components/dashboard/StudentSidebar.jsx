@@ -204,7 +204,11 @@ function StudentSidebar({ mobileOpen, setMobileOpen }) {
           onClick={() => setMobileOpen && setMobileOpen(false)}
           className="flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-slate-100 transition-colors no-underline mb-1"
         >
-          <Avatar name={user?.firstName || "Student"} size="sm" />
+          <Avatar
+            name={user?.firstName ? `${user.firstName} ${user?.lastName || ""}`.trim() : "Student User"}
+            src={user?.profilePhoto}
+            size="sm"
+          />
           <div className="min-w-0 flex-1">
             <span className="text-xs font-semibold text-slate-900 truncate block">
               {user?.firstName ? `${user.firstName} ${user?.lastName || ""}`.trim() : "Student User"}

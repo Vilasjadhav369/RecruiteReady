@@ -1,4 +1,4 @@
-﻿import api from "./api.js";
+import api from "./api.js";
 
 export const TOKEN_KEY = "recruiteready_token";
 
@@ -66,6 +66,17 @@ export const updateProfile = async (profileData) => {
 };
 
 /**
+ * Change authenticated user password.
+ *
+ * @param {Object} passwordData - { currentPassword, newPassword, confirmPassword }
+ * @returns {Promise<Object>} API response payload
+ */
+export const changePassword = async (passwordData) => {
+  const response = await api.patch("/auth/change-password", passwordData);
+  return response.data;
+};
+
+/**
  * Log out user by clearing stored token and informing backend.
  */
 export const logoutUser = async () => {
@@ -86,5 +97,6 @@ export default {
   loginUser,
   getCurrentUser,
   updateProfile,
+  changePassword,
   logoutUser,
 };

@@ -3,8 +3,9 @@ import { Link } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardContent } from "../ui/Card.jsx";
 import { ProgressBar } from "../ui/ProgressBar.jsx";
 import { Badge } from "../ui/Badge.jsx";
-import { ArrowRightIcon, CheckIcon, ProfileIcon } from "../ui/Icons.jsx";
+import { ArrowRightIcon, ProfileIcon } from "../ui/Icons.jsx";
 import { Button } from "../ui/Button.jsx";
+import { calculateProfileCompletion } from "../../utils/profileCompletion.js";
 
 /**
  * ProfileCompletionCard — Compact card calculating profile completeness from real user fields.
@@ -13,20 +14,7 @@ import { Button } from "../ui/Button.jsx";
 function ProfileCompletionCard({ user }) {
   if (!user) return null;
 
-  const fields = [
-    { label: "First Name", completed: Boolean(user.firstName?.trim()) },
-    { label: "Last Name", completed: Boolean(user.lastName?.trim()) },
-    { label: "Email", completed: Boolean(user.email?.trim()) },
-    { label: "College", completed: Boolean(user.college?.trim()) },
-    { label: "Branch", completed: Boolean(user.branch?.trim()) },
-    { label: "Graduation Year", completed: Boolean(user.graduationYear) },
-    { label: "Target Companies", completed: Array.isArray(user.targetCompanies) && user.targetCompanies.length > 0 },
-  ];
-
-  const completedCount = fields.filter((f) => f.completed).length;
-  const totalCount = fields.length;
-  const percentage = Math.round((completedCount / totalCount) * 100);
-  const isComplete = percentage === 100;
+  const { percentage, completedCount, totalCount, isComplete } = calculateProfileCompletion(user);
 
   return (
     <Card className="flex flex-col justify-between h-full">

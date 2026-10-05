@@ -14,6 +14,7 @@ import mockTestRouter from './routes/mockTest.js';
 import progressRouter from './routes/progress.js';
 import reviewRouter from './routes/review.js';
 import leaderboardRouter from './routes/leaderboard.js';
+import profileRouter from './routes/profile.js';
 import notFound from './middleware/notFound.js';
 import errorHandler from './middleware/errorHandler.js';
 
@@ -40,6 +41,7 @@ app.use(express.urlencoded({ extended: true }));
 // 4. Register routes
 app.use('/api', healthRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/profile', profileRouter);
 app.use('/api/dashboard', dashboardRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/aptitude', aptitudeRouter);

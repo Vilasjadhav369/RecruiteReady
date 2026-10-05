@@ -1,7 +1,9 @@
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useState } from 'react';
+import { EyeIcon, EyeOffIcon } from './Icons.jsx';
 
 /**
  * Input — Professional form text input with accessible label, error, helper text, and icons.
+ * Automatically provides accessible show/hide password toggle for type="password".
  */
 export const Input = forwardRef(function Input(
   {
@@ -15,12 +17,17 @@ export const Input = forwardRef(function Input(
     suffixIcon,
     required = false,
     disabled = false,
+    showPasswordToggle = true,
     className = '',
     containerClassName = '',
     ...props
   },
   ref
 ) {
+  const [showPassword, setShowPassword] = useState(false);
+  const isPassword = type === 'password';
+  const effectiveType = isPassword && showPassword ? 'text' : type;
+
   const inputId = id || name || `input-${Math.random().toString(36).substr(2, 9)}`;
 
   const borderClass = error
@@ -30,6 +37,8 @@ export const Input = forwardRef(function Input(
   const disabledClass = disabled
     ? 'bg-slate-50 text-slate-500 cursor-not-allowed border-slate-200'
     : 'bg-white';
+
+  const hasSuffix = (isPassword && showPasswordToggle) || Boolean(suffixIcon);
 
   return (
     <div className={`space-y-1.5 ${containerClassName}`}>
@@ -54,22 +63,36 @@ export const Input = forwardRef(function Input(
           ref={ref}
           id={inputId}
           name={name}
-          type={type}
+          type={effectiveType}
           disabled={disabled}
           required={required}
           aria-invalid={!!error}
           aria-describedby={error ? `${inputId}-error` : helperText ? `${inputId}-helper` : undefined}
           className={`w-full min-h-[44px] sm:min-h-0 h-10 sm:h-9 text-sm rounded-lg border transition-all duration-150 outline-none ${borderClass} ${disabledClass} ${
             prefixIcon ? 'pl-10' : 'pl-3'
-          } ${suffixIcon ? 'pr-10' : 'pr-3'} placeholder:text-slate-400 ${className}`}
+          } ${hasSuffix ? 'pr-10' : 'pr-3'} placeholder:text-slate-400 ${className}`}
           {...props}
         />
 
-        {suffixIcon && (
+        {isPassword && showPasswordToggle ? (
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
+            title={showPassword ? 'Hide password' : 'Show password'}
+            className="absolute right-2.5 p-1 text-slate-400 hover:text-slate-600 rounded transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#166534]"
+          >
+            {showPassword ? (
+              <EyeOffIcon className="w-4 h-4 text-slate-500" />
+            ) : (
+              <EyeIcon className="w-4 h-4 text-slate-500" />
+            )}
+          </button>
+        ) : suffixIcon ? (
           <div className="absolute right-3 text-slate-400 flex items-center">
             {suffixIcon}
           </div>
-        )}
+        ) : null}
       </div>
 
       {error ? (

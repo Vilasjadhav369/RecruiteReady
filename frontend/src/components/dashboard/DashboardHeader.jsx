@@ -95,7 +95,7 @@ function DashboardHeader({ onMenuClick }) {
             aria-label="User account menu"
             aria-haspopup="true"
           >
-            <Avatar name={displayName} size="xs" />
+            <Avatar name={fullName} src={user?.profilePhoto} size="xs" />
             <span className="hidden sm:block text-xs font-semibold text-slate-800 max-w-[120px] truncate">
               {displayName}
             </span>

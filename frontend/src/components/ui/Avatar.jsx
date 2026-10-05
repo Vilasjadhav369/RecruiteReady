@@ -1,12 +1,40 @@
 import React from 'react';
 
 /**
+ * Deterministic student initials generator matching RecruitReady specification:
+ * - "Anand Jadhav" -> "AJ"
+ * - "Anand", "Jadhav" -> "AJ"
+ * - "Anand" -> "A"
+ * - "" / fallback -> "S"
+ */
+export function getInitials(nameOrFirst, lastName) {
+  if (lastName !== undefined && lastName !== null && String(lastName).trim()) {
+    const f = String(nameOrFirst || '').trim();
+    const l = String(lastName || '').trim();
+    if (f && l) return (f[0] + l[0]).toUpperCase();
+    if (f) return f[0].toUpperCase();
+    if (l) return l[0].toUpperCase();
+    return 'S';
+  }
+  const str = String(nameOrFirst || '').trim();
+  if (!str) return 'S';
+  const parts = str.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+  return parts[0][0].toUpperCase();
+}
+
+/**
  * Avatar — User or entity avatar with initials fallback and status dot indicator.
  */
 export function Avatar({
   src,
   alt = '',
   name = '',
+  firstName,
+  lastName,
+  initials: explicitInitials,
   size = 'md',
   status, // 'online' | 'offline' | 'busy'
   className = '',
@@ -33,29 +61,24 @@ export function Avatar({
     busy: 'bg-amber-500',
   };
 
-  const getInitials = (str) => {
-    if (!str) return '?';
-    const parts = str.trim().split(/\s+/);
-    if (parts.length >= 2) {
-      return (parts[0][0] + parts[1][0]).toUpperCase();
-    }
-    return str.slice(0, 2).toUpperCase();
-  };
+  const computedInitials =
+    explicitInitials ||
+    getInitials(firstName || name || alt, lastName);
 
   return (
     <div className={`relative inline-flex items-center justify-center shrink-0 ${className}`}>
       {src ? (
         <img
           src={src}
-          alt={alt || name}
+          alt={alt || name || 'User avatar'}
           className={`${sizes[size] || sizes.md} rounded-full object-cover border border-slate-200`}
         />
       ) : (
         <div
           className={`${sizes[size] || sizes.md} rounded-full bg-slate-900 text-white font-semibold flex items-center justify-center select-none shadow-xs`}
-          aria-label={alt || name}
+          aria-label={alt || name || 'User avatar'}
         >
-          {getInitials(name || alt)}
+          {computedInitials}
         </div>
       )}
 
