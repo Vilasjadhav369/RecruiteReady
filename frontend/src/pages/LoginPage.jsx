@@ -51,6 +51,7 @@ function LoginPage() {
     setIsSubmitting(true);
 
     try {
+      const res = await login({ email: email.trim(), password });
       const user = res?.data?.user;
       if (user?.role === "admin") {
         navigate("/admin", { replace: true });

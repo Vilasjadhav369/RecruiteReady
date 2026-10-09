@@ -80,7 +80,7 @@ function RegisterPage() {
     setIsSubmitting(true);
 
     try {
-      await register({
+      const res = await register({
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         email: email.trim().toLowerCase(),
@@ -103,6 +103,17 @@ function RegisterPage() {
       setErrorMessage(msg);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleGoogleSuccess = (res) => {
+    const user = res?.data?.user;
+    if (user?.role === "admin") {
+      navigate("/admin", { replace: true });
+    } else if (!user?.onboardingCompleted) {
+      navigate("/onboarding", { replace: true });
+    } else {
+      navigate("/dashboard", { replace: true });
     }
   };
 
@@ -188,7 +199,7 @@ function RegisterPage() {
             {/* Social Quick Sign-Up */}
             <div className="space-y-3 mb-5">
               <GoogleSignInButton
-                onSuccess={() => navigate("/dashboard", { replace: true })}
+                onSuccess={handleGoogleSuccess}
                 onError={(msg) => setErrorMessage(msg)}
                 disabled={isSubmitting}
               />
