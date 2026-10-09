@@ -22,7 +22,7 @@ export function ReviewCard({ review }) {
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <div
-              className="w-9 h-9 rounded-full bg-[#DCFCE7] border border-[#BBF7D0] text-[#14532D] font-bold text-xs flex items-center justify-center shrink-0 select-none"
+              className="w-9 h-9 rounded-full bg-primary-tint border border-primary-border text-primary-dark font-bold text-xs flex items-center justify-center shrink-0 select-none"
               aria-hidden="true"
             >
               {initial}

@@ -8,7 +8,13 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "seed:admin": "node src/scripts/seedAdmin.js",
-    "seed:content": "node src/scripts/seedDevContent.js"
+    "seed:content": "node src/scripts/seedDevContent.js",
+    "test": "node src/scripts/testPhase10ObservabilitySuite.js",
+    "test:all": "node src/scripts/testPhase10ObservabilitySuite.js && node src/scripts/testAuthSuite.js && node src/scripts/testAdminProductivitySuite.js && node src/scripts/testCompanyPreparationSuite.js",
+    "test:auth": "node src/scripts/testAuthSuite.js",
+    "test:admin": "node src/scripts/testAdminProductivitySuite.js",
+    "test:company": "node src/scripts/testCompanyPreparationSuite.js",
+    "test:quality": "node src/scripts/testPhase10ObservabilitySuite.js"
   },
   "keywords": [
     "recruitready",
@@ -22,10 +28,13 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
+    "google-auth-library": "^11.1.0",
+    "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.3",
-    "mongoose": "^9.10.1"
+    "mongoose": "^9.10.1",
+    "nodemailer": "^10.0.15"
   },
   "devDependencies": {
-    "nodemon": "^3.1.7"
+    "nodemon": "^3.1.14"
   }
 }

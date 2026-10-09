@@ -9,7 +9,6 @@ import {
   CodingIcon,
   MockTestIcon,
   AptitudeIcon,
-  ChevronRightIcon,
 } from '../ui/Icons.jsx';
 import searchService from '../../services/searchService.js';
 
@@ -164,7 +163,7 @@ export function GlobalSearchModal({ isOpen, onClose }) {
           />
 
           <div className="flex items-center gap-2 shrink-0 ml-2">
-            {loading && <SpinnerIcon className="w-4 h-4 text-[#166534] animate-spin" />}
+            {loading && <SpinnerIcon className="w-4 h-4 text-primary animate-spin" />}
             {query && !loading && (
               <button
                 type="button"
@@ -189,7 +188,7 @@ export function GlobalSearchModal({ isOpen, onClose }) {
               <button
                 type="button"
                 onClick={() => setQuery((q) => q + ' ')}
-                className="text-xs text-[#166534] hover:underline font-semibold"
+                className="text-xs text-primary hover:underline font-semibold"
               >
                 Retry
               </button>
@@ -211,7 +210,7 @@ export function GlobalSearchModal({ isOpen, onClose }) {
                     key={tag}
                     type="button"
                     onClick={() => setQuery(tag)}
-                    className="px-2.5 py-1 text-xs bg-slate-100 hover:bg-[#DCFCE7] hover:text-[#166534] text-slate-600 rounded-lg transition-colors cursor-pointer"
+                    className="px-2.5 py-1 text-xs bg-slate-100 hover:bg-primary-tint hover:text-primary text-slate-600 rounded-lg transition-colors cursor-pointer"
                   >
                     {tag}
                   </button>
@@ -233,7 +232,7 @@ export function GlobalSearchModal({ isOpen, onClose }) {
               {results.companies?.length > 0 && (
                 <div>
                   <div className="flex items-center gap-2 px-2 pb-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                    <CompanyIcon className="w-3.5 h-3.5 text-[#166534]" />
+                    <CompanyIcon className="w-3.5 h-3.5 text-primary" />
                     <span>Companies ({results.companies.length})</span>
                   </div>
                   <div className="space-y-1">
@@ -246,7 +245,7 @@ export function GlobalSearchModal({ isOpen, onClose }) {
                           onClick={() => handleSelect(item)}
                           className={`p-2.5 rounded-xl flex items-center justify-between gap-3 cursor-pointer transition-all ${
                             isSelected
-                              ? 'bg-[#F0FDF4] border border-[#BBF7D0]'
+                              ? 'bg-primary-soft border border-primary-border'
                               : 'hover:bg-slate-50 border border-transparent'
                           }`}
                         >
@@ -258,7 +257,7 @@ export function GlobalSearchModal({ isOpen, onClose }) {
                               {item.subtitle}
                             </span>
                           </div>
-                          <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-[#DCFCE7] text-[#14532D] shrink-0">
+                          <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-primary-tint text-primary-dark shrink-0">
                             Company
                           </span>
                         </div>
@@ -285,7 +284,7 @@ export function GlobalSearchModal({ isOpen, onClose }) {
                           onClick={() => handleSelect(item)}
                           className={`p-2.5 rounded-xl flex items-center justify-between gap-3 cursor-pointer transition-all ${
                             isSelected
-                              ? 'bg-[#F0FDF4] border border-[#BBF7D0]'
+                              ? 'bg-primary-soft border border-primary-border'
                               : 'hover:bg-slate-50 border border-transparent'
                           }`}
                         >
@@ -324,7 +323,7 @@ export function GlobalSearchModal({ isOpen, onClose }) {
                           onClick={() => handleSelect(item)}
                           className={`p-2.5 rounded-xl flex items-center justify-between gap-3 cursor-pointer transition-all ${
                             isSelected
-                              ? 'bg-[#F0FDF4] border border-[#BBF7D0]'
+                              ? 'bg-primary-soft border border-primary-border'
                               : 'hover:bg-slate-50 border border-transparent'
                           }`}
                         >
@@ -363,7 +362,7 @@ export function GlobalSearchModal({ isOpen, onClose }) {
                           onClick={() => handleSelect(item)}
                           className={`p-2.5 rounded-xl flex items-center justify-between gap-3 cursor-pointer transition-all ${
                             isSelected
-                              ? 'bg-[#F0FDF4] border border-[#BBF7D0]'
+                              ? 'bg-primary-soft border border-primary-border'
                               : 'hover:bg-slate-50 border border-transparent'
                           }`}
                         >
@@ -389,7 +388,7 @@ export function GlobalSearchModal({ isOpen, onClose }) {
               {results.aptitude?.length > 0 && (
                 <div>
                   <div className="flex items-center gap-2 px-2 pb-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                    <AptitudeIcon className="w-3.5 h-3.5 text-[#166534]" />
+                    <AptitudeIcon className="w-3.5 h-3.5 text-primary" />
                     <span>Aptitude Topics ({results.aptitude.length})</span>
                   </div>
                   <div className="space-y-1">
@@ -402,7 +401,7 @@ export function GlobalSearchModal({ isOpen, onClose }) {
                           onClick={() => handleSelect(item)}
                           className={`p-2.5 rounded-xl flex items-center justify-between gap-3 cursor-pointer transition-all ${
                             isSelected
-                              ? 'bg-[#F0FDF4] border border-[#BBF7D0]'
+                              ? 'bg-primary-soft border border-primary-border'
                               : 'hover:bg-slate-50 border border-transparent'
                           }`}
                         >
@@ -414,7 +413,7 @@ export function GlobalSearchModal({ isOpen, onClose }) {
                               {item.subtitle}
                             </span>
                           </div>
-                          <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-[#DCFCE7] text-[#14532D] shrink-0">
+                          <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-primary-tint text-primary-dark shrink-0">
                             Aptitude
                           </span>
                         </div>

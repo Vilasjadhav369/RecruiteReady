@@ -1,9 +1,20 @@
 import api from "./api.js";
 
-// ─── DASHBOARD & ANALYTICS ──────────────────────────────────────────────────
+// ─── DASHBOARD, HEALTH & ANALYTICS ──────────────────────────────────────────
 
 export const getAdminDashboard = async () => {
   const response = await api.get("/admin/dashboard");
+  return response.data?.data;
+};
+
+export const getAdminHealth = async () => {
+  const response = await api.get("/admin/health");
+  return response.data?.data;
+};
+
+export const getAdminAuditLogs = async (params = {}) => {
+  const query = new URLSearchParams(params).toString();
+  const response = await api.get(`/admin/audit-logs${query ? `?${query}` : ""}`);
   return response.data?.data;
 };
 
@@ -14,10 +25,25 @@ export const getAdminAnalytics = async () => {
 
 // ─── STUDENTS ───────────────────────────────────────────────────────────────
 
-export const getStudents = async ({ search = "", status = "all", page = 1, limit = 10 } = {}) => {
+export const getStudents = async ({
+  search = "",
+  status = "all",
+  branch = "all",
+  graduationYear = "all",
+  emailVerified = "all",
+  sortBy = "createdAt",
+  sortOrder = "desc",
+  page = 1,
+  limit = 10,
+} = {}) => {
   const params = new URLSearchParams();
   if (search) params.append("search", search);
   if (status && status !== "all") params.append("status", status);
+  if (branch && branch !== "all") params.append("branch", branch);
+  if (graduationYear && graduationYear !== "all") params.append("graduationYear", graduationYear);
+  if (emailVerified && emailVerified !== "all") params.append("emailVerified", emailVerified);
+  if (sortBy) params.append("sortBy", sortBy);
+  if (sortOrder) params.append("sortOrder", sortOrder);
   if (page) params.append("page", page);
   if (limit) params.append("limit", limit);
 
@@ -33,6 +59,34 @@ export const getStudentById = async (id) => {
 export const updateStudentStatus = async (id, isActive) => {
   const response = await api.patch(`/admin/students/${id}/status`, { isActive });
   return response.data?.data?.student;
+};
+
+export const bulkUpdateStudentStatus = async (ids, isActive) => {
+  const response = await api.patch("/admin/students/bulk-status", { ids, isActive });
+  return response.data;
+};
+
+export const downloadStudentsCsv = async (filters = {}) => {
+  const params = new URLSearchParams();
+  if (filters.search) params.append("search", filters.search);
+  if (filters.status && filters.status !== "all") params.append("status", filters.status);
+  if (filters.branch && filters.branch !== "all") params.append("branch", filters.branch);
+  if (filters.graduationYear && filters.graduationYear !== "all") params.append("graduationYear", filters.graduationYear);
+  if (filters.emailVerified && filters.emailVerified !== "all") params.append("emailVerified", filters.emailVerified);
+
+  const response = await api.get(`/admin/students/export-csv?${params.toString()}`, {
+    responseType: "blob",
+  });
+
+  const blob = new Blob([response.data], { type: "text/csv;charset=utf-8;" });
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.setAttribute("download", `students_export_${Date.now()}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
 };
 
 // ─── APTITUDE QUESTIONS ─────────────────────────────────────────────────────
@@ -77,11 +131,21 @@ export const updateAptitudeQuestionStatus = async (id, isActive) => {
   return response.data?.data?.question;
 };
 
+export const bulkUpdateAptitudeStatus = async (ids, isActive) => {
+  const response = await api.patch("/admin/aptitude/questions/bulk-status", { ids, isActive });
+  return response.data;
+};
+
+export const deleteAptitudeQuestion = async (id) => {
+  const response = await api.delete(`/admin/aptitude/questions/${id}`);
+  return response.data;
+};
+
 // ─── CODING PROBLEMS ────────────────────────────────────────────────────────
 
 export const getAdminCodingProblems = async (params = {}) => {
   const query = new URLSearchParams(params).toString();
-  const response = await api.get(`/admin/coding/problems${query ? `?${query}` : ''}`);
+  const response = await api.get(`/admin/coding/problems${query ? `?${query}` : ""}`);
   return response.data?.data;
 };
 
@@ -105,11 +169,21 @@ export const updateCodingProblemStatus = async (id, isActive) => {
   return response.data?.data?.problem;
 };
 
+export const bulkUpdateCodingStatus = async (ids, isActive) => {
+  const response = await api.patch("/admin/coding/problems/bulk-status", { ids, isActive });
+  return response.data;
+};
+
+export const deleteCodingProblem = async (id) => {
+  const response = await api.delete(`/admin/coding/problems/${id}`);
+  return response.data;
+};
+
 // ─── COMPANIES ──────────────────────────────────────────────────────────────
 
 export const getAdminCompanies = async (params = {}) => {
   const query = new URLSearchParams(params).toString();
-  const response = await api.get(`/admin/companies${query ? `?${query}` : ''}`);
+  const response = await api.get(`/admin/companies${query ? `?${query}` : ""}`);
   return response.data?.data;
 };
 
@@ -133,11 +207,21 @@ export const updateCompanyStatus = async (id, isActive) => {
   return response.data?.data?.company;
 };
 
+export const bulkUpdateCompanyStatus = async (ids, isActive) => {
+  const response = await api.patch("/admin/companies/bulk-status", { ids, isActive });
+  return response.data;
+};
+
+export const deleteCompany = async (id) => {
+  const response = await api.delete(`/admin/companies/${id}`);
+  return response.data;
+};
+
 // ─── STUDY RESOURCES ────────────────────────────────────────────────────────
 
 export const getAdminResources = async (params = {}) => {
   const query = new URLSearchParams(params).toString();
-  const response = await api.get(`/admin/resources${query ? `?${query}` : ''}`);
+  const response = await api.get(`/admin/resources${query ? `?${query}` : ""}`);
   return response.data?.data;
 };
 
@@ -161,11 +245,21 @@ export const updateResourceStatus = async (id, isActive) => {
   return response.data?.data?.resource;
 };
 
+export const bulkUpdateResourceStatus = async (ids, isActive) => {
+  const response = await api.patch("/admin/resources/bulk-status", { ids, isActive });
+  return response.data;
+};
+
+export const deleteResource = async (id) => {
+  const response = await api.delete(`/admin/resources/${id}`);
+  return response.data;
+};
+
 // ─── MOCK TESTS ─────────────────────────────────────────────────────────────
 
 export const getAdminMockTests = async (params = {}) => {
   const query = new URLSearchParams(params).toString();
-  const response = await api.get(`/admin/mock-tests${query ? `?${query}` : ''}`);
+  const response = await api.get(`/admin/mock-tests${query ? `?${query}` : ""}`);
   return response.data?.data;
 };
 
@@ -189,11 +283,21 @@ export const updateMockTestStatus = async (id, isPublished) => {
   return response.data?.data?.mockTest;
 };
 
+export const bulkUpdateMockTestStatus = async (ids, isPublished) => {
+  const response = await api.patch("/admin/mock-tests/bulk-status", { ids, isPublished });
+  return response.data;
+};
+
+export const deleteMockTest = async (id) => {
+  const response = await api.delete(`/admin/mock-tests/${id}`);
+  return response.data;
+};
+
 // ─── REVIEWS MODERATION ─────────────────────────────────────────────────────
 
 export const getAdminReviews = async (params = {}) => {
   const query = new URLSearchParams(params).toString();
-  const response = await api.get(`/admin/reviews${query ? `?${query}` : ''}`);
+  const response = await api.get(`/admin/reviews${query ? `?${query}` : ""}`);
   return response.data?.data;
 };
 
@@ -207,6 +311,11 @@ export const rejectReview = async (id) => {
   return response.data?.data?.review;
 };
 
+export const bulkUpdateReviewStatus = async (ids, status) => {
+  const response = await api.patch("/admin/reviews/bulk-moderation", { ids, status });
+  return response.data;
+};
+
 export const deleteReview = async (id) => {
   const response = await api.delete(`/admin/reviews/${id}`);
   return response.data;
@@ -214,37 +323,52 @@ export const deleteReview = async (id) => {
 
 export default {
   getAdminDashboard,
+  getAdminHealth,
+  getAdminAuditLogs,
   getAdminAnalytics,
   getStudents,
   getStudentById,
   updateStudentStatus,
+  bulkUpdateStudentStatus,
+  downloadStudentsCsv,
   getAdminAptitudeQuestions,
   createAptitudeQuestion,
   getAptitudeQuestionById,
   updateAptitudeQuestion,
   updateAptitudeQuestionStatus,
+  bulkUpdateAptitudeStatus,
+  deleteAptitudeQuestion,
   getAdminCodingProblems,
   createCodingProblem,
   getAdminCodingProblemById,
   updateCodingProblem,
   updateCodingProblemStatus,
+  bulkUpdateCodingStatus,
+  deleteCodingProblem,
   getAdminCompanies,
   createCompany,
   getAdminCompanyById,
   updateCompany,
   updateCompanyStatus,
+  bulkUpdateCompanyStatus,
+  deleteCompany,
   getAdminResources,
   createResource,
   getAdminResourceById,
   updateResource,
   updateResourceStatus,
+  bulkUpdateResourceStatus,
+  deleteResource,
   getAdminMockTests,
   createMockTest,
   getAdminMockTestById,
   updateMockTest,
   updateMockTestStatus,
+  bulkUpdateMockTestStatus,
+  deleteMockTest,
   getAdminReviews,
   approveReview,
   rejectReview,
+  bulkUpdateReviewStatus,
   deleteReview,
 };

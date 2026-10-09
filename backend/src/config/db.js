@@ -1,4 +1,4 @@
-﻿import mongoose from 'mongoose';
+import mongoose from 'mongoose';
 
 /**
  * connectDB — Connect to MongoDB database using Mongoose.
@@ -12,7 +12,19 @@ export const connectDB = async () => {
   }
 
   try {
-    const conn = await mongoose.connect(uri);
+    const conn = await mongoose.connect(uri, {
+      serverSelectionTimeoutMS: 5000,
+      connectTimeoutMS: 10000,
+    });
+
+    mongoose.connection.on('error', (err) => {
+      console.error('[MongoDB Error]:', err.message);
+    });
+
+    mongoose.connection.on('disconnected', () => {
+      console.warn('[MongoDB Warn]: Disconnected from database.');
+    });
+
     console.log(`MongoDB connected successfully: ${conn.connection.host}/${conn.connection.name}`);
     return conn;
   } catch (error) {

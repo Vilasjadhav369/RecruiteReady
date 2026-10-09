@@ -5,6 +5,7 @@ import {
   getAdminCompanyById,
   updateCompany,
   updateCompanyStatus,
+  deleteCompany,
 } from "../../services/adminService.js";
 import {
   PageHeader,
@@ -33,6 +34,7 @@ import {
   EditIcon,
   EyeIcon,
   ExternalLinkIcon,
+  TrashIcon,
 } from "../../components/ui/Icons.jsx";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -57,6 +59,11 @@ const INITIAL_FORM_STATE = {
   aptitudeTopics: "",
   codingTopics: "",
   interviewTopics: "",
+  isFeatured: false,
+  minCgpa: "",
+  allowedBranches: "",
+  allowedGraduationYears: "",
+  maxBacklogs: "",
   isActive: true,
 };
 
@@ -173,6 +180,11 @@ export default function AdminCompaniesPage() {
   const [isToggleModalOpen, setIsToggleModalOpen] = useState(false);
   const [togglingId, setTogglingId] = useState(null);
 
+  // ── Delete Confirmation ──
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   // ── Toast ──
   const [toast, setToast] = useState(null);
   const toastTimerRef = useRef(null);
@@ -267,6 +279,19 @@ export default function AdminCompaniesPage() {
       aptitudeTopics: (c.aptitudeTopics || []).join(", "),
       codingTopics: (c.codingTopics || []).join(", "),
       interviewTopics: (c.interviewTopics || []).join(", "),
+      isFeatured: c.isFeatured ?? false,
+      minCgpa:
+        c.eligibilityCriteria?.minCgpa != null
+          ? String(c.eligibilityCriteria.minCgpa)
+          : "",
+      allowedBranches: (c.eligibilityCriteria?.allowedBranches || []).join(", "),
+      allowedGraduationYears: (
+        c.eligibilityCriteria?.allowedGraduationYears || []
+      ).join(", "),
+      maxBacklogs:
+        c.eligibilityCriteria?.maxBacklogs != null
+          ? String(c.eligibilityCriteria.maxBacklogs)
+          : "",
       isActive: c.isActive ?? true,
     });
     setFormError(null);
@@ -336,6 +361,30 @@ export default function AdminCompaniesPage() {
         .split(",")
         .map((t) => t.trim())
         .filter(Boolean),
+      isFeatured: Boolean(formData.isFeatured),
+      eligibilityCriteria: {
+        minCgpa:
+          formData.minCgpa !== "" && !isNaN(parseFloat(formData.minCgpa))
+            ? parseFloat(formData.minCgpa)
+            : undefined,
+        allowedBranches: formData.allowedBranches
+          ? formData.allowedBranches
+              .split(",")
+              .map((b) => b.trim())
+              .filter(Boolean)
+          : [],
+        allowedGraduationYears: formData.allowedGraduationYears
+          ? formData.allowedGraduationYears
+              .split(",")
+              .map((y) => parseInt(y.trim(), 10))
+              .filter((y) => !isNaN(y))
+          : [],
+        maxBacklogs:
+          formData.maxBacklogs !== "" &&
+          !isNaN(parseInt(formData.maxBacklogs, 10))
+            ? parseInt(formData.maxBacklogs, 10)
+            : undefined,
+      },
       isActive: formData.isActive,
     };
 
@@ -396,6 +445,37 @@ export default function AdminCompaniesPage() {
     } finally {
       setTogglingId(null);
       setToggleTarget(null);
+    }
+  };
+
+  // ── Delete Company ──
+  const handleRequestDelete = (company) => {
+    setDeleteTarget(company);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      setIsDeleting(true);
+      const res = await deleteCompany(deleteTarget._id);
+      showToast(
+        "success",
+        res?.data?.softDeleted ? "Company Hidden" : "Company Deleted",
+        res?.message || "Company profile deleted successfully."
+      );
+      setIsDeleteModalOpen(false);
+      setDeleteTarget(null);
+      fetchCompanies();
+    } catch (err) {
+      console.error("Error deleting company:", err);
+      showToast(
+        "error",
+        "Delete Failed",
+        err.response?.data?.message || "Failed to delete company."
+      );
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -492,7 +572,8 @@ export default function AdminCompaniesPage() {
                 <TableHead>Company</TableHead>
                 <TableHead>Industry</TableHead>
                 <TableHead>Target Roles</TableHead>
-                <TableHead>Selection Rounds</TableHead>
+                <TableHead>Rounds</TableHead>
+                <TableHead>Completeness</TableHead>
                 <TableHead>Website</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -500,7 +581,7 @@ export default function AdminCompaniesPage() {
             </TableHeader>
             <TableBody>
               {Array.from({ length: 5 }).map((_, i) => (
-                <SkeletonTableRow key={i} cols={7} />
+                <SkeletonTableRow key={i} cols={8} />
               ))}
             </TableBody>
           </Table>
@@ -559,10 +640,11 @@ export default function AdminCompaniesPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="min-w-[240px]">Company</TableHead>
+                    <TableHead className="min-w-[220px]">Company</TableHead>
                     <TableHead>Industry</TableHead>
-                    <TableHead className="min-w-[180px]">Target Roles</TableHead>
-                    <TableHead>Selection Rounds</TableHead>
+                    <TableHead className="min-w-[160px]">Target Roles</TableHead>
+                    <TableHead>Rounds</TableHead>
+                    <TableHead>Completeness</TableHead>
                     <TableHead>Website</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -627,6 +709,37 @@ export default function AdminCompaniesPage() {
                           </span>
                         </TableCell>
 
+                        {/* Data Completeness */}
+                        <TableCell>
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-12 h-1.5 bg-slate-100 rounded-full overflow-hidden shrink-0">
+                              <div
+                                className={`h-full ${
+                                  (c.quality?.completenessPercentage ?? 0) >= 80
+                                    ? "bg-emerald-500"
+                                    : (c.quality?.completenessPercentage ?? 0) >= 50
+                                    ? "bg-amber-500"
+                                    : "bg-rose-500"
+                                }`}
+                                style={{
+                                  width: `${c.quality?.completenessPercentage ?? 0}%`,
+                                }}
+                              />
+                            </div>
+                            <span className="text-[11px] font-mono font-medium text-slate-600">
+                              {c.quality?.completenessPercentage ?? 0}%
+                            </span>
+                            {c.isFeatured && (
+                              <span
+                                className="text-[10px] text-amber-600 font-bold ml-0.5"
+                                title="Featured Track"
+                              >
+                                ★
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+
                         {/* Website */}
                         <TableCell>
                           {websiteUrl ? (
@@ -683,6 +796,15 @@ export default function AdminCompaniesPage() {
                               }
                             >
                               {c.isActive ? "Hide" : "Activate"}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRequestDelete(c)}
+                              title="Delete company"
+                              className="text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+                            >
+                              <TrashIcon className="w-3.5 h-3.5" />
                             </Button>
                           </div>
                         </TableCell>
@@ -777,6 +899,18 @@ export default function AdminCompaniesPage() {
                       {c.selectionProcess?.length || 0} stage
                       {(c.selectionProcess?.length || 0) === 1 ? "" : "s"}
                     </span>
+                    <span>•</span>
+                    <span>
+                      Completeness:{" "}
+                      <strong className="font-semibold text-slate-700">
+                        {c.quality?.completenessPercentage ?? 0}%
+                      </strong>
+                    </span>
+                    {c.isFeatured && (
+                      <Badge variant="warning" size="sm" className="text-[10px]">
+                        Featured
+                      </Badge>
+                    )}
                     {websiteUrl && (
                       <>
                         <span>•</span>
@@ -834,6 +968,15 @@ export default function AdminCompaniesPage() {
                       onClick={() => handleRequestToggle(c)}
                     >
                       {c.isActive ? "Hide" : "Activate"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-rose-600 border-rose-200 hover:bg-rose-50 px-2.5"
+                      onClick={() => handleRequestDelete(c)}
+                      title="Delete company"
+                    >
+                      <TrashIcon className="w-3.5 h-3.5" />
                     </Button>
                   </div>
                 </div>
@@ -995,6 +1138,51 @@ export default function AdminCompaniesPage() {
             />
           </div>
 
+          {/* ── Section: Structured Eligibility Criteria (Phase 39) ── */}
+          <div className="space-y-3 pt-2 border-t border-slate-100">
+            <h4 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider pt-1">
+              Structured Eligibility Criteria (For Student Match Engine)
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Input
+                label="Minimum CGPA (0 - 10)"
+                type="number"
+                step="0.1"
+                min="0"
+                max="10"
+                value={formData.minCgpa}
+                onChange={(e) => updateField("minCgpa", e.target.value)}
+                placeholder="e.g. 7.0"
+                helperText="Leave blank if no minimum CGPA requirement."
+              />
+              <Input
+                label="Maximum Active Backlogs Allowed"
+                type="number"
+                min="0"
+                value={formData.maxBacklogs}
+                onChange={(e) => updateField("maxBacklogs", e.target.value)}
+                placeholder="e.g. 0"
+                helperText="Leave blank if backlogs are not evaluated."
+              />
+            </div>
+            <Input
+              label="Allowed Branches (comma separated)"
+              value={formData.allowedBranches}
+              onChange={(e) => updateField("allowedBranches", e.target.value)}
+              placeholder="e.g. Computer Science, Information Technology, Electronics"
+              helperText="Leave blank if open to all branches."
+            />
+            <Input
+              label="Allowed Graduation Years (comma separated)"
+              value={formData.allowedGraduationYears}
+              onChange={(e) =>
+                updateField("allowedGraduationYears", e.target.value)
+              }
+              placeholder="e.g. 2025, 2026"
+              helperText="Leave blank if open to all passing-out batches."
+            />
+          </div>
+
           {/* ── Section: Syllabus & Preparation Topics ── */}
           <div className="space-y-3 pt-2 border-t border-slate-100">
             <h4 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider pt-1">
@@ -1020,8 +1208,8 @@ export default function AdminCompaniesPage() {
             />
           </div>
 
-          {/* ── Section: Status ── */}
-          <div className="pt-2 border-t border-slate-100">
+          {/* ── Section: Status & Visibility ── */}
+          <div className="pt-2 border-t border-slate-100 space-y-2">
             <div className="flex items-center gap-2.5">
               <input
                 type="checkbox"
@@ -1035,6 +1223,21 @@ export default function AdminCompaniesPage() {
                 className="text-xs font-medium text-slate-700 cursor-pointer select-none"
               >
                 Active — visible to students on the company preparation tracks
+              </label>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <input
+                type="checkbox"
+                id="form-featured-toggle"
+                checked={formData.isFeatured}
+                onChange={(e) => updateField("isFeatured", e.target.checked)}
+                className="w-4 h-4 rounded text-amber-500 focus:ring-amber-400 border-slate-300"
+              />
+              <label
+                htmlFor="form-featured-toggle"
+                className="text-xs font-medium text-slate-700 cursor-pointer select-none"
+              >
+                Featured Track — highlight and prioritize in student directory
               </label>
             </div>
           </div>
@@ -1165,11 +1368,61 @@ export default function AdminCompaniesPage() {
             {viewCompany.eligibility && (
               <div>
                 <h5 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-                  Eligibility Criteria
+                  Eligibility Criteria (Description)
                 </h5>
                 <p className="text-xs text-slate-700 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
                   {viewCompany.eligibility}
                 </p>
+              </div>
+            )}
+
+            {/* Structured Eligibility Criteria */}
+            {viewCompany.eligibilityCriteria && (
+              <div>
+                <h5 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  Structured Match Criteria
+                </h5>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                  <div className="p-2 bg-slate-50 border border-slate-200 rounded-lg">
+                    <span className="text-[10px] text-slate-400 block uppercase font-medium">
+                      Min CGPA
+                    </span>
+                    <span className="font-semibold text-slate-800">
+                      {viewCompany.eligibilityCriteria.minCgpa ?? "None"}
+                    </span>
+                  </div>
+                  <div className="p-2 bg-slate-50 border border-slate-200 rounded-lg">
+                    <span className="text-[10px] text-slate-400 block uppercase font-medium">
+                      Max Backlogs
+                    </span>
+                    <span className="font-semibold text-slate-800">
+                      {viewCompany.eligibilityCriteria.maxBacklogs ?? "None"}
+                    </span>
+                  </div>
+                  <div className="p-2 bg-slate-50 border border-slate-200 rounded-lg sm:col-span-2">
+                    <span className="text-[10px] text-slate-400 block uppercase font-medium">
+                      Eligible Batches
+                    </span>
+                    <span className="font-semibold text-slate-800">
+                      {viewCompany.eligibilityCriteria.allowedGraduationYears?.length
+                        ? viewCompany.eligibilityCriteria.allowedGraduationYears.join(
+                            ", "
+                          )
+                        : "All batches"}
+                    </span>
+                  </div>
+                </div>
+                {viewCompany.eligibilityCriteria.allowedBranches?.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {viewCompany.eligibilityCriteria.allowedBranches.map(
+                      (b, i) => (
+                        <Badge key={i} variant="default" size="sm">
+                          {b}
+                        </Badge>
+                      )
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
@@ -1339,6 +1592,59 @@ export default function AdminCompaniesPage() {
               </p>
               <p className="text-xs text-slate-500">
                 {toggleTarget.industry || "Technology"} • /{toggleTarget.slug}
+              </p>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* ─── Delete Confirmation Modal ───────────────────────────── */}
+      <Modal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setDeleteTarget(null);
+        }}
+        title="Delete Company Profile?"
+        description="Are you sure you want to delete this company profile? If students are targeting this company in their goals, it will be deactivated to preserve student preparation plans."
+        maxWidth="max-w-md"
+        footer={
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={isDeleting}
+              onClick={() => {
+                setIsDeleteModalOpen(false);
+                setDeleteTarget(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              loading={isDeleting}
+              onClick={handleConfirmDelete}
+            >
+              Delete
+            </Button>
+          </>
+        }
+      >
+        {deleteTarget && (
+          <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg flex items-center gap-3">
+            <CompanyLogo
+              src={deleteTarget.logoUrl}
+              name={deleteTarget.name}
+              size="md"
+            />
+            <div>
+              <p className="text-sm font-semibold text-slate-900">
+                {deleteTarget.name || "—"}
+              </p>
+              <p className="text-xs text-slate-500">
+                {deleteTarget.industry || "Technology"} • /{deleteTarget.slug}
               </p>
             </div>
           </div>

@@ -16,8 +16,8 @@ export function ProgressBar({
   const percentage = Math.min(100, Math.max(0, Math.round((value / max) * 100)));
 
   const variants = {
-    primary: 'bg-[#166534]',
-    brand: 'bg-[#22C55E]',
+    primary: 'bg-primary',
+    brand: 'bg-primary-light',
     success: 'bg-emerald-600',
     warning: 'bg-amber-500',
     danger: 'bg-red-600',

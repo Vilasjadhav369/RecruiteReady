@@ -1,4 +1,4 @@
-﻿import LoadingSkeleton from "./LoadingSkeleton.jsx";
+import LoadingSkeleton from "./LoadingSkeleton.jsx";
 
 /**
  * StatItem — A single statistic display unit.
@@ -15,7 +15,7 @@ function StatItem({ label, value, icon, trend, loading = false }) {
   return (
     <div className="flex flex-col items-start gap-1">
       {icon && (
-        <div className="w-9 h-9 bg-[#E8F1FF] rounded-lg flex items-center justify-center mb-2 flex-shrink-0">
+        <div className="w-9 h-9 bg-primary-tint rounded-lg flex items-center justify-center mb-2 flex-shrink-0">
           {icon}
         </div>
       )}

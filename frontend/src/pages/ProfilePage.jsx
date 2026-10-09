@@ -1,7 +1,13 @@
 import { useState, useEffect, useMemo } from "react";
-import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
-import { updateProfile, changePassword } from "../services/authService.js";
+import {
+  updateProfile,
+  changePassword,
+  getSessions,
+  revokeSession,
+  logoutAllSessions,
+  resendVerification,
+} from "../services/authService.js";
 import { getCompanies } from "../services/companyService.js";
 import { calculateProfileCompletion } from "../utils/profileCompletion.js";
 import {
@@ -64,6 +70,7 @@ function ProfilePage() {
     branch: "",
     graduationYear: "",
     profilePhoto: "",
+    preparationLevel: "",
   });
 
   const [targetCompanies, setTargetCompanies] = useState([]);
@@ -86,6 +93,14 @@ function ProfilePage() {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [passwordSuccess, setPasswordSuccess] = useState("");
   const [passwordError, setPasswordError] = useState("");
+
+  // Active Sessions & Email Verification State
+  const [sessions, setSessions] = useState([]);
+  const [loadingSessions, setLoadingSessions] = useState(false);
+  const [sessionActionLoading, setSessionActionLoading] = useState(false);
+  const [sessionMessage, setSessionMessage] = useState({ text: "", type: "" });
+  const [resendingVerification, setResendingVerification] = useState(false);
+  const [verificationSent, setVerificationSent] = useState(false);
 
   // Fetch authentic companies from database for suggestions
   useEffect(() => {
@@ -115,6 +130,7 @@ function ProfilePage() {
         branch: user.branch || "",
         graduationYear: user.graduationYear ? String(user.graduationYear) : "",
         profilePhoto: user.profilePhoto || "",
+        preparationLevel: user.preparationLevel || "",
       });
       setTargetCompanies(Array.isArray(user.targetCompanies) ? user.targetCompanies : []);
       setPreparationGoals(Array.isArray(user.preparationGoals) ? user.preparationGoals : []);
@@ -131,7 +147,8 @@ function ProfilePage() {
       formData.college !== (user.college || "") ||
       formData.branch !== (user.branch || "") ||
       formData.graduationYear !== initialGrad ||
-      formData.profilePhoto !== (user.profilePhoto || "");
+      formData.profilePhoto !== (user.profilePhoto || "") ||
+      formData.preparationLevel !== (user.preparationLevel || "");
 
     const initialCompanies = user.targetCompanies || [];
     const companiesChanged =
@@ -156,6 +173,7 @@ function ProfilePage() {
       branch: formData.branch,
       graduationYear: formData.graduationYear ? Number(formData.graduationYear) : null,
       profilePhoto: formData.profilePhoto,
+      preparationLevel: formData.preparationLevel,
       targetCompanies,
       preparationGoals,
     };
@@ -179,6 +197,7 @@ function ProfilePage() {
         branch: user.branch || "",
         graduationYear: user.graduationYear ? String(user.graduationYear) : "",
         profilePhoto: user.profilePhoto || "",
+        preparationLevel: user.preparationLevel || "",
       });
       setTargetCompanies(user.targetCompanies || []);
       setPreparationGoals(user.preparationGoals || []);
@@ -245,6 +264,7 @@ function ProfilePage() {
         branch: formData.branch.trim(),
         graduationYear: formData.graduationYear ? Number(formData.graduationYear) : null,
         profilePhoto: formData.profilePhoto.trim(),
+        preparationLevel: formData.preparationLevel,
         targetCompanies,
         preparationGoals,
       };
@@ -317,6 +337,73 @@ function ProfilePage() {
     }
   };
 
+  // Fetch active sessions
+  const fetchSessions = async () => {
+    setLoadingSessions(true);
+    try {
+      const data = await getSessions();
+      setSessions(data);
+    } catch {
+      // Non-blocking session fetch failure
+    } finally {
+      setLoadingSessions(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSessions();
+  }, []);
+
+  const handleRevokeSession = async (sessionId) => {
+    setSessionActionLoading(true);
+    setSessionMessage({ text: "", type: "" });
+    try {
+      await revokeSession(sessionId);
+      setSessions((prev) => prev.filter((s) => s._id !== sessionId));
+      setSessionMessage({ text: "Session revoked successfully.", type: "success" });
+    } catch (err) {
+      setSessionMessage({
+        text: err.response?.data?.message || "Failed to revoke session.",
+        type: "error",
+      });
+    } finally {
+      setSessionActionLoading(false);
+    }
+  };
+
+  const handleLogoutAllOther = async () => {
+    setSessionActionLoading(true);
+    setSessionMessage({ text: "", type: "" });
+    try {
+      await logoutAllSessions();
+      await fetchSessions();
+      setSessionMessage({
+        text: "All other active sessions have been logged out successfully.",
+        type: "success",
+      });
+    } catch (err) {
+      setSessionMessage({
+        text: err.response?.data?.message || "Failed to log out other devices.",
+        type: "error",
+      });
+    } finally {
+      setSessionActionLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!user?.email) return;
+    setResendingVerification(true);
+    try {
+      await resendVerification(user.email);
+      setVerificationSent(true);
+    } catch {
+      // Non-blocking
+    } finally {
+      setResendingVerification(false);
+    }
+  };
+
   const availableCompanySuggestions = useMemo(() => {
     return companySuggestions.filter((c) => !targetCompanies.includes(c));
   }, [companySuggestions, targetCompanies]);
@@ -361,15 +448,9 @@ function ProfilePage() {
           { label: "Student Profile" },
         ]}
         actions={
-          <Link to="/dashboard">
-            <Button
-              variant="outline"
-              size="sm"
-              iconLeft={<ArrowLeftIcon className="w-4 h-4" />}
-            >
+          <Button to="/dashboard" variant="outline" size="sm" iconLeft={<ArrowLeftIcon className="w-4 h-4" />}>
               Back to Dashboard
             </Button>
-          </Link>
         }
       />
 
@@ -377,16 +458,16 @@ function ProfilePage() {
       {profileSuccess && (
         <div
           role="status"
-          className="p-4 rounded-xl bg-[#F0FDF4] border border-[#DCFCE7] text-[#14532D] text-xs sm:text-sm font-medium flex items-center justify-between gap-3 shadow-xs animate-in fade-in duration-200"
+          className="p-4 rounded-xl bg-primary-soft border border-primary-tint text-primary-dark text-xs sm:text-sm font-medium flex items-center justify-between gap-3 shadow-xs animate-in fade-in duration-200"
         >
           <div className="flex items-center gap-2.5">
-            <CheckCircleIcon className="w-5 h-5 text-[#166534] shrink-0" />
+            <CheckCircleIcon className="w-5 h-5 text-primary shrink-0" />
             <span>{profileSuccess}</span>
           </div>
           <button
             type="button"
             onClick={() => setProfileSuccess("")}
-            className="text-[#14532D] hover:text-[#166534] transition-colors cursor-pointer p-1"
+            className="text-primary-dark hover:text-primary transition-colors cursor-pointer p-1"
             aria-label="Dismiss notification"
           >
             <CloseIcon className="w-4 h-4" />
@@ -489,7 +570,7 @@ function ProfilePage() {
                   {completion.completedCount} of {completion.totalCount} details added
                 </p>
               </div>
-              <span className="text-sm font-bold text-[#166534] font-mono">
+              <span className="text-sm font-bold text-primary font-mono">
                 {completion.percentage}%
               </span>
             </CardHeader>
@@ -509,7 +590,7 @@ function ProfilePage() {
                   >
                     <span className="flex items-center gap-2">
                       {f.completed ? (
-                        <span className="w-4 h-4 rounded-full bg-[#DCFCE7] text-[#166534] flex items-center justify-center shrink-0">
+                        <span className="w-4 h-4 rounded-full bg-primary-tint text-primary flex items-center justify-center shrink-0">
                           <CheckIcon className="w-2.5 h-2.5" />
                         </span>
                       ) : (
@@ -540,7 +621,7 @@ function ProfilePage() {
           <Card className="border-slate-200/80 bg-slate-50/70 shadow-xs">
             <CardContent className="p-4 space-y-2">
               <div className="flex items-center gap-2 text-slate-900 font-semibold text-xs">
-                <ShieldCheckIcon className="w-4 h-4 text-[#166534] shrink-0" />
+                <ShieldCheckIcon className="w-4 h-4 text-primary shrink-0" />
                 <span>Verified Credentials</span>
               </div>
               <p className="text-xs text-slate-500 leading-relaxed">
@@ -671,6 +752,32 @@ function ProfilePage() {
                     helperText="Academic completion year (2000 – 2100)."
                   />
                 </div>
+
+                <div>
+                  <label
+                    htmlFor="preparationLevel"
+                    className="block text-xs font-semibold text-slate-700 tracking-tight mb-1.5"
+                  >
+                    Current Placement Preparation Level
+                  </label>
+                  <select
+                    id="preparationLevel"
+                    name="preparationLevel"
+                    value={formData.preparationLevel}
+                    onChange={handleInputChange}
+                    className="w-full h-10 px-3.5 text-sm bg-white border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                  >
+                    <option value="">Select preparation level</option>
+                    <option value="Just Starting">Level 1: Just Starting (Foundations needed)</option>
+                    <option value="Beginner">Level 2: Beginner (Basics familiar, topic practice needed)</option>
+                    <option value="Intermediate">Level 3: Intermediate (Standard DSA & aptitude)</option>
+                    <option value="Advanced">Level 4: Advanced (Targeting product companies)</option>
+                    <option value="Placement Ready">Level 5: Placement Ready (Interview & test ready)</option>
+                  </select>
+                  <span className="text-[11px] text-slate-500 mt-1 block">
+                    Determines tailored placement recommendations and diagnostic assessment tracks.
+                  </span>
+                </div>
               </CardContent>
             </Card>
 
@@ -720,7 +827,7 @@ function ProfilePage() {
                     value={newCompany}
                     onChange={(e) => setNewCompany(e.target.value)}
                     placeholder="Enter company name..."
-                    className="flex-1 h-9 px-3 text-xs sm:text-sm rounded-lg border border-slate-200 bg-white placeholder:text-slate-400 focus:border-[#166534] focus:ring-2 focus:ring-[#166534]/20 outline-none transition-all"
+                    className="flex-1 h-9 px-3 text-xs sm:text-sm rounded-lg border border-slate-200 bg-white placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
                         e.preventDefault();
@@ -750,7 +857,7 @@ function ProfilePage() {
                           key={suggested}
                           type="button"
                           onClick={() => handleAddCompany(suggested)}
-                          className="px-2.5 py-1 rounded-md bg-slate-100 hover:bg-[#DCFCE7] hover:text-[#14532D] hover:border-[#BBF7D0] border border-slate-200/80 text-[11px] font-medium text-slate-600 transition-colors cursor-pointer"
+                          className="px-2.5 py-1 rounded-md bg-slate-100 hover:bg-primary-tint hover:text-primary-dark hover:border-primary-border border border-slate-200/80 text-[11px] font-medium text-slate-600 transition-colors cursor-pointer"
                         >
                           + {suggested}
                         </button>
@@ -807,7 +914,7 @@ function ProfilePage() {
                     value={newGoal}
                     onChange={(e) => setNewGoal(e.target.value)}
                     placeholder="e.g. Master Graph Algorithms, 80%+ Mock Score..."
-                    className="flex-1 h-9 px-3 text-xs sm:text-sm rounded-lg border border-slate-200 bg-white placeholder:text-slate-400 focus:border-[#166534] focus:ring-2 focus:ring-[#166534]/20 outline-none transition-all"
+                    className="flex-1 h-9 px-3 text-xs sm:text-sm rounded-lg border border-slate-200 bg-white placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
                         e.preventDefault();
@@ -837,7 +944,7 @@ function ProfilePage() {
                           key={suggested}
                           type="button"
                           onClick={() => handleAddGoal(suggested)}
-                          className="px-2.5 py-1 rounded-md bg-slate-100 hover:bg-[#DCFCE7] hover:text-[#14532D] hover:border-[#BBF7D0] border border-slate-200/80 text-[11px] font-medium text-slate-600 transition-colors cursor-pointer"
+                          className="px-2.5 py-1 rounded-md bg-slate-100 hover:bg-primary-tint hover:text-primary-dark hover:border-primary-border border border-slate-200/80 text-[11px] font-medium text-slate-600 transition-colors cursor-pointer"
                         >
                           + {suggested}
                         </button>
@@ -859,7 +966,7 @@ function ProfilePage() {
                     </span>
                   ) : (
                     <span className="flex items-center gap-1.5 text-slate-500">
-                      <CheckIcon className="w-3.5 h-3.5 text-[#166534]" />
+                      <CheckIcon className="w-3.5 h-3.5 text-primary" />
                       All details synchronized with your candidate record
                     </span>
                   )}
@@ -890,132 +997,313 @@ function ProfilePage() {
             </Card>
           </form>
 
-          {/* ================= 5. ACCOUNT SECURITY: CHANGE PASSWORD ================= */}
+          {/* ================= 5. ACCOUNT SECURITY & ACTIVE SESSIONS ================= */}
           <Card className="border-slate-200/80 shadow-xs">
             <CardHeader>
               <div>
                 <div className="flex items-center gap-2">
-                  <CardTitle>Account Security</CardTitle>
-                  <Badge variant="neutral">Password Management</Badge>
+                  <CardTitle>Account Security & Sessions</CardTitle>
+                  <Badge variant="neutral">Security Management</Badge>
                 </div>
                 <CardDescription>
-                  Update your authentication password. Passwords are securely hashed with bcrypt before storage.
+                  Manage connected authentication methods, password recovery, and active browser sessions.
                 </CardDescription>
               </div>
             </CardHeader>
-            <CardContent>
-              {passwordSuccess && (
-                <div
-                  role="status"
-                  className="mb-4 p-3 rounded-lg bg-[#F0FDF4] border border-[#DCFCE7] text-[#14532D] text-xs font-medium flex items-center justify-between gap-2 shadow-xs"
-                >
-                  <div className="flex items-center gap-2">
-                    <CheckCircleIcon className="w-4 h-4 text-[#166534] shrink-0" />
-                    <span>{passwordSuccess}</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setPasswordSuccess("")}
-                    className="text-[#14532D] hover:text-[#166534] p-1"
-                  >
-                    <CloseIcon className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              )}
-
-              {passwordError && (
-                <div
-                  role="alert"
-                  className="mb-4 p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium flex items-center justify-between gap-2 shadow-xs"
-                >
-                  <div className="flex items-center gap-2">
-                    <AlertCircleIcon className="w-4 h-4 text-rose-600 shrink-0" />
-                    <span>{passwordError}</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setPasswordError("")}
-                    className="text-rose-700 hover:text-rose-900 p-1"
-                  >
-                    <CloseIcon className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              )}
-
-              <form onSubmit={handlePasswordSubmit} className="space-y-4 max-w-xl">
-                <Input
-                  label="Current Password"
-                  id="currentPassword"
-                  name="currentPassword"
-                  type="password"
-                  required
-                  autoComplete="current-password"
-                  value={passwordData.currentPassword}
-                  onChange={(e) =>
-                    setPasswordData((prev) => ({ ...prev, currentPassword: e.target.value }))
-                  }
-                  placeholder="Enter current password"
-                />
-
-                <Input
-                  label="New Password (min 8 characters)"
-                  id="newPassword"
-                  name="newPassword"
-                  type="password"
-                  required
-                  autoComplete="new-password"
-                  value={passwordData.newPassword}
-                  onChange={(e) =>
-                    setPasswordData((prev) => ({ ...prev, newPassword: e.target.value }))
-                  }
-                  placeholder="Enter new strong password"
-                  helperText="Use at least 8 characters. Do not reuse your current password."
-                />
-
-                <Input
-                  label="Confirm New Password"
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  required
-                  autoComplete="new-password"
-                  value={passwordData.confirmPassword}
-                  onChange={(e) =>
-                    setPasswordData((prev) => ({ ...prev, confirmPassword: e.target.value }))
-                  }
-                  placeholder="Re-enter new password"
-                  helperText={
-                    passwordMatch ? (
-                      <span className="text-[#166534] font-medium flex items-center gap-1">
-                        <CheckIcon className="w-3 h-3 text-[#166534]" /> Passwords match
+            <CardContent className="space-y-6">
+              {/* Linked Accounts & Email Verification Status */}
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+                <div className="text-xs font-semibold text-slate-800">Connected Authentication Identities</div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="p-3 bg-white rounded-lg border border-slate-200 text-xs">
+                    <div className="text-slate-400 text-[11px] mb-1">Email Account</div>
+                    <div className="font-medium text-slate-900 truncate mb-1.5">{user?.email || "Unknown"}</div>
+                    {user?.emailVerified ? (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                        <CheckCircleIcon className="w-3 h-3 text-emerald-600" /> Verified
                       </span>
-                    ) : passwordMismatch ? (
-                      <span className="text-red-600 font-medium">
-                        Passwords do not match
-                      </span>
-                    ) : null
-                  }
-                />
+                    ) : (
+                      <div className="flex flex-col gap-1.5">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                          <AlertCircleIcon className="w-3 h-3 text-amber-600" /> Pending Verification
+                        </span>
+                        {verificationSent ? (
+                          <span className="text-[11px] text-emerald-600 font-medium">Verification link sent!</span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={handleResendVerification}
+                            disabled={resendingVerification}
+                            className="text-[11px] text-primary hover:underline font-medium text-left cursor-pointer"
+                          >
+                            {resendingVerification ? "Sending..." : "Resend Link"}
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
 
-                <div className="pt-2">
-                  <Button
-                    type="submit"
-                    variant="primary"
-                    size="md"
-                    loading={isChangingPassword}
-                    disabled={
-                      isChangingPassword ||
-                      !passwordData.currentPassword ||
-                      !passwordData.newPassword ||
-                      !passwordData.confirmPassword ||
-                      passwordData.newPassword !== passwordData.confirmPassword
+                  <div className="p-3 bg-white rounded-lg border border-slate-200 text-xs">
+                    <div className="text-slate-400 text-[11px] mb-1">Google Identity</div>
+                    <div className="font-medium text-slate-900 mb-1.5">
+                      {user?.googleId ? "Google Connected" : "Not Linked"}
+                    </div>
+                    {user?.googleId ? (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                        <CheckCircleIcon className="w-3 h-3 text-emerald-600" /> Active
+                      </span>
+                    ) : (
+                      <span className="text-[11px] text-slate-400">Not linked</span>
+                    )}
+                  </div>
+
+                  <div className="p-3 bg-white rounded-lg border border-slate-200 text-xs">
+                    <div className="text-slate-400 text-[11px] mb-1">GitHub OAuth</div>
+                    <div className="font-medium text-slate-900 mb-1.5">
+                      {user?.githubId ? "GitHub Connected" : "Not Linked"}
+                    </div>
+                    {user?.githubId ? (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                        <CheckCircleIcon className="w-3 h-3 text-emerald-600" /> Active
+                      </span>
+                    ) : (
+                      <span className="text-[11px] text-slate-400">Not linked</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Password Management */}
+              <div className="pt-2">
+                <div className="text-xs font-semibold text-slate-800 mb-3">Change Account Password</div>
+                {passwordSuccess && (
+                  <div
+                    role="status"
+                    className="mb-4 p-3 rounded-lg bg-primary-soft border border-primary-tint text-primary-dark text-xs font-medium flex items-center justify-between gap-2 shadow-xs"
+                  >
+                    <div className="flex items-center gap-2">
+                      <CheckCircleIcon className="w-4 h-4 text-primary shrink-0" />
+                      <span>{passwordSuccess}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setPasswordSuccess("")}
+                      className="text-primary-dark hover:text-primary p-1"
+                    >
+                      <CloseIcon className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+
+                {passwordError && (
+                  <div
+                    role="alert"
+                    className="mb-4 p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium flex items-center justify-between gap-2 shadow-xs"
+                  >
+                    <div className="flex items-center gap-2">
+                      <AlertCircleIcon className="w-4 h-4 text-rose-600 shrink-0" />
+                      <span>{passwordError}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setPasswordError("")}
+                      className="text-rose-700 hover:text-rose-900 p-1"
+                    >
+                      <CloseIcon className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+
+                <form onSubmit={handlePasswordSubmit} className="space-y-4 max-w-xl">
+                  <Input
+                    label="Current Password"
+                    id="currentPassword"
+                    name="currentPassword"
+                    type="password"
+                    required
+                    autoComplete="current-password"
+                    value={passwordData.currentPassword}
+                    onChange={(e) =>
+                      setPasswordData((prev) => ({ ...prev, currentPassword: e.target.value }))
                     }
-                    iconLeft={<ShieldCheckIcon className="w-4 h-4" />}
-                  >
-                    Update Password
-                  </Button>
+                    placeholder="Enter current password"
+                  />
+
+                  <Input
+                    label="New Password (min 8 characters)"
+                    id="newPassword"
+                    name="newPassword"
+                    type="password"
+                    required
+                    autoComplete="new-password"
+                    value={passwordData.newPassword}
+                    onChange={(e) =>
+                      setPasswordData((prev) => ({ ...prev, newPassword: e.target.value }))
+                    }
+                    placeholder="Enter new strong password"
+                    helperText="Use at least 8 characters. Do not reuse your current password."
+                  />
+
+                  <Input
+                    label="Confirm New Password"
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type="password"
+                    required
+                    autoComplete="new-password"
+                    value={passwordData.confirmPassword}
+                    onChange={(e) =>
+                      setPasswordData((prev) => ({ ...prev, confirmPassword: e.target.value }))
+                    }
+                    placeholder="Re-enter new password"
+                    helperText={
+                      passwordMatch ? (
+                        <span className="text-primary font-medium flex items-center gap-1">
+                          <CheckIcon className="w-3 h-3 text-primary" /> Passwords match
+                        </span>
+                      ) : passwordMismatch ? (
+                        <span className="text-red-600 font-medium">
+                          Passwords do not match
+                        </span>
+                      ) : null
+                    }
+                  />
+
+                  <div className="pt-2">
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      size="md"
+                      loading={isChangingPassword}
+                      disabled={
+                        isChangingPassword ||
+                        !passwordData.currentPassword ||
+                        !passwordData.newPassword ||
+                        !passwordData.confirmPassword ||
+                        passwordData.newPassword !== passwordData.confirmPassword
+                      }
+                      iconLeft={<ShieldCheckIcon className="w-4 h-4" />}
+                    >
+                      Update Password
+                    </Button>
+                  </div>
+                </form>
+              </div>
+
+              {/* Active Sessions Management */}
+              <div className="pt-4 border-t border-slate-200">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                  <div>
+                    <div className="text-xs font-semibold text-slate-800">Active Device Sessions</div>
+                    <div className="text-xs text-slate-500">
+                      Devices currently authorized to access your RecruitReady candidate account.
+                    </div>
+                  </div>
+                  {sessions.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleLogoutAllOther}
+                      loading={sessionActionLoading}
+                      className="text-xs text-rose-600 border-rose-200 hover:bg-rose-50"
+                    >
+                      Log Out All Other Devices
+                    </Button>
+                  )}
                 </div>
-              </form>
+
+                {sessionMessage.text && (
+                  <div
+                    role="status"
+                    className={`mb-4 p-3 rounded-lg text-xs font-medium flex items-center justify-between gap-2 shadow-xs ${
+                      sessionMessage.type === "success"
+                        ? "bg-emerald-50 border border-emerald-200 text-emerald-800"
+                        : "bg-rose-50 border border-rose-200 text-rose-800"
+                    }`}
+                  >
+                    <span>{sessionMessage.text}</span>
+                    <button
+                      type="button"
+                      onClick={() => setSessionMessage({ text: "", type: "" })}
+                      className="p-1 hover:opacity-75"
+                    >
+                      <CloseIcon className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+
+                {loadingSessions ? (
+                  <div className="text-xs text-slate-400 py-4 italic">Loading active sessions...</div>
+                ) : sessions.length === 0 ? (
+                  <div className="text-xs text-slate-400 py-3 italic">
+                    Current session active. No auxiliary sessions recorded.
+                  </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    {sessions.map((sess) => (
+                      <div
+                        key={sess._id}
+                        className={`p-3.5 rounded-lg border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                          sess.isCurrent
+                            ? "bg-primary-soft/40 border-primary-tint"
+                            : "bg-slate-50 border-slate-200"
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div
+                            className={`p-2 rounded-md shrink-0 ${
+                              sess.isCurrent
+                                ? "bg-primary text-white"
+                                : "bg-slate-200 text-slate-600"
+                            }`}
+                          >
+                            <ShieldCheckIcon className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-semibold text-slate-900">
+                                {sess.browser} on {sess.os}
+                              </span>
+                              {sess.isCurrent && (
+                                <Badge variant="primary">Current Device</Badge>
+                              )}
+                            </div>
+                            <div className="text-[11px] text-slate-500 mt-0.5 flex flex-wrap items-center gap-2">
+                              <span>IP: {sess.ipAddress}</span>
+                              <span>•</span>
+                              <span>
+                                Last active:{" "}
+                                {sess.lastUsedAt
+                                  ? new Date(sess.lastUsedAt).toLocaleString("en-US", {
+                                      month: "short",
+                                      day: "numeric",
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    })
+                                  : "Recently"}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {!sess.isCurrent && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleRevokeSession(sess._id)}
+                            disabled={sessionActionLoading}
+                            className="text-xs text-slate-600 hover:text-rose-600 hover:border-rose-300 self-end sm:self-center"
+                          >
+                            Revoke
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
         </div>

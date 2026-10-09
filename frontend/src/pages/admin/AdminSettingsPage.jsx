@@ -20,7 +20,6 @@ import {
   Skeleton,
 } from "../../components/ui/index.js";
 import {
-  ProfileIcon,
   ShieldCheckIcon,
   CheckCircleIcon,
   AlertCircleIcon,

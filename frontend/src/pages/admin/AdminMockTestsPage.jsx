@@ -6,6 +6,7 @@ import {
   updateMockTest,
   updateMockTestStatus,
   getAdminAptitudeQuestions,
+  deleteMockTest,
 } from '../../services/adminService.js';
 import {
   PageHeader,
@@ -36,6 +37,7 @@ import {
   ClockIcon,
   DocumentIcon,
   SearchIcon,
+  TrashIcon,
 } from '../../components/ui/Icons.jsx';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -134,6 +136,11 @@ export default function AdminMockTestsPage() {
   const [toggleTarget, setToggleTarget] = useState(null);
   const [isToggleModalOpen, setIsToggleModalOpen] = useState(false);
   const [togglingId, setTogglingId] = useState(null);
+
+  // ── Delete Confirmation ──
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // ── Question Bank Integration for Assessment Composition ──
   const [availableQuestions, setAvailableQuestions] = useState([]);
@@ -415,6 +422,37 @@ export default function AdminMockTestsPage() {
     } finally {
       setTogglingId(null);
       setToggleTarget(null);
+    }
+  };
+
+  // ── Delete Mock Test ──
+  const handleRequestDelete = (test) => {
+    setDeleteTarget(test);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      setIsDeleting(true);
+      const res = await deleteMockTest(deleteTarget._id);
+      showToast(
+        'success',
+        res?.data?.softDeleted ? 'Mock Test Unpublished' : 'Mock Test Deleted',
+        res?.message || 'Mock test deleted successfully.'
+      );
+      setIsDeleteModalOpen(false);
+      setDeleteTarget(null);
+      fetchMockTests();
+    } catch (err) {
+      console.error('Error deleting mock test:', err);
+      showToast(
+        'error',
+        'Delete Failed',
+        err.response?.data?.message || 'Failed to delete mock test.'
+      );
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -707,6 +745,15 @@ export default function AdminMockTestsPage() {
                             >
                               {test.isPublished ? 'Unpublish' : 'Publish'}
                             </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRequestDelete(test)}
+                              title="Delete test"
+                              className="text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+                            >
+                              <TrashIcon className="w-3.5 h-3.5" />
+                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -849,6 +896,15 @@ export default function AdminMockTestsPage() {
                       onClick={() => handleRequestToggle(test)}
                     >
                       {test.isPublished ? 'Unpublish' : 'Publish'}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-rose-600 border-rose-200 hover:bg-rose-50 px-2.5"
+                      onClick={() => handleRequestDelete(test)}
+                      title="Delete test"
+                    >
+                      <TrashIcon className="w-3.5 h-3.5" />
                     </Button>
                   </div>
                 </div>
@@ -1300,6 +1356,63 @@ export default function AdminMockTestsPage() {
               </span>
               <span className="text-xs text-slate-500">
                 • {toggleTarget.questions?.length ?? toggleTarget.totalQuestions ?? 0} Questions
+              </span>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* ─── Delete Confirmation Modal ───────────────────────────── */}
+      <Modal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setDeleteTarget(null);
+        }}
+        title="Delete Mock Test?"
+        description="Are you sure you want to delete this mock test? If students have attempted this assessment, it will be unpublished rather than deleted to protect student scorecards."
+        maxWidth="max-w-md"
+        footer={
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={isDeleting}
+              onClick={() => {
+                setIsDeleteModalOpen(false);
+                setDeleteTarget(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              loading={isDeleting}
+              onClick={handleConfirmDelete}
+            >
+              Delete
+            </Button>
+          </>
+        }
+      >
+        {deleteTarget && (
+          <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
+            <p className="text-sm font-semibold text-slate-900">
+              {deleteTarget.title || '—'}
+            </p>
+            <div className="flex items-center gap-2 mt-2">
+              <Badge
+                variant={getDifficultyVariant(deleteTarget.difficulty)}
+                size="sm"
+              >
+                {getDifficultyLabel(deleteTarget.difficulty)}
+              </Badge>
+              <span className="text-xs text-slate-500">
+                {deleteTarget.durationMinutes || 0} min
+              </span>
+              <span className="text-xs text-slate-500">
+                • {deleteTarget.questions?.length ?? deleteTarget.totalQuestions ?? 0} Questions
               </span>
             </div>
           </div>

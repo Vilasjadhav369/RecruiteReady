@@ -58,6 +58,30 @@ const companySchema = new mongoose.Schema(
       trim: true,
       default: 'BE / B.Tech / MCA / Equivalent degree with 60% or 6.5+ CGPA',
     },
+    eligibilityCriteria: {
+      minCgpa: {
+        type: Number,
+        default: null,
+        min: 0,
+        max: 10,
+      },
+      allowedBranches: {
+        type: [String],
+        default: [],
+      },
+      allowedGraduationYears: {
+        type: [Number],
+        default: [],
+      },
+      maxBacklogs: {
+        type: Number,
+        default: null,
+      },
+    },
+    isFeatured: {
+      type: Boolean,
+      default: false,
+    },
     selectionProcess: {
       type: [String],
       default: [
@@ -100,6 +124,8 @@ const companySchema = new mongoose.Schema(
 );
 
 companySchema.index({ industry: 1, isActive: 1 });
+companySchema.index({ isActive: 1, isFeatured: -1, createdAt: -1 });
+companySchema.index({ isActive: 1, name: 1 });
 
 const Company = mongoose.model('Company', companySchema);
 

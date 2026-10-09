@@ -35,10 +35,23 @@ api.interceptors.response.use(
   (error) => {
     // 401 Unauthorized handling: clean stale token if unauthenticated
     if (error.response?.status === 401) {
-      const isAuthCheck = error.config?.url?.includes("/auth/me");
-      if (isAuthCheck) {
+      const url = error.config?.url || "";
+      const isCredentialAttempt = /\/auth\/(login|register)/.test(url);
+      // A 401 on a normal request means the session is gone. Wrong-password
+      // responses from login/register must not clear anything.
+      if (!isCredentialAttempt && localStorage.getItem("recruiteready_token")) {
         localStorage.removeItem("recruiteready_token");
+        window.dispatchEvent(new Event("auth:expired"));
       }
+    } else if (error.response?.status === 403) {
+      // 403 Forbidden handling
+      window.dispatchEvent(new CustomEvent("auth:forbidden", { detail: error.response?.data }));
+    } else if (error.response?.status === 429) {
+      // Rate limiting notification
+      console.warn("[API] Rate limit reached. Please throttle requests.");
+    } else if (!error.response && error.code === "ECONNABORTED") {
+      // Request timeout
+      console.warn("[API Timeout] Request timed out after 10000ms.");
     }
 
     return Promise.reject(error);

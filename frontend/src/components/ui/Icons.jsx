@@ -121,6 +121,9 @@ export function CloseIcon({ className = 'w-5 h-5' }) {
   );
 }
 
+export const XIcon = CloseIcon;
+export const CompaniesIcon = CompanyIcon;
+
 export function PlusIcon({ className = 'w-5 h-5' }) {
   return (
     <svg className={className} {...defaultProps}>
@@ -492,9 +495,35 @@ export function SparklesIcon({ className = 'w-5 h-5' }) {
   );
 }
 
-export function BookmarkIcon({ className = 'w-4 h-4' }) {
+export function BookmarkIcon({ className = 'w-4 h-4', filled = false }) {
   return (
-    <svg className={className} viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg
+      className={className}
+      viewBox="0 0 20 20"
+      fill={filled ? "currentColor" : "none"}
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M5 3a2 2 0 00-2 2v13l7-4 7 4V5a2 2 0 00-2-2H5z" />
+    </svg>
+  );
+}
+
+export function BookmarkFilledIcon({ className = 'w-4 h-4' }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 20 20"
+      fill="currentColor"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
       <path d="M5 3a2 2 0 00-2 2v13l7-4 7 4V5a2 2 0 00-2-2H5z" />
     </svg>
   );

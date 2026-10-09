@@ -1,9 +1,11 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { EyeIcon, EyeOffIcon, CheckIcon } from "../components/ui/Icons.jsx";
 import { Button } from "../components/ui/Button.jsx";
 import { Card } from "../components/ui/Card.jsx";
+import GoogleSignInButton from "../components/auth/GoogleSignInButton.jsx";
+import GitHubSignInButton from "../components/auth/GitHubSignInButton.jsx";
 
 function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -24,6 +26,15 @@ function RegisterPage() {
 
   const { register } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const err = params.get("error");
+    if (err) {
+      setErrorMessage(err);
+    }
+  }, [location.search]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -79,8 +90,12 @@ function RegisterPage() {
         graduationYear: graduationYear ? Number(graduationYear) : undefined,
       });
 
-      // Redirect to authenticated student dashboard
-      navigate("/dashboard", { replace: true });
+      const user = res?.data?.user;
+      if (user?.role === "admin") {
+        navigate("/admin", { replace: true });
+      } else {
+        navigate("/onboarding", { replace: true });
+      }
     } catch (err) {
       const msg =
         err.response?.data?.message ||
@@ -98,7 +113,7 @@ function RegisterPage() {
         {/* ── LEFT COLUMN: Context & Highlights ─────────── */}
         <div className="lg:col-span-5 space-y-6 text-left pt-2 lg:sticky lg:top-24">
           <div className="inline-flex items-center gap-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[#166534] bg-[#DCFCE7] px-2.5 py-0.5 rounded-full border border-[#BBF7D0]">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-primary bg-primary-tint px-2.5 py-0.5 rounded-full border border-primary-border">
               New Student Registration
             </span>
           </div>
@@ -107,7 +122,7 @@ function RegisterPage() {
             <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight leading-tight">
               Start Your Placement Journey.
             </h1>
-            <p className="text-lg font-semibold text-[#166534]">
+            <p className="text-lg font-semibold text-primary">
               Structured, Centralized Preparation.
             </p>
           </div>
@@ -118,7 +133,7 @@ function RegisterPage() {
 
           <div className="space-y-3 pt-2 text-xs sm:text-sm text-slate-700">
             <div className="flex items-start gap-2.5">
-              <div className="w-5 h-5 rounded-full bg-[#DCFCE7] text-[#166534] flex items-center justify-center shrink-0 mt-0.5">
+              <div className="w-5 h-5 rounded-full bg-primary-tint text-primary flex items-center justify-center shrink-0 mt-0.5">
                 <CheckIcon className="w-3.5 h-3.5" />
               </div>
               <div>
@@ -128,7 +143,7 @@ function RegisterPage() {
             </div>
 
             <div className="flex items-start gap-2.5">
-              <div className="w-5 h-5 rounded-full bg-[#DCFCE7] text-[#166534] flex items-center justify-center shrink-0 mt-0.5">
+              <div className="w-5 h-5 rounded-full bg-primary-tint text-primary flex items-center justify-center shrink-0 mt-0.5">
                 <CheckIcon className="w-3.5 h-3.5" />
               </div>
               <div>
@@ -138,7 +153,7 @@ function RegisterPage() {
             </div>
 
             <div className="flex items-start gap-2.5">
-              <div className="w-5 h-5 rounded-full bg-[#DCFCE7] text-[#166534] flex items-center justify-center shrink-0 mt-0.5">
+              <div className="w-5 h-5 rounded-full bg-primary-tint text-primary flex items-center justify-center shrink-0 mt-0.5">
                 <CheckIcon className="w-3.5 h-3.5" />
               </div>
               <div>
@@ -170,6 +185,29 @@ function RegisterPage() {
               </div>
             )}
 
+            {/* Social Quick Sign-Up */}
+            <div className="space-y-3 mb-5">
+              <GoogleSignInButton
+                onSuccess={() => navigate("/dashboard", { replace: true })}
+                onError={(msg) => setErrorMessage(msg)}
+                disabled={isSubmitting}
+              />
+              <GitHubSignInButton
+                disabled={isSubmitting}
+                onError={(msg) => setErrorMessage(msg)}
+              />
+            </div>
+
+            {/* Visual Divider */}
+            <div className="relative my-5 flex items-center justify-center">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-slate-200" />
+              </div>
+              <div className="relative bg-white px-3 text-xs text-slate-500 uppercase tracking-wider font-medium">
+                or register with email
+              </div>
+            </div>
+
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Name Fields */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
@@ -188,7 +226,7 @@ function RegisterPage() {
                     value={formData.firstName}
                     onChange={handleChange}
                     placeholder="e.g. Anand"
-                    className="w-full min-h-[44px] sm:min-h-0 h-10 sm:h-9 px-3.5 text-sm bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#166534] focus:ring-2 focus:ring-[#166534]/20 transition-all"
+                    className="w-full min-h-[44px] sm:min-h-0 h-10 sm:h-9 px-3.5 text-sm bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
                   />
                 </div>
                 <div>
@@ -206,7 +244,7 @@ function RegisterPage() {
                     value={formData.lastName}
                     onChange={handleChange}
                     placeholder="e.g. Sharma"
-                    className="w-full min-h-[44px] sm:min-h-0 h-10 sm:h-9 px-3.5 text-sm bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#166534] focus:ring-2 focus:ring-[#166534]/20 transition-all"
+                    className="w-full min-h-[44px] sm:min-h-0 h-10 sm:h-9 px-3.5 text-sm bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
                   />
                 </div>
               </div>
@@ -228,7 +266,7 @@ function RegisterPage() {
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="student@example.com"
-                  className="w-full min-h-[44px] sm:min-h-0 h-10 sm:h-9 px-3.5 text-sm bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#166534] focus:ring-2 focus:ring-[#166534]/20 transition-all"
+                  className="w-full min-h-[44px] sm:min-h-0 h-10 sm:h-9 px-3.5 text-sm bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
                 />
               </div>
 
@@ -251,7 +289,7 @@ function RegisterPage() {
                       value={formData.password}
                       onChange={handleChange}
                       placeholder="••••••••"
-                      className="w-full min-h-[44px] sm:min-h-0 h-10 sm:h-9 pl-3.5 pr-10 text-sm bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#166534] focus:ring-2 focus:ring-[#166534]/20 transition-all"
+                      className="w-full min-h-[44px] sm:min-h-0 h-10 sm:h-9 pl-3.5 pr-10 text-sm bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
                     />
                     <button
                       type="button"
@@ -285,7 +323,7 @@ function RegisterPage() {
                       value={formData.confirmPassword}
                       onChange={handleChange}
                       placeholder="••••••••"
-                      className="w-full min-h-[44px] sm:min-h-0 h-10 sm:h-9 pl-3.5 pr-10 text-sm bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#166534] focus:ring-2 focus:ring-[#166534]/20 transition-all"
+                      className="w-full min-h-[44px] sm:min-h-0 h-10 sm:h-9 pl-3.5 pr-10 text-sm bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
                     />
                     <button
                       type="button"
@@ -324,7 +362,7 @@ function RegisterPage() {
                       value={formData.college}
                       onChange={handleChange}
                       placeholder="e.g. Pune Institute of Computer Technology"
-                      className="w-full min-h-[44px] sm:min-h-0 h-10 sm:h-9 px-3.5 text-sm bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#166534] focus:ring-2 focus:ring-[#166534]/20 transition-all"
+                      className="w-full min-h-[44px] sm:min-h-0 h-10 sm:h-9 px-3.5 text-sm bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
                     />
                   </div>
 
@@ -343,7 +381,7 @@ function RegisterPage() {
                         value={formData.branch}
                         onChange={handleChange}
                         placeholder="e.g. Computer Science"
-                        className="w-full min-h-[44px] sm:min-h-0 h-10 sm:h-9 px-3.5 text-sm bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#166534] focus:ring-2 focus:ring-[#166534]/20 transition-all"
+                        className="w-full min-h-[44px] sm:min-h-0 h-10 sm:h-9 px-3.5 text-sm bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
                       />
                     </div>
                     <div>
@@ -362,7 +400,7 @@ function RegisterPage() {
                         value={formData.graduationYear}
                         onChange={handleChange}
                         placeholder="e.g. 2026"
-                        className="w-full min-h-[44px] sm:min-h-0 h-10 sm:h-9 px-3.5 text-sm bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#166534] focus:ring-2 focus:ring-[#166534]/20 transition-all"
+                        className="w-full min-h-[44px] sm:min-h-0 h-10 sm:h-9 px-3.5 text-sm bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
                       />
                     </div>
                   </div>
@@ -387,7 +425,7 @@ function RegisterPage() {
                 Already have an account?{" "}
                 <Link
                   to="/login"
-                  className="font-semibold text-[#166534] hover:text-[#14532D] hover:underline no-underline"
+                  className="font-semibold text-primary hover:text-primary-dark hover:underline no-underline"
                 >
                   Sign In
                 </Link>

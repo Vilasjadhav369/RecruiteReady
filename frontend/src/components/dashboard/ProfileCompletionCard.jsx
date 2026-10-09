@@ -1,6 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
-import { Card, CardHeader, CardTitle, CardContent } from "../ui/Card.jsx";
+import { Card, CardHeader, CardContent } from "../ui/Card.jsx";
 import { ProgressBar } from "../ui/ProgressBar.jsx";
 import { Badge } from "../ui/Badge.jsx";
 import { ArrowRightIcon, ProfileIcon } from "../ui/Icons.jsx";
@@ -22,7 +21,7 @@ function ProfileCompletionCard({ user }) {
         <CardHeader className="pb-3 border-b-0">
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-md bg-[#DCFCE7] text-[#166534] flex items-center justify-center shrink-0">
+              <div className="w-6 h-6 rounded-md bg-primary-tint text-primary flex items-center justify-center shrink-0">
                 <ProfileIcon className="w-3.5 h-3.5" />
               </div>
               <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
@@ -66,16 +65,9 @@ function ProfileCompletionCard({ user }) {
       </div>
 
       <div className="px-5 py-3.5 bg-slate-50/60 border-t border-slate-100 flex items-center justify-between">
-        <Link to="/profile" className="w-full no-underline">
-          <Button
-            variant="outline"
-            size="sm"
-            fullWidth
-            iconRight={<ArrowRightIcon className="w-3.5 h-3.5" />}
-          >
+        <Button to="/profile" variant="outline" size="sm" fullWidth iconRight={<ArrowRightIcon className="w-3.5 h-3.5" />} className="w-full">
             {isComplete ? "Manage Profile" : "Complete Profile"}
           </Button>
-        </Link>
       </div>
     </Card>
   );

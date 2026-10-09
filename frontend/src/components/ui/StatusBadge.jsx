@@ -23,6 +23,12 @@ export function StatusBadge({ status = '', className = '', ...props }) {
     expired: { variant: 'danger', label: 'Expired', dot: false },
     passed: { variant: 'success', label: 'Passed', dot: true },
     failed: { variant: 'danger', label: 'Failed', dot: false },
+    accepted: { variant: 'success', label: 'Accepted', dot: true },
+    'wrong answer': { variant: 'danger', label: 'Wrong Answer', dot: false },
+    'time limit exceeded': { variant: 'warning', label: 'Time Limit Exceeded', dot: false },
+    'compilation error': { variant: 'danger', label: 'Compilation Error', dot: false },
+    'runtime error': { variant: 'danger', label: 'Runtime Error', dot: false },
+    'execution unavailable': { variant: 'default', label: 'Execution Unavailable', dot: false },
   };
 
   const config = statusConfig[normalized] || {

@@ -81,25 +81,25 @@ function Navbar() {
             to="/"
             className="flex items-center gap-2.5 no-underline hover:no-underline shrink-0 group"
           >
-            <div className="w-8 h-8 rounded-lg bg-[#166534] flex items-center justify-center shrink-0 shadow-xs group-hover:bg-[#14532D] transition-colors">
+            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0 shadow-xs group-hover:bg-primary-dark transition-colors">
               <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
                 <path
                   d="M10 3L3 7L10 11L17 7L10 3Z"
-                  stroke="#DCFCE7"
+                  stroke="#DBEAFE"
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
                 <path
                   d="M5.5 8.5V13.5C5.5 13.5 7 15.5 10 15.5C13 15.5 14.5 13.5 14.5 13.5V8.5"
-                  stroke="#22C55E"
+                  stroke="#3B82F6"
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
                 <path
                   d="M17 7V12"
-                  stroke="#DCFCE7"
+                  stroke="#DBEAFE"
                   strokeWidth="2"
                   strokeLinecap="round"
                 />
@@ -127,7 +127,7 @@ function Navbar() {
                     const active = !isAnchor && isActive && (link.to === "/" ? location.pathname === "/" : true);
                     return `px-3.5 py-1.5 rounded-lg text-sm font-medium transition-colors no-underline hover:no-underline ${
                       active
-                        ? "text-[#166534] bg-[#DCFCE7] font-semibold"
+                        ? "text-primary bg-primary-tint font-semibold"
                         : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70"
                     }`;
                   }}
@@ -144,9 +144,9 @@ function Navbar() {
               <div className="flex items-center gap-2.5">
                 <Link
                   to="/dashboard"
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 hover:border-[#166534]/50 transition-colors no-underline text-xs font-semibold text-slate-800"
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 hover:border-primary/50 transition-colors no-underline text-xs font-semibold text-slate-800"
                 >
-                  <div className="w-5 h-5 rounded-full bg-[#166534] text-white flex items-center justify-center text-[10px] font-bold">
+                  <div className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-[10px] font-bold">
                     {user?.firstName?.[0]?.toUpperCase() ?? "S"}
                   </div>
                   <span>Dashboard</span>
@@ -165,16 +165,14 @@ function Navbar() {
               <div className="flex items-center gap-2">
                 <Link
                   to="/login"
-                  className="px-3.5 py-2 text-sm font-medium text-slate-700 hover:text-[#166534] hover:bg-slate-100/60 rounded-lg transition-colors no-underline hover:no-underline"
+                  className="px-3.5 py-2 text-sm font-medium text-slate-700 hover:text-primary hover:bg-slate-100/60 rounded-lg transition-colors no-underline hover:no-underline"
                 >
                   Login
                 </Link>
 
-                <Link to="/register" className="no-underline hover:no-underline">
-                  <Button variant="primary" size="md">
+                <Button to="/register" variant="primary" size="md">
                     Create Account
                   </Button>
-                </Link>
               </div>
             )}
           </div>
@@ -182,7 +180,7 @@ function Navbar() {
           {/* ── Mobile Hamburger Button ──────────────────── */}
           <button
             type="button"
-            className="md:hidden min-w-[44px] min-h-[44px] p-2.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-[#166534]"
+            className="md:hidden min-w-[44px] min-h-[44px] p-2.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-primary"
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-label={mobileOpen ? "Close navigation menu" : "Open navigation menu"}
             aria-expanded={mobileOpen}

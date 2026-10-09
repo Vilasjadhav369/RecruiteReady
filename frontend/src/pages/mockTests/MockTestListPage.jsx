@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useFeedback } from '../../components/ui/FeedbackProvider.jsx';
+import { useNavigate } from 'react-router-dom';
 import { getMockTests, startMockTest } from '../../services/mockTestService.js';
 import { 
   PageHeader, 
@@ -16,12 +17,12 @@ import {
   ClockIcon, 
   DocumentIcon,
   ArrowRightIcon,
-  CheckCircleIcon,
   EyeIcon,
   TrophyIcon
 } from '../../components/ui/Icons.jsx';
 
 export default function MockTestListPage() {
+  const { notify } = useFeedback();
   const navigate = useNavigate();
   const [tests, setTests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -62,7 +63,7 @@ export default function MockTestListPage() {
       }
     } catch (err) {
       console.error('Failed to start mock test:', err);
-      alert(err.response?.data?.message || 'Could not initialize this test session.');
+      notify({ variant: 'error', title: 'Unable to start test', message: err.response?.data?.message || 'Could not start this test. Please try again.' });
     } finally {
       setStartingId(null);
     }
@@ -94,15 +95,9 @@ export default function MockTestListPage() {
           { label: 'Mock Tests' },
         ]}
         actions={
-          <Link to="/mock-tests/history">
-            <Button 
-              variant="outline" 
-              size="sm"
-              iconLeft={<ClockIcon className="w-4 h-4" />}
-            >
+          <Button to="/mock-tests/history" variant="outline" size="sm" iconLeft={<ClockIcon className="w-4 h-4" />}>
               Attempt History
             </Button>
-          </Link>
         }
       />
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { getMockResult } from '../../services/mockTestService.js';
 import { formatDateTime } from '../../utils/formatters.js';
 import { 
@@ -85,24 +85,12 @@ export default function MockTestResultPage() {
         }
         actions={
           <div className="flex items-center gap-2.5">
-            <Link to="/mock-tests/history">
-              <Button 
-                variant="outline" 
-                size="sm"
-                iconLeft={<ClockIcon className="w-4 h-4" />}
-              >
+            <Button to="/mock-tests/history" variant="outline" size="sm" iconLeft={<ClockIcon className="w-4 h-4" />}>
                 Attempt History
               </Button>
-            </Link>
-            <Link to="/mock-tests">
-              <Button 
-                variant="primary" 
-                size="sm"
-                iconLeft={<ChevronLeftIcon className="w-4 h-4" />}
-              >
+            <Button to="/mock-tests" variant="primary" size="sm" iconLeft={<ChevronLeftIcon className="w-4 h-4" />}>
                 All Assessments
               </Button>
-            </Link>
           </div>
         }
       />

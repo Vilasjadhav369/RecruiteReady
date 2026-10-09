@@ -14,7 +14,7 @@ import {
   StarIcon,
   InfoIcon,
   ChevronRightIcon,
-  SpinnerIcon,
+  ResourcesIcon,
 } from '../ui/Icons.jsx';
 import notificationService from '../../services/notificationService.js';
 
@@ -46,19 +46,22 @@ function formatRelativeTime(ts) {
 function getNotificationIcon(type) {
   switch (type) {
     case 'review_approved':
-      return <CheckCircleIcon className="w-4 h-4 text-[#166534]" />;
+      return <CheckCircleIcon className="w-4 h-4 text-primary" />;
     case 'review_rejected':
       return <AlertCircleIcon className="w-4 h-4 text-amber-600" />;
     case 'mock_test_completed':
-      return <MockTestIcon className="w-4 h-4 text-[#166534]" />;
+    case 'new_mock_test':
+      return <MockTestIcon className="w-4 h-4 text-primary" />;
+    case 'new_study_material':
+      return <ResourcesIcon className="w-4 h-4 text-teal-600" />;
     case 'aptitude_completed':
-      return <AptitudeIcon className="w-4 h-4 text-[#166534]" />;
+      return <AptitudeIcon className="w-4 h-4 text-primary" />;
     case 'coding_accepted':
-      return <CodingIcon className="w-4 h-4 text-[#166534]" />;
+      return <CodingIcon className="w-4 h-4 text-primary" />;
     case 'coding_rejected':
       return <CodingIcon className="w-4 h-4 text-amber-600" />;
     case 'security_alert':
-      return <ShieldCheckIcon className="w-4 h-4 text-[#166534]" />;
+      return <ShieldCheckIcon className="w-4 h-4 text-primary" />;
     case 'admin_review_pending':
       return <StarIcon className="w-4 h-4 text-amber-600" />;
     default:
@@ -199,7 +202,7 @@ export function NotificationDropdown({ align = 'right' }) {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="relative min-w-[40px] min-h-[40px] p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-[#166534]"
+        className="relative min-w-[40px] min-h-[40px] p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-primary"
         aria-label={unreadCount > 0 ? `Notifications (${unreadCount} unread)` : 'Notifications'}
         aria-expanded={isOpen}
         aria-haspopup="dialog"
@@ -207,7 +210,7 @@ export function NotificationDropdown({ align = 'right' }) {
       >
         <BellIcon className="w-4 h-4 text-slate-600" />
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-[#166534] text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none border-2 border-white select-none animate-in zoom-in-75">
+          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-primary text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none border-2 border-white select-none animate-in zoom-in-75">
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
@@ -227,7 +230,7 @@ export function NotificationDropdown({ align = 'right' }) {
             <div className="flex items-center gap-2">
               <span className="font-bold text-slate-900 text-sm">Notifications</span>
               {unreadCount > 0 && (
-                <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-[#DCFCE7] text-[#14532D]">
+                <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-primary-tint text-primary-dark">
                   {unreadCount} new
                 </span>
               )}
@@ -239,7 +242,7 @@ export function NotificationDropdown({ align = 'right' }) {
                   type="button"
                   onClick={handleMarkAllAsRead}
                   disabled={markingAll}
-                  className="text-[11px] font-semibold text-[#166534] hover:text-[#14532D] hover:underline cursor-pointer disabled:opacity-50"
+                  className="text-[11px] font-semibold text-primary hover:text-primary-dark hover:underline cursor-pointer disabled:opacity-50"
                   aria-label="Mark all notifications as read"
                 >
                   {markingAll ? 'Marking...' : 'Mark all read'}
@@ -301,7 +304,7 @@ export function NotificationDropdown({ align = 'right' }) {
                     key={item._id}
                     onClick={() => handleItemClick(item)}
                     className={`p-3 sm:px-4 flex items-start gap-3 transition-colors cursor-pointer group ${
-                      !item.isRead ? 'bg-[#F0FDF4]/70 hover:bg-[#F0FDF4]' : 'hover:bg-slate-50'
+                      !item.isRead ? 'bg-primary-soft/70 hover:bg-primary-soft' : 'hover:bg-slate-50'
                     }`}
                   >
                     {/* Icon */}
@@ -317,7 +320,7 @@ export function NotificationDropdown({ align = 'right' }) {
                         </span>
                         {!item.isRead && (
                           <span
-                            className="w-2 h-2 rounded-full bg-[#166534] shrink-0"
+                            className="w-2 h-2 rounded-full bg-primary shrink-0"
                             title="Unread"
                             aria-label="Unread notification"
                           />
@@ -331,7 +334,7 @@ export function NotificationDropdown({ align = 'right' }) {
                       <div className="flex items-center justify-between mt-1 text-[10px] text-slate-400 font-mono">
                         <span>{formatRelativeTime(item.createdAt)}</span>
                         {item.link && (
-                          <span className="text-[#166534] font-sans font-semibold group-hover:underline flex items-center gap-0.5">
+                          <span className="text-primary font-sans font-semibold group-hover:underline flex items-center gap-0.5">
                             View <ChevronRightIcon className="w-3 h-3" />
                           </span>
                         )}
@@ -346,7 +349,7 @@ export function NotificationDropdown({ align = 'right' }) {
                           onClick={(e) => handleMarkAsRead(item, e)}
                           title="Mark as read"
                           aria-label="Mark notification as read"
-                          className="p-1 rounded text-slate-400 hover:text-[#166534] hover:bg-white cursor-pointer"
+                          className="p-1 rounded text-slate-400 hover:text-primary hover:bg-white cursor-pointer"
                         >
                           <CheckIcon className="w-3.5 h-3.5" />
                         </button>
@@ -372,7 +375,7 @@ export function NotificationDropdown({ align = 'right' }) {
             <Link
               to="/notifications"
               onClick={() => setIsOpen(false)}
-              className="text-xs font-semibold text-[#166534] hover:text-[#14532D] no-underline hover:underline flex items-center gap-1"
+              className="text-xs font-semibold text-primary hover:text-primary-dark no-underline hover:underline flex items-center gap-1"
             >
               View all notifications <ChevronRightIcon className="w-3.5 h-3.5" />
             </Link>

@@ -1,4 +1,4 @@
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useId } from 'react';
 import { ChevronDownIcon } from './Icons.jsx';
 
 /**
@@ -22,11 +22,12 @@ export const Select = forwardRef(function Select(
   },
   ref
 ) {
-  const selectId = id || name || `select-${Math.random().toString(36).substr(2, 9)}`;
+  const generatedId = useId();
+  const selectId = id || name || `select-${generatedId}`;
 
   const borderClass = error
     ? 'border-red-300 text-red-900 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
-    : 'border-slate-200 text-slate-900 focus:border-[#166534] focus:ring-2 focus:ring-[#166534]/20';
+    : 'border-slate-200 text-slate-900 focus:border-primary focus:ring-2 focus:ring-primary/20';
 
   const disabledClass = disabled
     ? 'bg-slate-50 text-slate-500 cursor-not-allowed border-slate-200'

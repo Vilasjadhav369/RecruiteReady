@@ -1,10 +1,11 @@
-﻿import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import {
   getToken,
   setToken,
   removeToken,
   loginUser,
   registerUser,
+  googleLoginUser,
   getCurrentUser,
   logoutUser,
 } from "../services/authService.js";
@@ -27,7 +28,7 @@ export function AuthProvider({ children }) {
     try {
       const userData = await getCurrentUser();
       setUser(userData);
-    } catch (err) {
+    } catch {
       console.warn("Session expired or token invalid. Clearing auth state.");
       removeToken();
       setUser(null);
@@ -39,6 +40,17 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     refreshUser();
   }, [refreshUser]);
+
+  // The API layer fires this when the server rejects the session (401),
+  // so protected routes redirect to /login instead of showing broken pages.
+  useEffect(() => {
+    const handleExpired = () => {
+      removeToken();
+      setUser(null);
+    };
+    window.addEventListener("auth:expired", handleExpired);
+    return () => window.removeEventListener("auth:expired", handleExpired);
+  }, []);
 
   // Login handler
   const login = async (credentials) => {
@@ -56,6 +68,22 @@ export function AuthProvider({ children }) {
     return res;
   };
 
+  // Google Login handler
+  const googleLogin = async (credential) => {
+    const res = await googleLoginUser(credential);
+    const userObj = res.data?.user;
+    setUser(userObj);
+    return res;
+  };
+
+  // Direct token login handler (for OAuth redirect flows like GitHub)
+  const loginWithToken = async (token) => {
+    setToken(token);
+    const userData = await getCurrentUser();
+    setUser(userData);
+    return userData;
+  };
+
   // Immediate in-memory user update (e.g. after profile edit)
   const updateUser = (updatedUserData) => {
     setUser((prev) => (prev ? { ...prev, ...updatedUserData } : updatedUserData));
@@ -63,21 +91,33 @@ export function AuthProvider({ children }) {
 
   // Logout handler
   const logout = async () => {
-    await logoutUser();
-    setUser(null);
+    try {
+      await logoutUser();
+    } finally {
+      // Always clear local state, even if the network call fails.
+      removeToken();
+      setUser(null);
+    }
   };
 
-  const value = {
-    user,
-    loading,
-    isAuthenticated: Boolean(user),
-    isAdmin: user?.role === "admin",
-    login,
-    register,
-    updateUser,
-    logout,
-    refreshUser,
-  };
+  const value = useMemo(
+    () => ({
+      user,
+      loading,
+      isAuthenticated: Boolean(user),
+      isAdmin: user?.role === "admin",
+      login,
+      register,
+      googleLogin,
+      loginWithToken,
+      updateUser,
+      logout,
+      refreshUser,
+    }),
+    // login/register/googleLogin/loginWithToken/updateUser/logout only touch stable setters
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [user, loading, refreshUser]
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

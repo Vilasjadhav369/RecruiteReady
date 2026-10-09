@@ -25,7 +25,7 @@ function CompanyCard({ company, loading = false }) {
       to={`/companies/${company.slug || company._id || company.id}`}
       className="group block bg-white border border-slate-200 rounded-xl p-5 hover:border-slate-300 hover:shadow-xs transition-all duration-200 no-underline"
     >
-      <div className="w-10 h-10 bg-[#DCFCE7] border border-[#BBF7D0] text-brand-dark rounded-lg flex items-center justify-center mb-3 font-bold text-xs">
+      <div className="w-10 h-10 bg-primary-tint border border-primary-border text-brand-dark rounded-lg flex items-center justify-center mb-3 font-bold text-xs">
         <span>{initials}</span>
       </div>
       <span className="text-sm font-bold text-slate-900 block mb-1 group-hover:text-brand-dark transition-colors">

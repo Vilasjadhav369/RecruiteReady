@@ -71,7 +71,7 @@ function RatingSelector({ value = null, onChange, disabled = false }) {
               aria-label={`${star} of 5 stars`}
               aria-checked={isSelected}
               role="radio"
-              className="p-1 rounded-md text-amber-400 hover:text-amber-500 focus:outline-none focus:ring-2 focus:ring-[#166534]/30 transition-transform active:scale-95 disabled:opacity-50 cursor-pointer"
+              className="p-1 rounded-md text-amber-400 hover:text-amber-500 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-transform active:scale-95 disabled:opacity-50 cursor-pointer"
             >
               <StarIcon
                 className="w-6 h-6 text-amber-400"
@@ -104,7 +104,6 @@ export default function ReviewsPage() {
 
   // Authenticated Student's Review
   const [myReview, setMyReview] = useState(null);
-  const [myReviewLoading, setMyReviewLoading] = useState(true);
 
   // Review Form State
   const [isEditing, setIsEditing] = useState(false);
@@ -141,13 +140,10 @@ export default function ReviewsPage() {
   // Fetch student's own review
   const fetchMyReview = async () => {
     try {
-      setMyReviewLoading(true);
       const review = await getMyReview();
       setMyReview(review || null);
     } catch (err) {
       console.error('Failed to load user review:', err);
-    } finally {
-      setMyReviewLoading(false);
     }
   };
 
@@ -324,7 +320,7 @@ export default function ReviewsPage() {
 
       {/* Student's Existing Review Status Card (If already submitted) */}
       {myReview && !isEditing && (
-        <Card className="border-slate-200/80 shadow-xs bg-[#F0FDF4]/40 border-l-4 border-l-[#166534]">
+        <Card className="border-slate-200/80 shadow-xs bg-primary-soft/40 border-l-4 border-l-primary">
           <CardHeader className="pb-3 border-b border-slate-100 flex flex-row items-center justify-between">
             <div className="space-y-0.5">
               <CardTitle className="text-base text-slate-900">Your Submitted Feedback</CardTitle>
@@ -461,7 +457,7 @@ export default function ReviewsPage() {
                       onChange={(e) => setTitle(e.target.value)}
                       disabled={submitting}
                       placeholder="e.g. Structured aptitude and TCS preparation"
-                      className="w-full h-9 px-3 text-sm bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#166534] focus:ring-2 focus:ring-[#166534]/20 transition-all disabled:opacity-50"
+                      className="w-full h-9 px-3 text-sm bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all disabled:opacity-50"
                     />
                   </div>
 
@@ -478,7 +474,7 @@ export default function ReviewsPage() {
                       onChange={(e) => setComment(e.target.value)}
                       disabled={submitting}
                       placeholder="Tell us how RecruitReady has helped with your preparation..."
-                      className="w-full p-3 text-sm bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#166534] focus:ring-2 focus:ring-[#166534]/20 transition-all disabled:opacity-50 resize-y min-h-[90px]"
+                      className="w-full p-3 text-sm bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all disabled:opacity-50 resize-y min-h-[90px]"
                     />
                   </div>
 

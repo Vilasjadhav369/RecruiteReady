@@ -117,8 +117,8 @@ export default function ResourceListPage() {
         );
       case 'article':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#DCFCE7] text-[#14532D] border border-[#BBF7D0]">
-            <BookOpenIcon className="w-3 h-3 text-[#166534]" />
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-primary-tint text-primary-dark border border-primary-border">
+            <BookOpenIcon className="w-3 h-3 text-primary" />
             Article
           </span>
         );
@@ -162,7 +162,7 @@ export default function ResourceListPage() {
             onClick={() => handleCategorySelect('all')}
             className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all border ${
               category === 'all'
-                ? 'bg-[#166534] text-white border-[#166534] shadow-xs'
+                ? 'bg-primary text-white border-primary shadow-xs'
                 : 'bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50 border-slate-200/80'
             }`}
           >
@@ -175,7 +175,7 @@ export default function ResourceListPage() {
               onClick={() => handleCategorySelect(cat)}
               className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all border ${
                 category === cat
-                  ? 'bg-[#166534] text-white border-[#166534] shadow-xs'
+                  ? 'bg-primary text-white border-primary shadow-xs'
                   : 'bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50 border-slate-200/80'
               }`}
             >
@@ -204,7 +204,7 @@ export default function ResourceListPage() {
                 value={type}
                 onChange={handleTypeChange}
                 aria-label="Filter by material format"
-                className="w-full h-9 px-3 text-sm bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:border-[#166534] focus:ring-2 focus:ring-[#166534]/20 transition-all cursor-pointer"
+                className="w-full h-9 px-3 text-sm bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
               >
                 <option value="all">All Formats</option>
                 <option value="pdf">PDF Documents</option>
@@ -286,7 +286,7 @@ export default function ResourceListPage() {
                     </div>
 
                     {/* Title */}
-                    <h3 className="text-base font-bold text-slate-900 group-hover:text-[#166534] transition-colors line-clamp-2 leading-snug">
+                    <h3 className="text-base font-bold text-slate-900 group-hover:text-primary transition-colors line-clamp-2 leading-snug">
                       {r.title}
                     </h3>
 

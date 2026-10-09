@@ -20,8 +20,7 @@ import {
   ChevronRightIcon, 
   FlagIcon, 
   MenuIcon, 
-  XCircleIcon,
-  CheckCircleIcon
+  XCircleIcon
 } from '../../components/ui/Icons.jsx';
 
 export default function MockTestSessionPage() {
@@ -281,7 +280,7 @@ export default function MockTestSessionPage() {
                     onClick={() => handleSelectOption(opt.key)}
                     className={`w-full text-left p-4 rounded-xl border transition-all flex items-start gap-3.5 cursor-pointer ${
                       isSelected
-                        ? 'border-brand bg-[#F0FDF4] ring-1 ring-brand text-slate-900'
+                        ? 'border-brand bg-primary-soft ring-1 ring-brand text-slate-900'
                         : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50 bg-white text-slate-800'
                     }`}
                   >
@@ -373,7 +372,7 @@ export default function MockTestSessionPage() {
 
               {/* Status Summary Pills */}
               <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                <div className="bg-[#DCFCE7] text-brand-dark p-2 rounded-lg border border-[#BBF7D0]">
+                <div className="bg-primary-tint text-brand-dark p-2 rounded-lg border border-primary-border">
                   <span className="block font-bold text-sm">{answeredCount}</span>
                   <span className="text-[10px]">Answered</span>
                 </div>
@@ -394,7 +393,7 @@ export default function MockTestSessionPage() {
                   <span>Current</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="w-3 h-3 rounded bg-[#DCFCE7] border border-[#86EFAC]" />
+                  <span className="w-3 h-3 rounded bg-primary-tint border border-[#86EFAC]" />
                   <span>Answered</span>
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -420,7 +419,7 @@ export default function MockTestSessionPage() {
                   } else if (isQMarked) {
                     bgClass = 'bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200';
                   } else if (isAnswered) {
-                    bgClass = 'bg-[#DCFCE7] text-brand-dark border-[#86EFAC] hover:bg-[#BBF7D0]';
+                    bgClass = 'bg-primary-tint text-brand-dark border-[#86EFAC] hover:bg-primary-border';
                   }
 
                   return (
@@ -479,7 +478,7 @@ export default function MockTestSessionPage() {
           </p>
 
           <div className="grid grid-cols-3 gap-2.5 text-center">
-            <div className="p-3 bg-[#DCFCE7] rounded-xl border border-[#BBF7D0]">
+            <div className="p-3 bg-primary-tint rounded-xl border border-primary-border">
               <span className="block text-xl font-bold text-brand-dark">{answeredCount}</span>
               <span className="text-xs text-brand font-medium">Answered</span>
             </div>

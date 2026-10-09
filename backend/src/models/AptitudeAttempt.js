@@ -108,6 +108,9 @@ const aptitudeAttemptSchema = new mongoose.Schema(
 );
 
 aptitudeAttemptSchema.index({ user: 1, createdAt: -1 });
+aptitudeAttemptSchema.index({ user: 1, status: 1, createdAt: -1 });
+aptitudeAttemptSchema.index({ user: 1, category: 1 });
+aptitudeAttemptSchema.index({ user: 1, topic: 1 });
 
 const AptitudeAttempt = mongoose.model('AptitudeAttempt', aptitudeAttemptSchema);
 

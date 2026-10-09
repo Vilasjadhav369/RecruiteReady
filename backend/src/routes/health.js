@@ -1,4 +1,4 @@
-﻿import { Router } from 'express';
+import { Router } from 'express';
 import mongoose from 'mongoose';
 
 const router = Router();
@@ -50,6 +50,31 @@ router.get('/health/db', (req, res) => {
     success: isConnected,
     database: dbName,
     status,
+  });
+});
+
+/**
+ * GET /api/ready
+ * Readiness check endpoint — strictly confirms that critical dependencies (MongoDB)
+ * are connected and ready to accept traffic.
+ */
+router.get('/ready', (req, res) => {
+  const isConnected = mongoose.connection.readyState === 1;
+
+  if (isConnected) {
+    return res.status(200).json({
+      success: true,
+      status: 'ready',
+      database: 'connected',
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  return res.status(503).json({
+    success: false,
+    status: 'not_ready',
+    database: getDatabaseStatus(),
+    timestamp: new Date().toISOString(),
   });
 });
 

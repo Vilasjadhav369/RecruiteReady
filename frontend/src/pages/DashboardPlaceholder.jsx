@@ -1,4 +1,4 @@
-﻿import { Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 
 /**
@@ -12,39 +12,39 @@ function DashboardPlaceholder() {
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-12 lg:py-16">
       {/* Welcome Banner */}
       <div className="bg-white border border-[#D9E2EC] rounded-2xl p-8 shadow-sm mb-8">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 pb-6 border-b border-[#D9E2EC]">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 pb-6 border-b border-slate-200">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-[#E8F1FF] border-2 border-[#2563EB]/20 flex items-center justify-center text-xl font-bold text-[#2563EB]">
+            <div className="w-16 h-16 rounded-full bg-primary-tint border-2 border-primary-border flex items-center justify-center text-xl font-bold text-primary">
               {user?.firstName?.[0]?.toUpperCase() ?? "U"}
             </div>
             <div>
-              <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#E8F1FF] text-[#2563EB] mb-1 capitalize">
+              <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary-tint text-primary-dark mb-1 capitalize">
                 {user?.role || "Student"} Account
               </div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-[#172B4D]">
+              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">
                 Welcome, {user?.firstName} {user?.lastName}!
               </h1>
-              <span className="text-sm text-[#52606D] block">{user?.email}</span>
+              <span className="text-sm text-slate-500 block">{user?.email}</span>
             </div>
           </div>
 
           <button
             onClick={logout}
-            className="text-xs font-semibold text-[#52606D] hover:text-[#172B4D] border border-[#D9E2EC] hover:bg-[#F8FAFC] px-4 py-2 rounded-lg transition-colors cursor-pointer"
+            className="text-xs font-semibold text-slate-600 hover:text-slate-900 border border-slate-200 hover:bg-slate-50 px-4 py-2 rounded-lg transition-colors cursor-pointer"
           >
             Sign Out
           </button>
         </div>
 
         {/* Phase notification notice */}
-        <div className="mt-6 p-4 bg-[#F8FAFC] border border-[#D9E2EC] rounded-xl flex items-start gap-3.5">
-          <div className="w-6 h-6 rounded-full bg-[#2563EB] text-white flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">
+        <div className="mt-6 p-4 bg-slate-50 border border-slate-200 rounded-xl flex items-start gap-3.5">
+          <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">
             ✓
           </div>
           <div>
-            <h2 className="text-sm font-semibold text-[#172B4D]">Account Authenticated & Active</h2>
-            <p className="text-xs text-[#52606D] mt-0.5 leading-relaxed">
-              Phase 4 authentication foundation is active. Your comprehensive placement preparation dashboard, practice modules, and test analytics will be integrated in Phase 5.
+            <h2 className="text-sm font-semibold text-slate-900">Account Authenticated & Active</h2>
+            <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
+              Your placement preparation workspace is ready. Practice questions, mock assessments, and company roadmaps are active.
             </p>
           </div>
         </div>
@@ -116,7 +116,7 @@ function DashboardPlaceholder() {
           </span>
           <Link
             to="/"
-            className="text-xs font-semibold text-[#2563EB] hover:text-[#1d4ed8] no-underline"
+            className="text-xs font-semibold text-primary hover:text-primary-dark no-underline"
           >
             ← Back to Homepage
           </Link>

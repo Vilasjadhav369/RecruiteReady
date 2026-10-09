@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   BellIcon,
   CheckIcon,
@@ -15,10 +15,11 @@ import {
   InfoIcon,
   ChevronRightIcon,
   ChevronLeftIcon,
+  ResourcesIcon,
 } from '../components/ui/Icons.jsx';
 import { Button } from '../components/ui/Button.jsx';
 import { Badge } from '../components/ui/Badge.jsx';
-import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card.jsx';
+import { Card, CardTitle, CardContent } from '../components/ui/Card.jsx';
 import notificationService from '../services/notificationService.js';
 
 function formatFullTime(ts) {
@@ -45,6 +46,10 @@ function getNotificationBadge(type) {
       return <Badge variant="danger" size="sm">Review Rejected</Badge>;
     case 'mock_test_completed':
       return <Badge variant="brand" size="sm">Mock Assessment</Badge>;
+    case 'new_mock_test':
+      return <Badge variant="brand" size="sm">New Mock Test</Badge>;
+    case 'new_study_material':
+      return <Badge variant="info" size="sm">Study Material</Badge>;
     case 'aptitude_completed':
       return <Badge variant="brand" size="sm">Aptitude Practice</Badge>;
     case 'coding_accepted':
@@ -63,19 +68,22 @@ function getNotificationBadge(type) {
 function getNotificationIcon(type) {
   switch (type) {
     case 'review_approved':
-      return <CheckCircleIcon className="w-5 h-5 text-[#166534]" />;
+      return <CheckCircleIcon className="w-5 h-5 text-primary" />;
     case 'review_rejected':
       return <AlertCircleIcon className="w-5 h-5 text-amber-600" />;
     case 'mock_test_completed':
-      return <MockTestIcon className="w-5 h-5 text-[#166534]" />;
+    case 'new_mock_test':
+      return <MockTestIcon className="w-5 h-5 text-primary" />;
+    case 'new_study_material':
+      return <ResourcesIcon className="w-5 h-5 text-teal-600" />;
     case 'aptitude_completed':
-      return <AptitudeIcon className="w-5 h-5 text-[#166534]" />;
+      return <AptitudeIcon className="w-5 h-5 text-primary" />;
     case 'coding_accepted':
-      return <CodingIcon className="w-5 h-5 text-[#166534]" />;
+      return <CodingIcon className="w-5 h-5 text-primary" />;
     case 'coding_rejected':
       return <CodingIcon className="w-5 h-5 text-amber-600" />;
     case 'security_alert':
-      return <ShieldCheckIcon className="w-5 h-5 text-[#166534]" />;
+      return <ShieldCheckIcon className="w-5 h-5 text-primary" />;
     case 'admin_review_pending':
       return <StarIcon className="w-5 h-5 text-amber-600" />;
     default:
@@ -238,7 +246,7 @@ export function NotificationsPage() {
           }}
           className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
             filter === 'all'
-              ? 'bg-[#166534] text-white shadow-2xs'
+              ? 'bg-primary text-white shadow-2xs'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
           }`}
         >
@@ -253,7 +261,7 @@ export function NotificationsPage() {
           }}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
             filter === 'unread'
-              ? 'bg-[#166534] text-white shadow-2xs'
+              ? 'bg-primary text-white shadow-2xs'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
           }`}
         >
@@ -262,8 +270,8 @@ export function NotificationsPage() {
             <span
               className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
                 filter === 'unread'
-                  ? 'bg-white text-[#166534]'
-                  : 'bg-[#DCFCE7] text-[#14532D]'
+                  ? 'bg-white text-primary'
+                  : 'bg-primary-tint text-primary-dark'
               }`}
             >
               {data.unreadCount}
@@ -328,7 +336,7 @@ export function NotificationsPage() {
                 key={item._id}
                 onClick={() => handleItemClick(item)}
                 className={`p-4 sm:p-5 flex items-start gap-4 transition-colors cursor-pointer group ${
-                  !item.isRead ? 'bg-[#F0FDF4]/70 hover:bg-[#F0FDF4]' : 'hover:bg-slate-50'
+                  !item.isRead ? 'bg-primary-soft/70 hover:bg-primary-soft' : 'hover:bg-slate-50'
                 }`}
               >
                 {/* Type Icon */}
@@ -346,7 +354,7 @@ export function NotificationsPage() {
                       {getNotificationBadge(item.type)}
                       {!item.isRead && (
                         <span
-                          className="w-2 h-2 rounded-full bg-[#166534] shrink-0"
+                          className="w-2 h-2 rounded-full bg-primary shrink-0"
                           title="Unread"
                           aria-label="Unread notification"
                         />
@@ -364,7 +372,7 @@ export function NotificationsPage() {
 
                   {item.link && (
                     <div className="mt-2">
-                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#166534] group-hover:underline">
+                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary group-hover:underline">
                         View details <ChevronRightIcon className="w-3.5 h-3.5" />
                       </span>
                     </div>
@@ -379,7 +387,7 @@ export function NotificationsPage() {
                       onClick={(e) => handleMarkAsRead(item, e)}
                       title="Mark as read"
                       aria-label="Mark notification as read"
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-[#166534] hover:bg-white transition-colors cursor-pointer"
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-primary hover:bg-white transition-colors cursor-pointer"
                     >
                       <CheckIcon className="w-4 h-4" />
                     </button>

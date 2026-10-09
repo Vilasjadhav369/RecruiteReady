@@ -1,9 +1,8 @@
 import React from "react";
-import { Link } from "react-router-dom";
 import { Card } from "../ui/Card.jsx";
 import { Button } from "../ui/Button.jsx";
 import { Badge } from "../ui/Badge.jsx";
-import { AptitudeIcon, CodingIcon, ArrowRightIcon } from "../ui/Icons.jsx";
+import { AptitudeIcon, CodingIcon } from "../ui/Icons.jsx";
 
 /**
  * PlacementGuidanceCard / DashboardBottomCTA — Placement season strategy and academic guidance block.
@@ -64,26 +63,12 @@ function DashboardBottomCTA() {
         </div>
 
         <div className="flex flex-col sm:flex-row lg:flex-col gap-2.5 shrink-0 self-start lg:self-center">
-          <Link to="/aptitude" className="no-underline">
-            <Button
-              variant="primary"
-              size="md"
-              fullWidth
-              iconLeft={<AptitudeIcon className="w-4 h-4 text-white" />}
-            >
+          <Button to="/aptitude" variant="primary" size="md" fullWidth iconLeft={<AptitudeIcon className="w-4 h-4 text-white" />}>
               Practice Aptitude
             </Button>
-          </Link>
-          <Link to="/coding" className="no-underline">
-            <Button
-              variant="outline"
-              size="md"
-              fullWidth
-              iconLeft={<CodingIcon className="w-4 h-4 text-slate-600" />}
-            >
+          <Button to="/coding" variant="outline" size="md" fullWidth iconLeft={<CodingIcon className="w-4 h-4 text-slate-600" />}>
               Practice Coding
             </Button>
-          </Link>
         </div>
       </div>
     </Card>

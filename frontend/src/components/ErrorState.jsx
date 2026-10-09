@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ErrorState — Displayed when a data fetch fails.
  *
  * @param {string} message - Error message
@@ -17,7 +17,7 @@ function ErrorState({ message = "Unable to load this data. Please try again.", o
       {onRetry && (
         <button
           onClick={onRetry}
-          className="text-xs font-semibold text-[#2563EB] hover:underline"
+          className="text-xs font-semibold text-primary hover:text-primary-dark hover:underline cursor-pointer"
         >
           Try again
         </button>

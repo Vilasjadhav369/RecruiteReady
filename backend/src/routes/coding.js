@@ -2,6 +2,7 @@ import express from 'express';
 import {
   getProblems,
   getProblemById,
+  runProblemCode,
   submitProblem,
   getSubmissions,
   getSubmissionById,
@@ -15,6 +16,7 @@ router.use(protect);
 
 router.get('/problems', getProblems);
 router.get('/problems/:id', getProblemById);
+router.post('/problems/:id/run', runProblemCode);
 router.post('/problems/:id/submit', submitProblem);
 router.get('/submissions', getSubmissions);
 router.get('/submissions/:id', getSubmissionById);

@@ -15,6 +15,7 @@ import {
   StarIcon,
   TrophyIcon,
   BellIcon,
+  BookmarkIcon,
 } from "../ui/Icons.jsx";
 import { Avatar } from "../ui/Avatar.jsx";
 
@@ -38,6 +39,7 @@ const NAV_GROUPS = [
     title: "Study",
     items: [
       { label: "Study Materials", to: "/resources", icon: ResourcesIcon },
+      { label: "Saved Items", to: "/saved", icon: BookmarkIcon },
     ],
   },
   {
@@ -114,25 +116,25 @@ function StudentSidebar({ mobileOpen, setMobileOpen }) {
           className="flex items-center gap-2.5 no-underline hover:no-underline group"
           onClick={() => setMobileOpen && setMobileOpen(false)}
         >
-          <div className="w-8 h-8 rounded-lg bg-[#166534] flex items-center justify-center shrink-0 shadow-xs group-hover:bg-[#14532D] transition-colors">
+          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0 shadow-xs group-hover:bg-primary-dark transition-colors">
             <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
               <path
                 d="M10 3L3 7L10 11L17 7L10 3Z"
-                stroke="#DCFCE7"
+                stroke="#DBEAFE"
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
               <path
                 d="M5.5 8.5V13.5C5.5 13.5 7 15.5 10 15.5C13 15.5 14.5 13.5 14.5 13.5V8.5"
-                stroke="#22C55E"
+                stroke="#3B82F6"
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
               <path
                 d="M17 7V12"
-                stroke="#DCFCE7"
+                stroke="#DBEAFE"
                 strokeWidth="2"
                 strokeLinecap="round"
               />
@@ -153,7 +155,7 @@ function StudentSidebar({ mobileOpen, setMobileOpen }) {
           <button
             type="button"
             onClick={() => setMobileOpen(false)}
-            className="md:hidden min-w-[44px] min-h-[44px] p-2 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 flex items-center justify-center transition-colors focus-visible:outline-2 focus-visible:outline-[#166534]"
+            className="md:hidden min-w-[44px] min-h-[44px] p-2 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 flex items-center justify-center transition-colors focus-visible:outline-2 focus-visible:outline-primary"
             aria-label="Close navigation drawer"
           >
             <CloseIcon className="w-5 h-5" />
@@ -181,14 +183,14 @@ function StudentSidebar({ mobileOpen, setMobileOpen }) {
                   onClick={() => setMobileOpen && setMobileOpen(false)}
                   className={`min-h-[40px] flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all no-underline ${
                     active
-                      ? "bg-[#DCFCE7] text-[#166534] font-semibold border-l-4 border-[#166534] shadow-xs"
+                      ? "bg-primary-tint text-primary font-semibold border-l-4 border-primary shadow-xs"
                       : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 border-l-4 border-transparent"
                   }`}
                   aria-current={active ? "page" : undefined}
                 >
                   <Icon
                     className={`w-4 h-4 shrink-0 transition-colors ${
-                      active ? "text-[#166534]" : "text-slate-500"
+                      active ? "text-primary" : "text-slate-500"
                     }`}
                   />
                   <span className="truncate">{item.label}</span>

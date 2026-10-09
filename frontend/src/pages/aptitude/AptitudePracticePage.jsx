@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { getAptitudeMetadata, startAptitudeSession, getAptitudeHistory } from '../../services/aptitudeService.js';
 import { formatDate } from '../../utils/formatters.js';
 import {
@@ -212,15 +212,9 @@ export default function AptitudePracticePage() {
           ) : null
         }
         actions={
-          <Link to="/aptitude/history">
-            <Button
-              variant="outline"
-              size="sm"
-              iconLeft={<ClockIcon className="w-3.5 h-3.5 text-slate-500" />}
-            >
+          <Button to="/aptitude/history" variant="outline" size="sm" iconLeft={<ClockIcon className="w-3.5 h-3.5 text-slate-500" />}>
               Past Attempts
             </Button>
-          </Link>
         }
       />
 
@@ -239,7 +233,7 @@ export default function AptitudePracticePage() {
           label="Question Bank"
           value={metadata?.totalQuestions !== undefined ? metadata.totalQuestions : '—'}
           subtext="Active placement questions"
-          icon={<AptitudeIcon className="w-4 h-4 text-[#166534]" />}
+          icon={<AptitudeIcon className="w-4 h-4 text-primary" />}
         />
         <StatCard
           label="Past Attempts"
@@ -336,7 +330,7 @@ export default function AptitudePracticePage() {
                         onClick={() => handleCategorySelect(cat)}
                         className={`group text-left p-4 sm:p-5 rounded-xl border transition-all duration-150 cursor-pointer ${
                           isSelected
-                            ? 'border-[#166534] bg-[#F0FDF4] ring-2 ring-[#22C55E]/20 shadow-xs'
+                            ? 'border-primary bg-primary-soft ring-2 ring-primary-light/20 shadow-xs'
                             : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/60 bg-white'
                         }`}
                       >
@@ -344,8 +338,8 @@ export default function AptitudePracticePage() {
                           <div
                             className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
                               isSelected
-                                ? 'bg-[#DCFCE7] text-[#14532D]'
-                                : 'bg-slate-100 text-slate-600 group-hover:bg-[#DCFCE7] group-hover:text-[#14532D]'
+                                ? 'bg-primary-tint text-primary-dark'
+                                : 'bg-slate-100 text-slate-600 group-hover:bg-primary-tint group-hover:text-primary-dark'
                             }`}
                           >
                             <AptitudeIcon className="w-5 h-5" />
@@ -423,7 +417,7 @@ export default function AptitudePracticePage() {
             <CardFooter className="px-5 py-4 bg-slate-50/70 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="flex items-center gap-3 text-slate-600 text-xs flex-wrap">
                 <div className="flex items-center gap-1.5 font-semibold text-slate-900">
-                  <AptitudeIcon className="w-3.5 h-3.5 text-[#166534]" />
+                  <AptitudeIcon className="w-3.5 h-3.5 text-primary" />
                   <span>{category || 'Aptitude'}</span>
                 </div>
                 <span className="text-slate-300">·</span>
@@ -471,15 +465,9 @@ export default function AptitudePracticePage() {
                   Your latest aptitude practice sessions and performance records.
                 </CardDescription>
               </div>
-              <Link to="/aptitude/history">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  iconRight={<ArrowRightIcon className="w-3.5 h-3.5" />}
-                >
+              <Button to="/aptitude/history" variant="ghost" size="sm" iconRight={<ArrowRightIcon className="w-3.5 h-3.5" />}>
                   View All History
                 </Button>
-              </Link>
             </CardHeader>
 
             <CardContent className="p-0">
@@ -555,17 +543,13 @@ export default function AptitudePracticePage() {
                           </TableCell>
                           <TableCell className="text-right">
                             {effectiveStatus === 'in_progress' ? (
-                              <Link to={`/aptitude/session/${attempt._id}`}>
-                                <Button variant="outline" size="sm">
+                              <Button to={`/aptitude/session/${attempt._id}`} variant="outline" size="sm">
                                   Resume
                                 </Button>
-                              </Link>
                             ) : (
-                              <Link to={`/aptitude/result/${attempt._id}`}>
-                                <Button variant="ghost" size="sm">
+                              <Button to={`/aptitude/result/${attempt._id}`} variant="ghost" size="sm">
                                   Review
                                 </Button>
-                              </Link>
                             )}
                           </TableCell>
                         </TableRow>
@@ -581,8 +565,8 @@ export default function AptitudePracticePage() {
           <Card>
             <CardContent className="p-5 sm:p-6">
               <div className="flex items-start gap-3.5">
-                <div className="w-9 h-9 rounded-lg bg-[#DCFCE7] text-[#14532D] flex items-center justify-center shrink-0">
-                  <AlertTriangleIcon className="w-5 h-5 text-[#166534]" />
+                <div className="w-9 h-9 rounded-lg bg-primary-tint text-primary-dark flex items-center justify-center shrink-0">
+                  <AlertTriangleIcon className="w-5 h-5 text-primary" />
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-slate-900 tracking-tight">

@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { getAptitudeResult } from '../../services/aptitudeService.js';
-import { formatDateTime } from '../../utils/formatters.js';
 import {
   PageHeader,
   Card,
@@ -22,7 +21,6 @@ import {
   TrophyIcon,
   ClockIcon,
   PlusIcon,
-  CheckIcon,
 } from '../../components/ui/index.js';
 
 /**
@@ -162,24 +160,12 @@ export default function AptitudeResultPage() {
         }
         actions={
           <div className="flex items-center gap-2">
-            <Link to="/aptitude">
-              <Button
-                variant="primary"
-                size="sm"
-                iconLeft={<PlusIcon className="w-3.5 h-3.5" />}
-              >
+            <Button to="/aptitude" variant="primary" size="sm" iconLeft={<PlusIcon className="w-3.5 h-3.5" />}>
                 New Practice
               </Button>
-            </Link>
-            <Link to="/aptitude/history">
-              <Button
-                variant="outline"
-                size="sm"
-                iconLeft={<ClockIcon className="w-3.5 h-3.5 text-slate-500" />}
-              >
+            <Button to="/aptitude/history" variant="outline" size="sm" iconLeft={<ClockIcon className="w-3.5 h-3.5 text-slate-500" />}>
                 All History
               </Button>
-            </Link>
           </div>
         }
       />
@@ -190,7 +176,7 @@ export default function AptitudeResultPage() {
           label="Score"
           value={summary.score || 0}
           subtext="Total marks"
-          icon={<TrophyIcon className="w-4 h-4 text-[#166534]" />}
+          icon={<TrophyIcon className="w-4 h-4 text-primary" />}
         />
         <StatCard
           label="Accuracy"
@@ -346,7 +332,7 @@ export default function AptitudeResultPage() {
                     let optionBorder = 'border-slate-200 bg-white text-slate-700';
                     if (isRightAnswer) {
                       optionBorder =
-                        'border-[#22C55E] bg-[#F0FDF4] text-[#14532D] font-medium shadow-xs';
+                        'border-[#22C55E] bg-[#F0FDF4] text-primary-dark font-medium shadow-xs';
                     } else if (isUserPick && !isRightAnswer) {
                       optionBorder =
                         'border-red-300 bg-red-50/70 text-red-950 font-medium';
@@ -360,7 +346,7 @@ export default function AptitudeResultPage() {
                         <span
                           className={`font-mono font-bold w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${
                             isRightAnswer
-                              ? 'bg-[#166534] text-white'
+                              ? 'bg-primary text-white'
                               : isUserPick
                               ? 'bg-red-600 text-white'
                               : 'bg-slate-100 text-slate-700'
@@ -387,7 +373,7 @@ export default function AptitudeResultPage() {
                 {/* Full Solution & Explanation (Never Truncated) */}
                 <div className="p-4 bg-slate-50 border border-slate-200/90 rounded-xl text-xs space-y-1.5">
                   <div className="font-bold text-slate-900 flex items-center gap-1.5">
-                    <InfoIcon className="w-4 h-4 text-[#166534]" />
+                    <InfoIcon className="w-4 h-4 text-primary" />
                     <span>Explanation & Verified Solution:</span>
                   </div>
                   <div className="text-slate-700 leading-relaxed pl-5.5 whitespace-pre-line">

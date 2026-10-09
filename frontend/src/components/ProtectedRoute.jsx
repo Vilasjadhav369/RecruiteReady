@@ -1,6 +1,5 @@
-﻿import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
-import LoadingSkeleton from "./LoadingSkeleton.jsx";
 
 /**
  * ProtectedRoute — Ensures only authenticated users can access the route.
@@ -13,8 +12,8 @@ function ProtectedRoute({ children }) {
   if (loading) {
     return (
       <div className="min-h-[70vh] flex flex-col items-center justify-center p-8">
-        <div className="w-10 h-10 border-3 border-[#2563EB]/20 border-t-[#2563EB] rounded-full animate-spin mb-4" />
-        <span className="text-sm text-[#52606D]">Verifying session...</span>
+        <div className="w-10 h-10 border-3 border-primary/20 border-t-primary rounded-full animate-spin mb-4" />
+        <span className="text-sm text-slate-500">Verifying session...</span>
       </div>
     );
   }

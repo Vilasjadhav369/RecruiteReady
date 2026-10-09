@@ -9,6 +9,8 @@ import StudyMaterial from '../models/StudyMaterial.js';
 import MockTest from '../models/MockTest.js';
 import MockTestAttempt from '../models/MockTestAttempt.js';
 import Review from '../models/Review.js';
+import AuditLog from '../models/AuditLog.js';
+import { logSecurityEvent } from '../services/securityLogger.js';
 import notificationService from '../services/notificationService.js';
 
 // ─── ADMIN DASHBOARD ──────────────────────────────────────────────────────────
@@ -32,9 +34,15 @@ export const getAdminDashboardStats = async (req, res, next) => {
       totalMockTests,
       totalMockAttempts,
       totalReviews,
+      pendingReviews,
+      inactiveQuestions,
+      inactiveProblems,
+      inactiveResources,
+      unpublishedMockTests,
       recentUsers,
       recentQuestions,
       recentAttempts,
+      recentAuditLogs,
     ] = await Promise.all([
       User.countDocuments({ role: 'student' }),
       User.countDocuments({ role: 'student', isActive: true }),
@@ -48,6 +56,11 @@ export const getAdminDashboardStats = async (req, res, next) => {
       MockTest.countDocuments(),
       MockTestAttempt.countDocuments(),
       Review.countDocuments(),
+      Review.countDocuments({ status: 'pending' }),
+      AptitudeQuestion.countDocuments({ isActive: false }),
+      CodingProblem.countDocuments({ isActive: false }),
+      StudyMaterial.countDocuments({ isActive: false }),
+      MockTest.countDocuments({ isPublished: false }),
       User.find({ role: 'student' })
         .select('firstName lastName email college createdAt isActive')
         .sort({ createdAt: -1 })
@@ -63,41 +76,83 @@ export const getAdminDashboardStats = async (req, res, next) => {
         .sort({ createdAt: -1 })
         .limit(5)
         .lean(),
+      AuditLog.find()
+        .populate('user', 'firstName lastName email')
+        .sort({ createdAt: -1 })
+        .limit(10)
+        .lean(),
     ]);
 
-    const activityList = [];
+    let activityList = [];
 
-    recentUsers.forEach((u) => {
-      activityList.push({
-        type: 'user_registration',
-        title: `Student Registered: ${u.firstName} ${u.lastName}`,
-        subtitle: u.college || u.email,
-        timestamp: u.createdAt,
-        status: u.isActive ? 'active' : 'inactive',
+    if (recentAuditLogs && recentAuditLogs.length > 0) {
+      activityList = recentAuditLogs.map((log) => ({
+        type: log.action,
+        title: log.action.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+        subtitle: log.user
+          ? `${log.user.firstName} ${log.user.lastName} (${log.user.email})`
+          : log.entityType || 'System Event',
+        timestamp: log.createdAt,
+        severity: log.severity || 'info',
+        entityType: log.entityType,
+        ipAddress: log.ipAddress,
+        status: log.severity === 'critical' ? 'critical' : 'active',
+      }));
+    } else {
+      recentUsers.forEach((u) => {
+        activityList.push({
+          type: 'user_registration',
+          title: `Student Registered: ${u.firstName} ${u.lastName}`,
+          subtitle: u.college || u.email,
+          timestamp: u.createdAt,
+          status: u.isActive ? 'active' : 'inactive',
+        });
       });
-    });
 
-    recentQuestions.forEach((q) => {
-      activityList.push({
-        type: 'question_created',
-        title: `Aptitude Question Added: ${q.topic}`,
-        subtitle: `${q.category} • ${q.difficulty}`,
-        timestamp: q.createdAt,
-        status: q.isActive ? 'active' : 'inactive',
+      recentQuestions.forEach((q) => {
+        activityList.push({
+          type: 'question_created',
+          title: `Aptitude Question Added: ${q.topic}`,
+          subtitle: `${q.category} • ${q.difficulty}`,
+          timestamp: q.createdAt,
+          status: q.isActive ? 'active' : 'inactive',
+        });
       });
-    });
 
-    recentAttempts.forEach((a) => {
-      activityList.push({
-        type: 'aptitude_attempt',
-        title: `Test Completed by ${a.user ? a.user.firstName : 'Student'}`,
-        subtitle: `Score: ${a.percentage || 0}% • ${a.category || 'Aptitude'}`,
-        timestamp: a.submittedAt || a.createdAt,
-        status: a.status,
+      recentAttempts.forEach((a) => {
+        activityList.push({
+          type: 'aptitude_attempt',
+          title: `Test Completed by ${a.user ? a.user.firstName : 'Student'}`,
+          subtitle: `Score: ${a.percentage || 0}% • ${a.category || 'Aptitude'}`,
+          timestamp: a.submittedAt || a.createdAt,
+          status: a.status,
+        });
       });
-    });
+    }
 
     activityList.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    const pendingActions = {
+      pendingReviews,
+      inactiveQuestions,
+      inactiveProblems,
+      inactiveResources,
+      unpublishedMockTests,
+      incompleteCompanies: 0,
+      totalPending:
+        pendingReviews +
+        inactiveQuestions +
+        inactiveProblems +
+        inactiveResources +
+        unpublishedMockTests,
+    };
+
+    const healthSummary = {
+      dbStatus: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+      uptimeSeconds: Math.floor(process.uptime()),
+      memoryUsageMb: Math.round(process.memoryUsage().heapUsed / (1024 * 1024)),
+      timestamp: new Date().toISOString(),
+    };
 
     res.status(200).json({
       success: true,
@@ -128,8 +183,165 @@ export const getAdminDashboardStats = async (req, res, next) => {
         },
         reviews: {
           total: totalReviews,
+          pending: pendingReviews,
         },
-        activity: activityList.slice(0, 8),
+        pendingActions,
+        health: healthSummary,
+        activity: activityList.slice(0, 10),
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * GET /api/admin/health
+ * Live platform health diagnostics (MongoDB ping, memory, uptime, collection counts).
+ */
+export const getAdminHealth = async (req, res, next) => {
+  try {
+    const startTime = Date.now();
+    let dbPing = -1;
+    let dbStatus = 'disconnected';
+
+    if (mongoose.connection.readyState === 1) {
+      try {
+        await mongoose.connection.db.admin().ping();
+        dbPing = Date.now() - startTime;
+        dbStatus = 'connected';
+      } catch (err) {
+        dbStatus = 'degraded';
+      }
+    }
+
+    const [
+      userCount,
+      studentCount,
+      aptCount,
+      codeCount,
+      compCount,
+      testCount,
+      revCount,
+      logCount,
+    ] = await Promise.all([
+      User.countDocuments(),
+      User.countDocuments({ role: 'student' }),
+      AptitudeQuestion.countDocuments(),
+      CodingProblem.countDocuments(),
+      Company.countDocuments(),
+      MockTest.countDocuments(),
+      Review.countDocuments(),
+      AuditLog.countDocuments(),
+    ]);
+
+    const mem = process.memoryUsage();
+
+    res.status(200).json({
+      success: true,
+      data: {
+        status: dbStatus === 'connected' ? 'healthy' : 'degraded',
+        timestamp: new Date().toISOString(),
+        database: {
+          status: dbStatus,
+          name: mongoose.connection.name || 'recruitready',
+          pingMs: dbPing,
+          readyState: mongoose.connection.readyState,
+        },
+        process: {
+          uptimeSeconds: Math.floor(process.uptime()),
+          nodeVersion: process.version,
+          memory: {
+            heapUsedMb: Math.round(mem.heapUsed / (1024 * 1024)),
+            heapTotalMb: Math.round(mem.heapTotal / (1024 * 1024)),
+            rssMb: Math.round(mem.rss / (1024 * 1024)),
+          },
+        },
+        collections: {
+          users: userCount,
+          students: studentCount,
+          aptitudeQuestions: aptCount,
+          codingProblems: codeCount,
+          companies: compCount,
+          mockTests: testCount,
+          reviews: revCount,
+          auditLogs: logCount,
+        },
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * GET /api/admin/audit-logs
+ * Paginated audit trail inspection with multi-dimensional filtering.
+ */
+export const getAdminAuditLogs = async (req, res, next) => {
+  try {
+    const {
+      action,
+      entityType,
+      severity,
+      search = '',
+      page = 1,
+      limit = 20,
+      startDate,
+      endDate,
+    } = req.query;
+
+    const query = {};
+
+    if (action && action !== 'all') query.action = action;
+    if (entityType && entityType !== 'all') query.entityType = entityType;
+    if (severity && severity !== 'all') query.severity = severity;
+
+    if (startDate || endDate) {
+      query.createdAt = {};
+      if (startDate) query.createdAt.$gte = new Date(startDate);
+      if (endDate) query.createdAt.$lte = new Date(endDate);
+    }
+
+    if (search.trim()) {
+      const s = search.trim();
+      query.$or = [
+        { action: { $regex: s, $options: 'i' } },
+        { entityType: { $regex: s, $options: 'i' } },
+        { ipAddress: { $regex: s, $options: 'i' } },
+      ];
+    }
+
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
+    const skip = (pageNum - 1) * limitNum;
+
+    const [total, logs, distinctActions, distinctEntityTypes] = await Promise.all([
+      AuditLog.countDocuments(query),
+      AuditLog.find(query)
+        .populate('user', 'firstName lastName email role')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limitNum)
+        .lean(),
+      AuditLog.distinct('action'),
+      AuditLog.distinct('entityType'),
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        logs,
+        pagination: {
+          total,
+          page: pageNum,
+          limit: limitNum,
+          pages: Math.ceil(total / limitNum) || 1,
+        },
+        filters: {
+          availableActions: distinctActions.filter(Boolean).sort(),
+          availableEntityTypes: distinctEntityTypes.filter(Boolean).sort(),
+        },
       },
     });
   } catch (error) {
@@ -141,11 +353,33 @@ export const getAdminDashboardStats = async (req, res, next) => {
 
 export const getStudents = async (req, res, next) => {
   try {
-    const { search = '', status = 'all', page = 1, limit = 10 } = req.query;
+    const {
+      search = '',
+      status = 'all',
+      branch = 'all',
+      graduationYear = 'all',
+      emailVerified = 'all',
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+      page = 1,
+      limit = 10,
+    } = req.query;
     const query = { role: 'student' };
 
     if (status === 'active') query.isActive = true;
     else if (status === 'inactive') query.isActive = false;
+
+    if (branch && branch !== 'all') {
+      query.branch = branch;
+    }
+
+    if (graduationYear && graduationYear !== 'all') {
+      const yr = parseInt(graduationYear, 10);
+      if (!isNaN(yr)) query.graduationYear = yr;
+    }
+
+    if (emailVerified === 'true') query.emailVerified = true;
+    else if (emailVerified === 'false') query.emailVerified = false;
 
     if (search.trim()) {
       const s = search.trim();
@@ -157,17 +391,31 @@ export const getStudents = async (req, res, next) => {
       ];
     }
 
+    const sortFields = {
+      createdAt: 'createdAt',
+      firstName: 'firstName',
+      email: 'email',
+      graduationYear: 'graduationYear',
+    };
+    const sortField = sortFields[sortBy] || 'createdAt';
+    const sortDirection = sortOrder === 'asc' ? 1 : -1;
+    const sort = { [sortField]: sortDirection };
+
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
-    const limitNum = Math.min(50, Math.max(1, parseInt(limit, 10) || 10));
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 10));
     const skip = (pageNum - 1) * limitNum;
 
-    const total = await User.countDocuments(query);
-    const students = await User.find(query)
-      .select('-password')
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limitNum)
-      .lean();
+    const [total, students, branches, years] = await Promise.all([
+      User.countDocuments(query),
+      User.find(query)
+        .select('-password')
+        .sort(sort)
+        .skip(skip)
+        .limit(limitNum)
+        .lean(),
+      User.distinct('branch', { role: 'student', branch: { $nin: ['', null] } }),
+      User.distinct('graduationYear', { role: 'student', graduationYear: { $ne: null } }),
+    ]);
 
     res.status(200).json({
       success: true,
@@ -179,8 +427,109 @@ export const getStudents = async (req, res, next) => {
           limit: limitNum,
           pages: Math.ceil(total / limitNum) || 1,
         },
+        filters: {
+          availableBranches: branches.filter(Boolean).sort(),
+          availableGraduationYears: years.filter(Boolean).sort((a, b) => a - b),
+        },
       },
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const exportStudentsCsv = async (req, res, next) => {
+  try {
+    const {
+      search = '',
+      status = 'all',
+      branch = 'all',
+      graduationYear = 'all',
+      emailVerified = 'all',
+    } = req.query;
+
+    const query = { role: 'student' };
+
+    if (status === 'active') query.isActive = true;
+    else if (status === 'inactive') query.isActive = false;
+
+    if (branch && branch !== 'all') {
+      query.branch = branch;
+    }
+
+    if (graduationYear && graduationYear !== 'all') {
+      const yr = parseInt(graduationYear, 10);
+      if (!isNaN(yr)) query.graduationYear = yr;
+    }
+
+    if (emailVerified === 'true') query.emailVerified = true;
+    else if (emailVerified === 'false') query.emailVerified = false;
+
+    if (search.trim()) {
+      const s = search.trim();
+      query.$or = [
+        { firstName: { $regex: s, $options: 'i' } },
+        { lastName: { $regex: s, $options: 'i' } },
+        { email: { $regex: s, $options: 'i' } },
+        { college: { $regex: s, $options: 'i' } },
+      ];
+    }
+
+    // STRICT PROJECTION: Explicit safe fields only. Passwords and secrets are completely excluded.
+    const students = await User.find(query)
+      .select('firstName lastName email college branch graduationYear cgpa backlogs isActive emailVerified createdAt')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const escapeCsv = (val) => {
+      if (val === null || val === undefined) return '""';
+      const s = String(val).replace(/"/g, '""');
+      return `"${s}"`;
+    };
+
+    const header = [
+      '"First Name"',
+      '"Last Name"',
+      '"Email"',
+      '"College"',
+      '"Branch"',
+      '"Graduation Year"',
+      '"CGPA"',
+      '"Backlogs"',
+      '"Status"',
+      '"Email Verified"',
+      '"Registered Date"',
+    ].join(',');
+
+    const rows = students.map((st) =>
+      [
+        escapeCsv(st.firstName),
+        escapeCsv(st.lastName),
+        escapeCsv(st.email),
+        escapeCsv(st.college),
+        escapeCsv(st.branch),
+        escapeCsv(st.graduationYear || ''),
+        escapeCsv(st.cgpa != null ? st.cgpa : ''),
+        escapeCsv(st.backlogs != null ? st.backlogs : 0),
+        escapeCsv(st.isActive ? 'Active' : 'Inactive'),
+        escapeCsv(st.emailVerified ? 'Verified' : 'Unverified'),
+        escapeCsv(st.createdAt ? new Date(st.createdAt).toISOString() : ''),
+      ].join(',')
+    );
+
+    const csvContent = [header, ...rows].join('\r\n');
+
+    await logSecurityEvent({
+      action: 'admin_export_students_csv',
+      user: req.user?._id,
+      entityType: 'User',
+      req,
+      details: { count: students.length, filterApplied: Object.keys(query).length },
+    });
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="students_export_${Date.now()}.csv"`);
+    res.status(200).send(csvContent);
   } catch (error) {
     next(error);
   }
@@ -215,10 +564,58 @@ export const updateStudentStatus = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Student not found' });
     }
 
+    await logSecurityEvent({
+      action: 'admin_update_student_status',
+      user: req.user?._id,
+      entityType: 'User',
+      entityId: student._id.toString(),
+      req,
+      details: { isActive, studentEmail: student.email },
+    });
+
     res.status(200).json({
       success: true,
       message: `Student account ${isActive ? 'activated' : 'deactivated'} successfully`,
       data: { student },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const bulkUpdateStudentStatus = async (req, res, next) => {
+  try {
+    const { ids, isActive } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ success: false, message: 'Array of student IDs is required' });
+    }
+    if (typeof isActive !== 'boolean') {
+      return res.status(400).json({ success: false, message: 'isActive boolean flag is required' });
+    }
+
+    const validIds = ids.filter((id) => mongoose.Types.ObjectId.isValid(id));
+    if (validIds.length === 0) {
+      return res.status(400).json({ success: false, message: 'No valid IDs provided' });
+    }
+
+    // Role protection: STRICTLY match role: 'student' so admins are NEVER modified!
+    const result = await User.updateMany(
+      { _id: { $in: validIds }, role: 'student' },
+      { $set: { isActive } }
+    );
+
+    await logSecurityEvent({
+      action: 'admin_bulk_update_student_status',
+      user: req.user?._id,
+      entityType: 'User',
+      req,
+      details: { modifiedCount: result.modifiedCount, isActive, targetCount: validIds.length },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `Successfully ${isActive ? 'activated' : 'deactivated'} ${result.modifiedCount} student(s)`,
+      data: { modifiedCount: result.modifiedCount },
     });
   } catch (error) {
     next(error);
@@ -405,10 +802,57 @@ export const updateAptitudeQuestionStatus = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Question not found' });
     }
 
+    await logSecurityEvent({
+      action: 'admin_update_aptitude_status',
+      user: req.user?._id,
+      entityType: 'AptitudeQuestion',
+      entityId: updated._id.toString(),
+      req,
+      details: { isActive },
+    });
+
     res.status(200).json({
       success: true,
       message: `Question ${isActive ? 'activated' : 'deactivated'} successfully`,
       data: { question: updated },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const bulkUpdateAptitudeStatus = async (req, res, next) => {
+  try {
+    const { ids, isActive } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ success: false, message: 'Array of question IDs is required' });
+    }
+    if (typeof isActive !== 'boolean') {
+      return res.status(400).json({ success: false, message: 'isActive boolean flag is required' });
+    }
+
+    const validIds = ids.filter((id) => mongoose.Types.ObjectId.isValid(id));
+    if (validIds.length === 0) {
+      return res.status(400).json({ success: false, message: 'No valid question IDs provided' });
+    }
+
+    const result = await AptitudeQuestion.updateMany(
+      { _id: { $in: validIds } },
+      { $set: { isActive } }
+    );
+
+    await logSecurityEvent({
+      action: 'admin_bulk_update_aptitude_status',
+      user: req.user?._id,
+      entityType: 'AptitudeQuestion',
+      req,
+      details: { modifiedCount: result.modifiedCount, isActive, targetCount: validIds.length },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `Successfully ${isActive ? 'activated' : 'deactivated'} ${result.modifiedCount} aptitude question(s)`,
+      data: { modifiedCount: result.modifiedCount },
     });
   } catch (error) {
     next(error);
@@ -436,6 +880,15 @@ export const deleteAptitudeQuestion = async (req, res, next) => {
     if (hasAttempts || inMockTest) {
       question.isActive = false;
       await question.save();
+
+      await logSecurityEvent({
+        action: 'admin_soft_delete_aptitude_question',
+        user: req.user?._id,
+        entityType: 'AptitudeQuestion',
+        entityId: question._id.toString(),
+        req,
+      });
+
       return res.status(200).json({
         success: true,
         message: 'Question has historical student attempt records or mock test references and was deactivated rather than permanently deleted to preserve scorecard integrity.',
@@ -444,6 +897,15 @@ export const deleteAptitudeQuestion = async (req, res, next) => {
     }
 
     await AptitudeQuestion.findByIdAndDelete(req.params.id);
+
+    await logSecurityEvent({
+      action: 'admin_delete_aptitude_question',
+      user: req.user?._id,
+      entityType: 'AptitudeQuestion',
+      entityId: req.params.id,
+      req,
+    });
+
     res.status(200).json({
       success: true,
       message: 'Question deleted permanently',
@@ -609,10 +1071,57 @@ export const updateCodingProblemStatus = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Coding problem not found' });
     }
 
+    await logSecurityEvent({
+      action: 'admin_update_coding_problem_status',
+      user: req.user?._id,
+      entityType: 'CodingProblem',
+      entityId: problem._id.toString(),
+      req,
+      details: { isActive },
+    });
+
     res.status(200).json({
       success: true,
       message: `Problem ${isActive ? 'activated' : 'deactivated'} successfully`,
       data: { problem },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const bulkUpdateCodingStatus = async (req, res, next) => {
+  try {
+    const { ids, isActive } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ success: false, message: 'Array of problem IDs is required' });
+    }
+    if (typeof isActive !== 'boolean') {
+      return res.status(400).json({ success: false, message: 'isActive boolean flag is required' });
+    }
+
+    const validIds = ids.filter((id) => mongoose.Types.ObjectId.isValid(id));
+    if (validIds.length === 0) {
+      return res.status(400).json({ success: false, message: 'No valid problem IDs provided' });
+    }
+
+    const result = await CodingProblem.updateMany(
+      { _id: { $in: validIds } },
+      { $set: { isActive } }
+    );
+
+    await logSecurityEvent({
+      action: 'admin_bulk_update_coding_status',
+      user: req.user?._id,
+      entityType: 'CodingProblem',
+      req,
+      details: { modifiedCount: result.modifiedCount, isActive, targetCount: validIds.length },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `Successfully ${isActive ? 'activated' : 'deactivated'} ${result.modifiedCount} coding problem(s)`,
+      data: { modifiedCount: result.modifiedCount },
     });
   } catch (error) {
     next(error);
@@ -635,6 +1144,15 @@ export const deleteCodingProblem = async (req, res, next) => {
     if (hasSubmissions || inMockTest) {
       problem.isActive = false;
       await problem.save();
+
+      await logSecurityEvent({
+        action: 'admin_soft_delete_coding_problem',
+        user: req.user?._id,
+        entityType: 'CodingProblem',
+        entityId: problem._id.toString(),
+        req,
+      });
+
       return res.status(200).json({
         success: true,
         message: 'Coding problem has historical student submissions or mock test references and was deactivated rather than permanently deleted to preserve history.',
@@ -643,6 +1161,15 @@ export const deleteCodingProblem = async (req, res, next) => {
     }
 
     await CodingProblem.findByIdAndDelete(req.params.id);
+
+    await logSecurityEvent({
+      action: 'admin_delete_coding_problem',
+      user: req.user?._id,
+      entityType: 'CodingProblem',
+      entityId: req.params.id,
+      req,
+    });
+
     res.status(200).json({
       success: true,
       message: 'Coding problem deleted permanently',
@@ -681,10 +1208,35 @@ export const getAdminCompanies = async (req, res, next) => {
       .limit(limitNum)
       .lean();
 
+    // Data Quality Completeness Calculation (Phase 39)
+    const enrichedCompanies = companies.map((c) => {
+      const checks = {
+        basicInfo: Boolean(c.name && c.description && c.industry),
+        eligibility: Boolean(c.eligibility || (c.eligibilityCriteria && (c.eligibilityCriteria.minCgpa || (c.eligibilityCriteria.allowedBranches && c.eligibilityCriteria.allowedBranches.length > 0)))),
+        selectionProcess: Array.isArray(c.selectionProcess) && c.selectionProcess.length > 0,
+        aptitude: Array.isArray(c.aptitudeTopics) && c.aptitudeTopics.length > 0,
+        coding: Array.isArray(c.codingTopics) && c.codingTopics.length > 0,
+        interview: Array.isArray(c.interviewTopics) && c.interviewTopics.length > 0,
+        resources: Array.isArray(c.resources) && c.resources.length > 0,
+      };
+      const totalChecks = Object.keys(checks).length;
+      const passedChecks = Object.values(checks).filter(Boolean).length;
+      const completenessPercentage = Math.round((passedChecks / totalChecks) * 100);
+
+      return {
+        ...c,
+        quality: {
+          checks,
+          completenessPercentage,
+          isComplete: completenessPercentage >= 80,
+        },
+      };
+    });
+
     res.status(200).json({
       success: true,
       data: {
-        companies,
+        companies: enrichedCompanies,
         pagination: { total, page: pageNum, limit: limitNum, pages: Math.ceil(total / limitNum) || 1 },
       },
     });
@@ -705,11 +1257,13 @@ export const createCompany = async (req, res, next) => {
       careersUrl,
       roles,
       eligibility,
+      eligibilityCriteria,
       selectionProcess,
       aptitudeTopics,
       codingTopics,
       interviewTopics,
       resources,
+      isFeatured,
       isActive,
     } = req.body;
 
@@ -717,10 +1271,16 @@ export const createCompany = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Company name is required' });
     }
 
-    const finalSlug = (slug || name)
+    let finalSlug = (slug || name)
       .toLowerCase()
+      .trim()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '');
+
+    const existingSlug = await Company.findOne({ slug: finalSlug });
+    if (existingSlug) {
+      finalSlug = `${finalSlug}-${Date.now().toString().slice(-4)}`;
+    }
 
     const company = await Company.create({
       name: name.trim(),
@@ -732,11 +1292,13 @@ export const createCompany = async (req, res, next) => {
       careersUrl: careersUrl || '',
       roles: Array.isArray(roles) ? roles : [],
       eligibility: eligibility || 'BE / B.Tech / MCA',
+      eligibilityCriteria: eligibilityCriteria || null,
       selectionProcess: Array.isArray(selectionProcess) ? selectionProcess : [],
       aptitudeTopics: Array.isArray(aptitudeTopics) ? aptitudeTopics : [],
       codingTopics: Array.isArray(codingTopics) ? codingTopics : [],
       interviewTopics: Array.isArray(interviewTopics) ? interviewTopics : [],
       resources: Array.isArray(resources) ? resources : [],
+      isFeatured: Boolean(isFeatured),
       isActive: isActive !== undefined ? isActive : true,
       createdBy: req.user._id,
     });
@@ -767,6 +1329,14 @@ export const updateCompany = async (req, res, next) => {
   try {
     const updates = { ...req.body };
     delete updates.createdBy;
+
+    if (updates.slug) {
+      updates.slug = updates.slug
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+    }
 
     const company = await Company.findByIdAndUpdate(
       req.params.id,
@@ -805,10 +1375,57 @@ export const updateCompanyStatus = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Company not found' });
     }
 
+    await logSecurityEvent({
+      action: 'admin_update_company_status',
+      user: req.user?._id,
+      entityType: 'Company',
+      entityId: company._id.toString(),
+      req,
+      details: { isActive, companyName: company.name },
+    });
+
     res.status(200).json({
       success: true,
       message: `Company ${isActive ? 'activated' : 'deactivated'} successfully`,
       data: { company },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const bulkUpdateCompanyStatus = async (req, res, next) => {
+  try {
+    const { ids, isActive } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ success: false, message: 'Array of company IDs is required' });
+    }
+    if (typeof isActive !== 'boolean') {
+      return res.status(400).json({ success: false, message: 'isActive boolean flag is required' });
+    }
+
+    const validIds = ids.filter((id) => mongoose.Types.ObjectId.isValid(id));
+    if (validIds.length === 0) {
+      return res.status(400).json({ success: false, message: 'No valid company IDs provided' });
+    }
+
+    const result = await Company.updateMany(
+      { _id: { $in: validIds } },
+      { $set: { isActive } }
+    );
+
+    await logSecurityEvent({
+      action: 'admin_bulk_update_company_status',
+      user: req.user?._id,
+      entityType: 'Company',
+      req,
+      details: { modifiedCount: result.modifiedCount, isActive, targetCount: validIds.length },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `Successfully ${isActive ? 'activated' : 'deactivated'} ${result.modifiedCount} company profile(s)`,
+      data: { modifiedCount: result.modifiedCount },
     });
   } catch (error) {
     next(error);
@@ -826,6 +1443,15 @@ export const deleteCompany = async (req, res, next) => {
     if (hasStudentsTargeting) {
       company.isActive = false;
       await company.save();
+
+      await logSecurityEvent({
+        action: 'admin_soft_delete_company',
+        user: req.user?._id,
+        entityType: 'Company',
+        entityId: company._id.toString(),
+        req,
+      });
+
       return res.status(200).json({
         success: true,
         message: 'Company is targeted by students and was deactivated rather than permanently deleted to preserve student goal data.',
@@ -834,6 +1460,15 @@ export const deleteCompany = async (req, res, next) => {
     }
 
     await Company.findByIdAndDelete(req.params.id);
+
+    await logSecurityEvent({
+      action: 'admin_delete_company',
+      user: req.user?._id,
+      entityType: 'Company',
+      entityId: req.params.id,
+      req,
+    });
+
     res.status(200).json({
       success: true,
       message: 'Company deleted permanently',
@@ -920,6 +1555,20 @@ export const createResource = async (req, res, next) => {
       uploadedBy: req.user._id,
     });
 
+    if (resource.isActive) {
+      notificationService
+        .broadcastStudentNotification({
+          type: 'new_study_material',
+          title: 'New Study Material Published',
+          message: `${resource.title} (${resource.category}) is now available in Study Materials.`,
+          link: `/resources/${resource._id}`,
+          metadata: { entityId: resource._id },
+        })
+        .catch((err) =>
+          console.error('[adminController] Resource notification broadcast error:', err.message)
+        );
+    }
+
     res.status(201).json({
       success: true,
       message: 'Resource created successfully',
@@ -1001,10 +1650,57 @@ export const updateResourceStatus = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Resource not found' });
     }
 
+    await logSecurityEvent({
+      action: 'admin_update_resource_status',
+      user: req.user?._id,
+      entityType: 'StudyMaterial',
+      entityId: resource._id.toString(),
+      req,
+      details: { isActive, title: resource.title },
+    });
+
     res.status(200).json({
       success: true,
       message: `Resource ${isActive ? 'activated' : 'deactivated'} successfully`,
       data: { resource },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const bulkUpdateResourceStatus = async (req, res, next) => {
+  try {
+    const { ids, isActive } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ success: false, message: 'Array of resource IDs is required' });
+    }
+    if (typeof isActive !== 'boolean') {
+      return res.status(400).json({ success: false, message: 'isActive boolean flag is required' });
+    }
+
+    const validIds = ids.filter((id) => mongoose.Types.ObjectId.isValid(id));
+    if (validIds.length === 0) {
+      return res.status(400).json({ success: false, message: 'No valid resource IDs provided' });
+    }
+
+    const result = await StudyMaterial.updateMany(
+      { _id: { $in: validIds } },
+      { $set: { isActive } }
+    );
+
+    await logSecurityEvent({
+      action: 'admin_bulk_update_resource_status',
+      user: req.user?._id,
+      entityType: 'StudyMaterial',
+      req,
+      details: { modifiedCount: result.modifiedCount, isActive, targetCount: validIds.length },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `Successfully ${isActive ? 'activated' : 'deactivated'} ${result.modifiedCount} study material resource(s)`,
+      data: { modifiedCount: result.modifiedCount },
     });
   } catch (error) {
     next(error);
@@ -1019,6 +1715,15 @@ export const deleteResource = async (req, res, next) => {
     }
 
     await StudyMaterial.findByIdAndDelete(req.params.id);
+
+    await logSecurityEvent({
+      action: 'admin_delete_resource',
+      user: req.user?._id,
+      entityType: 'StudyMaterial',
+      entityId: req.params.id,
+      req,
+    });
+
     res.status(200).json({
       success: true,
       message: 'Resource deleted permanently',
@@ -1101,6 +1806,20 @@ export const createMockTest = async (req, res, next) => {
       createdBy: req.user._id,
     });
 
+    if (test.isPublished) {
+      notificationService
+        .broadcastStudentNotification({
+          type: 'new_mock_test',
+          title: 'New Mock Assessment Available',
+          message: `${test.title} (${test.durationMinutes} mins) is now available to take.`,
+          link: `/mock-tests/${test.slug || test._id}`,
+          metadata: { entityId: test._id },
+        })
+        .catch((err) =>
+          console.error('[adminController] Mock test notification broadcast error:', err.message)
+        );
+    }
+
     res.status(201).json({
       success: true,
       message: 'Mock test created successfully',
@@ -1182,20 +1901,88 @@ export const updateMockTestStatus = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'isPublished boolean is required' });
     }
 
-    const mockTest = await MockTest.findByIdAndUpdate(
-      req.params.id,
-      { $set: { isPublished } },
-      { returnDocument: 'after' }
-    );
-
-    if (!mockTest) {
+    const testDoc = await MockTest.findById(req.params.id);
+    if (!testDoc) {
       return res.status(404).json({ success: false, message: 'Mock test not found' });
     }
+
+    if (isPublished && (!testDoc.questions || testDoc.questions.length === 0)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot publish mock test without questions configured. Please add questions before publishing.',
+      });
+    }
+
+    testDoc.isPublished = isPublished;
+    await testDoc.save();
+
+    await logSecurityEvent({
+      action: 'admin_update_mock_test_status',
+      user: req.user?._id,
+      entityType: 'MockTest',
+      entityId: testDoc._id.toString(),
+      req,
+      details: { isPublished, title: testDoc.title },
+    });
 
     res.status(200).json({
       success: true,
       message: `Mock test ${isPublished ? 'published' : 'unpublished'} successfully`,
-      data: { mockTest },
+      data: { mockTest: testDoc },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const bulkUpdateMockTestStatus = async (req, res, next) => {
+  try {
+    const { ids, isPublished } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ success: false, message: 'Array of mock test IDs is required' });
+    }
+    if (typeof isPublished !== 'boolean') {
+      return res.status(400).json({ success: false, message: 'isPublished boolean flag is required' });
+    }
+
+    const validIds = ids.filter((id) => mongoose.Types.ObjectId.isValid(id));
+    if (validIds.length === 0) {
+      return res.status(400).json({ success: false, message: 'No valid mock test IDs provided' });
+    }
+
+    if (isPublished) {
+      // Validate that all target mock tests have questions configured before publishing
+      const emptyTests = await MockTest.find({
+        _id: { $in: validIds },
+        $or: [{ questions: { $exists: false } }, { questions: { $size: 0 } }],
+      }).select('title');
+
+      if (emptyTests.length > 0) {
+        const titles = emptyTests.map((t) => t.title).join(', ');
+        return res.status(400).json({
+          success: false,
+          message: `Cannot publish mock test(s) without questions configured: ${titles}`,
+        });
+      }
+    }
+
+    const result = await MockTest.updateMany(
+      { _id: { $in: validIds } },
+      { $set: { isPublished } }
+    );
+
+    await logSecurityEvent({
+      action: 'admin_bulk_update_mock_test_status',
+      user: req.user?._id,
+      entityType: 'MockTest',
+      req,
+      details: { modifiedCount: result.modifiedCount, isPublished, targetCount: validIds.length },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `Successfully ${isPublished ? 'published' : 'unpublished'} ${result.modifiedCount} mock test(s)`,
+      data: { modifiedCount: result.modifiedCount },
     });
   } catch (error) {
     next(error);
@@ -1213,6 +2000,15 @@ export const deleteMockTest = async (req, res, next) => {
     if (hasAttempts) {
       mockTest.isPublished = false;
       await mockTest.save();
+
+      await logSecurityEvent({
+        action: 'admin_soft_delete_mock_test',
+        user: req.user?._id,
+        entityType: 'MockTest',
+        entityId: mockTest._id.toString(),
+        req,
+      });
+
       return res.status(200).json({
         success: true,
         message: 'Mock test has historical student attempts and was unpublished rather than permanently deleted to preserve scorecard history.',
@@ -1221,6 +2017,15 @@ export const deleteMockTest = async (req, res, next) => {
     }
 
     await MockTest.findByIdAndDelete(req.params.id);
+
+    await logSecurityEvent({
+      action: 'admin_delete_mock_test',
+      user: req.user?._id,
+      entityType: 'MockTest',
+      entityId: req.params.id,
+      req,
+    });
+
     res.status(200).json({
       success: true,
       message: 'Mock test deleted permanently',
@@ -1290,6 +2095,14 @@ export const approveReview = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Review not found' });
     }
 
+    await logSecurityEvent({
+      action: 'admin_approve_review',
+      user: req.user?._id,
+      entityType: 'Review',
+      entityId: review._id.toString(),
+      req,
+    });
+
     // Notify the student that their review was approved
     if (review.user) {
       await notificationService.createNotification({
@@ -1324,6 +2137,14 @@ export const rejectReview = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Review not found' });
     }
 
+    await logSecurityEvent({
+      action: 'admin_reject_review',
+      user: req.user?._id,
+      entityType: 'Review',
+      entityId: review._id.toString(),
+      req,
+    });
+
     // Notify the student that their review was not approved
     if (review.user) {
       await notificationService.createNotification({
@@ -1346,6 +2167,44 @@ export const rejectReview = async (req, res, next) => {
   }
 };
 
+export const bulkUpdateReviewStatus = async (req, res, next) => {
+  try {
+    const { ids, status } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ success: false, message: 'Array of review IDs is required' });
+    }
+    if (!['approved', 'rejected'].includes(status)) {
+      return res.status(400).json({ success: false, message: 'Status must be approved or rejected' });
+    }
+
+    const validIds = ids.filter((id) => mongoose.Types.ObjectId.isValid(id));
+    if (validIds.length === 0) {
+      return res.status(400).json({ success: false, message: 'No valid review IDs provided' });
+    }
+
+    const result = await Review.updateMany(
+      { _id: { $in: validIds } },
+      { $set: { status, moderatedAt: new Date(), moderatedBy: req.user._id } }
+    );
+
+    await logSecurityEvent({
+      action: 'admin_bulk_moderate_reviews',
+      user: req.user?._id,
+      entityType: 'Review',
+      req,
+      details: { modifiedCount: result.modifiedCount, status, targetCount: validIds.length },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `Successfully set ${result.modifiedCount} review(s) to ${status}`,
+      data: { modifiedCount: result.modifiedCount },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const deleteAdminReview = async (req, res, next) => {
   try {
     const review = await Review.findByIdAndDelete(req.params.id);
@@ -1353,6 +2212,14 @@ export const deleteAdminReview = async (req, res, next) => {
     if (!review) {
       return res.status(404).json({ success: false, message: 'Review not found' });
     }
+
+    await logSecurityEvent({
+      action: 'admin_delete_review',
+      user: req.user?._id,
+      entityType: 'Review',
+      entityId: req.params.id,
+      req,
+    });
 
     res.status(200).json({
       success: true,
@@ -1436,42 +2303,52 @@ export const getAdminAnalytics = async (req, res, next) => {
 
 export default {
   getAdminDashboardStats,
+  getAdminHealth,
+  getAdminAuditLogs,
   getStudents,
+  exportStudentsCsv,
   getStudentById,
   updateStudentStatus,
+  bulkUpdateStudentStatus,
   getAdminAptitudeQuestions,
   createAptitudeQuestion,
   getAptitudeQuestionById,
   updateAptitudeQuestion,
   updateAptitudeQuestionStatus,
+  bulkUpdateAptitudeStatus,
+  deleteAptitudeQuestion,
   getAdminCodingProblems,
   createCodingProblem,
   getAdminCodingProblemById,
   updateCodingProblem,
   updateCodingProblemStatus,
+  bulkUpdateCodingStatus,
+  deleteCodingProblem,
   getAdminCompanies,
   createCompany,
   getAdminCompanyById,
   updateCompany,
   updateCompanyStatus,
+  bulkUpdateCompanyStatus,
   deleteCompany,
   getAdminResources,
   createResource,
   getAdminResourceById,
   updateResource,
   updateResourceStatus,
+  bulkUpdateResourceStatus,
   deleteResource,
   getAdminMockTests,
   createMockTest,
   getAdminMockTestById,
   updateMockTest,
   updateMockTestStatus,
+  bulkUpdateMockTestStatus,
   deleteMockTest,
   getAdminReviews,
   approveReview,
   rejectReview,
+  bulkUpdateReviewStatus,
   deleteAdminReview,
-  deleteAptitudeQuestion,
-  deleteCodingProblem,
   getAdminAnalytics,
 };

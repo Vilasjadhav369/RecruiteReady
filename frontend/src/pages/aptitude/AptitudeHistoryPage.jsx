@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { getAptitudeHistory } from '../../services/aptitudeService.js';
 import { formatDateTime } from '../../utils/formatters.js';
 import {
@@ -97,15 +96,9 @@ export default function AptitudeHistoryPage() {
           </Badge>
         }
         actions={
-          <Link to="/aptitude">
-            <Button
-              variant="primary"
-              size="sm"
-              iconLeft={<PlusIcon className="w-3.5 h-3.5" />}
-            >
+          <Button to="/aptitude" variant="primary" size="sm" iconLeft={<PlusIcon className="w-3.5 h-3.5" />}>
               New Practice Session
             </Button>
-          </Link>
         }
       />
 
@@ -142,7 +135,7 @@ export default function AptitudeHistoryPage() {
           label="Average Accuracy"
           value={avgAccuracy !== null ? `${avgAccuracy}%` : '—'}
           subtext={avgAccuracy !== null ? 'Across page attempts' : 'Awaiting completed tests'}
-          icon={<AptitudeIcon className="w-4 h-4 text-[#166534]" />}
+          icon={<AptitudeIcon className="w-4 h-4 text-primary" />}
         />
         <StatCard
           label="Highest Score"
@@ -191,11 +184,9 @@ export default function AptitudeHistoryPage() {
                 title="No aptitude attempts yet"
                 description="Start your first practice session to build your placement readiness track record."
                 action={
-                  <Link to="/aptitude">
-                    <Button variant="primary" size="sm">
+                  <Button to="/aptitude" variant="primary" size="sm">
                       Start Practicing
                     </Button>
-                  </Link>
                 }
               />
             </div>
@@ -280,17 +271,13 @@ export default function AptitudeHistoryPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         {effectiveStatus === 'in_progress' ? (
-                          <Link to={`/aptitude/session/${att._id}`}>
-                            <Button variant="outline" size="sm">
+                          <Button to={`/aptitude/session/${att._id}`} variant="outline" size="sm">
                               Resume
                             </Button>
-                          </Link>
                         ) : (
-                          <Link to={`/aptitude/result/${att._id}`}>
-                            <Button variant="ghost" size="sm">
+                          <Button to={`/aptitude/result/${att._id}`} variant="ghost" size="sm">
                               View Result
                             </Button>
-                          </Link>
                         )}
                       </TableCell>
                     </TableRow>

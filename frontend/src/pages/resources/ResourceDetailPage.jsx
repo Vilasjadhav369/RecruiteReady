@@ -21,6 +21,7 @@ import {
   BookOpenIcon,
   EditIcon,
 } from '../../components/ui/Icons.jsx';
+import BookmarkButton from '../../components/bookmarks/BookmarkButton.jsx';
 
 export default function ResourceDetailPage() {
   const { id } = useParams();
@@ -92,8 +93,8 @@ export default function ResourceDetailPage() {
         );
       case 'article':
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#DCFCE7] text-[#14532D] border border-[#BBF7D0]">
-            <BookOpenIcon className="w-3.5 h-3.5 text-[#166534]" />
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-primary-tint text-primary-dark border border-primary-border">
+            <BookOpenIcon className="w-3.5 h-3.5 text-primary" />
             Article Guide
           </span>
         );
@@ -117,6 +118,12 @@ export default function ResourceDetailPage() {
 
   const headerActions = (
     <div className="flex items-center gap-2.5 flex-wrap">
+      <BookmarkButton
+        itemType="study_material"
+        itemId={resource._id}
+        variant="button"
+        showLabel
+      />
       <Button
         variant="outline"
         size="sm"

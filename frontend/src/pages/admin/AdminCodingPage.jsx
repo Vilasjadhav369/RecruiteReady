@@ -5,6 +5,7 @@ import {
   getAdminCodingProblemById,
   updateCodingProblem,
   updateCodingProblemStatus,
+  deleteCodingProblem,
 } from "../../services/adminService.js";
 import {
   PageHeader,
@@ -32,6 +33,7 @@ import {
   EditIcon,
   EyeIcon,
   DocumentIcon,
+  TrashIcon,
 } from "../../components/ui/Icons.jsx";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -157,6 +159,11 @@ export default function AdminCodingPage() {
   const [toggleTarget, setToggleTarget] = useState(null);
   const [isToggleModalOpen, setIsToggleModalOpen] = useState(false);
   const [togglingId, setTogglingId] = useState(null);
+
+  // ── Delete Confirmation ──
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // ── Toast ──
   const [toast, setToast] = useState(null);
@@ -426,6 +433,37 @@ export default function AdminCodingPage() {
     } finally {
       setTogglingId(null);
       setToggleTarget(null);
+    }
+  };
+
+  // ── Delete Coding Problem ──
+  const handleRequestDelete = (problem) => {
+    setDeleteTarget(problem);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      setIsDeleting(true);
+      const res = await deleteCodingProblem(deleteTarget._id);
+      showToast(
+        "success",
+        res?.data?.softDeleted ? "Problem Deactivated" : "Problem Deleted",
+        res?.message || "Coding problem deleted successfully."
+      );
+      setIsDeleteModalOpen(false);
+      setDeleteTarget(null);
+      fetchProblems();
+    } catch (err) {
+      console.error("Error deleting coding problem:", err);
+      showToast(
+        "error",
+        "Delete Failed",
+        err.response?.data?.message || "Failed to delete coding problem."
+      );
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -708,6 +746,15 @@ export default function AdminCodingPage() {
                           >
                             {p.isActive ? "Deactivate" : "Activate"}
                           </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRequestDelete(p)}
+                            title="Delete problem"
+                            className="text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+                          >
+                            <TrashIcon className="w-3.5 h-3.5" />
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -844,6 +891,15 @@ export default function AdminCodingPage() {
                     onClick={() => handleRequestToggle(p)}
                   >
                     {p.isActive ? "Deactivate" : "Activate"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-rose-600 border-rose-200 hover:bg-rose-50 px-2.5"
+                    onClick={() => handleRequestDelete(p)}
+                    title="Delete problem"
+                  >
+                    <TrashIcon className="w-3.5 h-3.5" />
                   </Button>
                 </div>
               </div>
@@ -1480,6 +1536,60 @@ export default function AdminCodingPage() {
               </Badge>
               <span className="text-xs text-slate-500">
                 {toggleTarget.category || "—"}
+              </span>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* ─── Delete Confirmation Modal ───────────────────────────── */}
+      <Modal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setDeleteTarget(null);
+        }}
+        title="Delete Coding Problem?"
+        description="Are you sure you want to delete this coding problem? If students have submitted solutions to this problem, it will be deactivated to protect historical student records."
+        maxWidth="max-w-md"
+        footer={
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={isDeleting}
+              onClick={() => {
+                setIsDeleteModalOpen(false);
+                setDeleteTarget(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              loading={isDeleting}
+              onClick={handleConfirmDelete}
+            >
+              Delete
+            </Button>
+          </>
+        }
+      >
+        {deleteTarget && (
+          <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
+            <p className="text-sm font-medium text-slate-800">
+              {deleteTarget.title || "—"}
+            </p>
+            <div className="flex items-center gap-2 mt-2">
+              <Badge
+                variant={getDifficultyVariant(deleteTarget.difficulty)}
+                size="sm"
+              >
+                {capitalize(deleteTarget.difficulty)}
+              </Badge>
+              <span className="text-xs text-slate-500">
+                {deleteTarget.category || "—"}
               </span>
             </div>
           </div>

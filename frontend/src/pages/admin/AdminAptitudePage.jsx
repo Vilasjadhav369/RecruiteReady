@@ -4,6 +4,7 @@ import {
   createAptitudeQuestion,
   updateAptitudeQuestion,
   updateAptitudeQuestionStatus,
+  deleteAptitudeQuestion,
 } from "../../services/adminService.js";
 import {
   PageHeader,
@@ -32,6 +33,7 @@ import {
   EyeIcon,
   DocumentIcon,
   CheckCircleIcon,
+  TrashIcon,
 } from "../../components/ui/Icons.jsx";
 
 // ─── Constants ────────────────────────────────────────────────────────
@@ -142,6 +144,11 @@ export default function AdminAptitudePage() {
   const [toggleTarget, setToggleTarget] = useState(null);
   const [isToggleModalOpen, setIsToggleModalOpen] = useState(false);
   const [togglingId, setTogglingId] = useState(null);
+
+  // ── Delete Confirmation ──
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // ── Toast ──
   const [toast, setToast] = useState(null);
@@ -399,6 +406,37 @@ export default function AdminAptitudePage() {
     } finally {
       setTogglingId(null);
       setToggleTarget(null);
+    }
+  };
+
+  // ── Delete Question ──
+  const handleRequestDelete = (q) => {
+    setDeleteTarget(q);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      setIsDeleting(true);
+      const res = await deleteAptitudeQuestion(deleteTarget._id);
+      showToast(
+        "success",
+        res?.data?.softDeleted ? "Question Deactivated" : "Question Deleted",
+        res?.message || "Question deleted successfully."
+      );
+      setIsDeleteModalOpen(false);
+      setDeleteTarget(null);
+      fetchQuestions();
+    } catch (err) {
+      console.error("Error deleting aptitude question:", err);
+      showToast(
+        "error",
+        "Delete Failed",
+        err.response?.data?.message || "Failed to delete question."
+      );
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -664,6 +702,15 @@ export default function AdminAptitudePage() {
                           >
                             {q.isActive ? "Deactivate" : "Activate"}
                           </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRequestDelete(q)}
+                            title="Delete question"
+                            className="text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+                          >
+                            <TrashIcon className="w-3.5 h-3.5" />
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -801,6 +848,15 @@ export default function AdminAptitudePage() {
                       onClick={() => handleRequestToggle(q)}
                     >
                       {q.isActive ? "Deactivate" : "Activate"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-rose-600 border-rose-200 hover:bg-rose-50 px-2.5"
+                      onClick={() => handleRequestDelete(q)}
+                      title="Delete question"
+                    >
+                      <TrashIcon className="w-3.5 h-3.5" />
                     </Button>
                   </div>
                 </div>
@@ -1176,6 +1232,57 @@ export default function AdminAptitudePage() {
               </Badge>
               <span className="text-xs text-slate-500">
                 {toggleTarget.category} • {toggleTarget.topic}
+              </span>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* ─── Delete Confirmation Modal ───────────────────────────── */}
+      <Modal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setDeleteTarget(null);
+        }}
+        title="Delete Question?"
+        description="Are you sure you want to delete this question? If students have attempted this question or it belongs to a mock test, it will be deactivated to protect historical student records."
+        maxWidth="max-w-md"
+        footer={
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={isDeleting}
+              onClick={() => {
+                setIsDeleteModalOpen(false);
+                setDeleteTarget(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              loading={isDeleting}
+              onClick={handleConfirmDelete}
+            >
+              Delete
+            </Button>
+          </>
+        }
+      >
+        {deleteTarget && (
+          <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
+            <p className="text-sm text-slate-800 line-clamp-3">
+              {truncateText(deleteTarget.question, 200)}
+            </p>
+            <div className="flex items-center gap-2 mt-2">
+              <Badge variant={getDifficultyVariant(deleteTarget.difficulty)} size="sm">
+                {capitalize(deleteTarget.difficulty)}
+              </Badge>
+              <span className="text-xs text-slate-500">
+                {deleteTarget.category} • {deleteTarget.topic}
               </span>
             </div>
           </div>

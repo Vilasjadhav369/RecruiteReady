@@ -1,4 +1,4 @@
-﻿import CompanyCard from "./CompanyCard.jsx";
+import CompanyCard from "./CompanyCard.jsx";
 import EmptyState from "./EmptyState.jsx";
 
 /**
@@ -29,8 +29,8 @@ function CompanyGrid({ companies = null, loading = false }) {
               <path d="M5 5V3a2 2 0 012-2h6a2 2 0 012 2v2M2 10h16" stroke="#2563EB" strokeWidth="1.5"/>
             </svg>
           }
-          title="Company data coming soon"
-          description="Company-specific preparation paths and interview resources will be available once the platform database is connected."
+          title="No companies available"
+          description="Explore available target companies to begin company-specific placement preparation."
         />
       </div>
     );

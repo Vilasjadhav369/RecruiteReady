@@ -17,8 +17,8 @@ export function Badge({
   const variants = {
     default: 'bg-slate-100 text-slate-700 border border-slate-200/80',
     neutral: 'bg-slate-100 text-slate-700 border border-slate-200/80',
-    brand: 'bg-[#DCFCE7] text-[#14532D] border border-[#BBF7D0]',
-    primary: 'bg-[#DCFCE7] text-[#14532D] border border-[#BBF7D0]',
+    brand: 'bg-primary-tint text-primary-dark border border-primary-border',
+    primary: 'bg-primary-tint text-primary-dark border border-primary-border',
     secondary: 'bg-slate-900 text-white border border-slate-900',
     success: 'bg-emerald-50 text-emerald-800 border border-emerald-200/80',
     warning: 'bg-amber-50 text-amber-800 border border-amber-200/80',
@@ -30,8 +30,8 @@ export function Badge({
   const dotColors = {
     default: 'bg-slate-500',
     neutral: 'bg-slate-500',
-    brand: 'bg-[#22C55E]',
-    primary: 'bg-[#22C55E]',
+    brand: 'bg-primary-light',
+    primary: 'bg-primary-light',
     secondary: 'bg-slate-300',
     success: 'bg-emerald-600',
     warning: 'bg-amber-500',

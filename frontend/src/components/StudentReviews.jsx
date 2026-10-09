@@ -1,5 +1,4 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import ReviewCard from './ReviewCard.jsx';
 import { SkeletonCard, EmptyState, Button } from './ui/index.js';
 import { StarIcon } from './ui/Icons.jsx';
@@ -31,11 +30,9 @@ export function StudentReviews({ reviews = [], loading = false, onShareClick }) 
               Share Your Experience
             </Button>
           ) : (
-            <Link to="/reviews">
-              <Button variant="primary">
+            <Button to="/reviews" variant="primary">
                 Share Your Experience
               </Button>
-            </Link>
           )
         }
       />

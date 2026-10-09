@@ -70,7 +70,7 @@ function DashboardHeader({ onMenuClick }) {
         <button
           type="button"
           onClick={onMenuClick}
-          className="md:hidden min-w-[44px] min-h-[44px] p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-[#166534]"
+          className="md:hidden min-w-[44px] min-h-[44px] p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-primary"
           aria-label="Open navigation menu"
         >
           <MenuIcon className="w-5 h-5" />
@@ -92,7 +92,7 @@ function DashboardHeader({ onMenuClick }) {
         <button
           type="button"
           onClick={() => setIsSearchOpen(true)}
-          className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-lg border border-slate-200 hover:border-slate-300 bg-slate-50 hover:bg-white text-slate-500 hover:text-slate-800 transition-all text-xs cursor-pointer shadow-2xs focus-visible:outline-2 focus-visible:outline-[#166534]"
+          className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-lg border border-slate-200 hover:border-slate-300 bg-slate-50 hover:bg-white text-slate-500 hover:text-slate-800 transition-all text-xs cursor-pointer shadow-2xs focus-visible:outline-2 focus-visible:outline-primary"
           aria-label="Search RecruitReady (Ctrl+K)"
           title="Search RecruitReady (Ctrl+K)"
         >
@@ -113,7 +113,7 @@ function DashboardHeader({ onMenuClick }) {
           <button
             type="button"
             onClick={() => setProfileDropdown(!profileDropdown)}
-            className="min-h-[40px] flex items-center gap-2 px-2 sm:px-2.5 py-1 rounded-lg border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 transition-all cursor-pointer shadow-xs focus-visible:outline-2 focus-visible:outline-[#166534]"
+            className="min-h-[40px] flex items-center gap-2 px-2 sm:px-2.5 py-1 rounded-lg border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 transition-all cursor-pointer shadow-xs focus-visible:outline-2 focus-visible:outline-primary"
             aria-expanded={profileDropdown}
             aria-label="User account menu"
             aria-haspopup="true"
@@ -145,7 +145,7 @@ function DashboardHeader({ onMenuClick }) {
               <Link
                 to="/profile"
                 onClick={() => setProfileDropdown(false)}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg text-slate-700 hover:bg-[#DCFCE7] hover:text-[#166534] transition-colors no-underline"
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-slate-700 hover:bg-primary-tint hover:text-primary transition-colors no-underline"
                 role="menuitem"
               >
                 <ProfileIcon className="w-4 h-4 text-slate-500" />

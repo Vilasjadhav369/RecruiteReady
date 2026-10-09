@@ -68,6 +68,12 @@ export function calculateProfileCompletion(user) {
       ),
     },
     {
+      key: 'preparationLevel',
+      label: 'Preparation Level',
+      category: 'Preparation',
+      completed: Boolean(user.preparationLevel?.trim()),
+    },
+    {
       key: 'targetCompanies',
       label: 'Target Companies',
       category: 'Preparation',

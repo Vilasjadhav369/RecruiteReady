@@ -51,7 +51,7 @@ export default function AdminPlaceholderPage() {
     <div className="space-y-6">
       <div className="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-8 shadow-xs">
         <div className="flex items-center gap-2 mb-2">
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#DCFCE7] text-[#14532D] border border-[#BBF7D0]">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary-tint text-primary-dark border border-primary-border">
             {moduleInfo.badge}
           </span>
           <span className="text-xs text-slate-600 font-medium">Coming Soon</span>
@@ -77,7 +77,7 @@ export default function AdminPlaceholderPage() {
         <div className="mt-6">
           <Link
             to="/admin"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-[#166534] hover:bg-[#14532D] text-white text-xs font-semibold rounded-xl transition shadow-xs"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-dark text-white text-xs font-semibold rounded-xl transition shadow-xs"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />

@@ -22,6 +22,8 @@ const notificationSchema = new mongoose.Schema(
           'security_alert',
           'admin_review_pending',
           'system_announcement',
+          'new_mock_test',
+          'new_study_material',
         ],
         message: 'Invalid notification type',
       },

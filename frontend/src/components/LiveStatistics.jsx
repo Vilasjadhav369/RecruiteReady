@@ -1,4 +1,4 @@
-﻿import EmptyState from "./EmptyState.jsx";
+import EmptyState from "./EmptyState.jsx";
 import LoadingSkeleton from "./LoadingSkeleton.jsx";
 
 /**
@@ -95,7 +95,7 @@ function LiveStatistics({ data = null, loading = false, hasError = false }) {
             </svg>
           }
           title="Live platform statistics"
-          description="Real-time activity data will appear here once the platform database is connected."
+          description="Live student activity statistics will update dynamically as students practice."
         />
       </div>
     );
@@ -104,8 +104,8 @@ function LiveStatistics({ data = null, loading = false, hasError = false }) {
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
       {METRIC_DEFS.map((metric) => (
-        <div key={metric.key} className="bg-white border border-[#D9E2EC] rounded-xl p-6">
-          <div className="w-10 h-10 bg-[#E8F1FF] rounded-lg flex items-center justify-center mb-4">
+        <div key={metric.key} className="bg-white border border-slate-200 rounded-xl p-6">
+          <div className="w-10 h-10 bg-primary-tint rounded-lg flex items-center justify-center mb-4">
             {metric.icon}
           </div>
           <p className="text-2xl font-bold text-[#172B4D] mb-1">

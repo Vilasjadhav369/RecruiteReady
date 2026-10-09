@@ -43,7 +43,7 @@ function MobileMenu({ isOpen, onClose }) {
               const active = !link.to.includes("#") && isActive && (link.to === "/" ? window.location.pathname === "/" : true);
               return `min-h-[44px] flex items-center px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors no-underline hover:no-underline ${
                 active
-                  ? "text-[#166534] bg-[#DCFCE7] font-semibold"
+                  ? "text-primary bg-primary-tint font-semibold"
                   : "text-slate-700 hover:text-slate-900 hover:bg-slate-100"
               }`;
             }}
@@ -56,7 +56,7 @@ function MobileMenu({ isOpen, onClose }) {
           {isAuthenticated ? (
             <>
               <div className="px-3.5 py-2.5 bg-slate-50 rounded-lg border border-slate-200 flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-[#166534] text-white flex items-center justify-center text-xs font-bold shrink-0">
+                <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold shrink-0">
                   {user?.firstName?.[0]?.toUpperCase() ?? "S"}
                 </div>
                 <div className="min-w-0 flex-1">
@@ -95,15 +95,9 @@ function MobileMenu({ isOpen, onClose }) {
                 Login
               </Link>
 
-              <Link
-                to="/register"
-                onClick={onClose}
-                className="no-underline"
-              >
-                <Button variant="primary" fullWidth size="md">
+              <Button to="/register" onClick={onClose} variant="primary" fullWidth size="md">
                   Create Account
                 </Button>
-              </Link>
             </div>
           )}
         </div>

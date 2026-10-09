@@ -11,6 +11,11 @@ export const getCodingProblem = async (id) => {
   return response.data?.data?.problem;
 };
 
+export const runCodingProblem = async (id, { language, code }) => {
+  const response = await api.post(`/coding/problems/${id}/run`, { language, code });
+  return response.data;
+};
+
 export const submitCodingProblem = async (id, { language, code }) => {
   const response = await api.post(`/coding/problems/${id}/submit`, { language, code });
   return response.data;
@@ -30,6 +35,7 @@ export const getCodingSubmission = async (id) => {
 export default {
   getCodingProblems,
   getCodingProblem,
+  runCodingProblem,
   submitCodingProblem,
   getCodingSubmissions,
   getCodingSubmission,

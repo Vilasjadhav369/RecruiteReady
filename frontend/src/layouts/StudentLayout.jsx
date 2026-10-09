@@ -16,21 +16,22 @@ function StudentLayout() {
 
   if (isAssessmentSession) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC]">
+      <div className="min-h-screen bg-background">
         <Outlet />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col md:flex-row overflow-x-hidden">
+    <div className="min-h-screen bg-background flex flex-col md:flex-row overflow-x-hidden">
       {/* Sidebar (desktop fixed, mobile drawer) */}
+      <a href="#main-content" className="skip-link">Skip to main content</a>
       <StudentSidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         <DashboardHeader onMenuClick={() => setMobileOpen(true)} />
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+        <main id="main-content" className="animate-page flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
           <Outlet />
         </main>
       </div>

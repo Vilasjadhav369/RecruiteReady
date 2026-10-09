@@ -8,9 +8,10 @@ import Footer from "../components/Footer.jsx";
  */
 function MainLayout() {
   return (
-    <div className="min-h-screen flex flex-col bg-[#F8FAFC] overflow-x-hidden">
+    <div className="min-h-screen flex flex-col bg-background overflow-x-hidden">
+      <a href="#main-content" className="skip-link">Skip to main content</a>
       <Navbar />
-      <main className="flex-1">
+      <main id="main-content" className="flex-1">
         <Outlet />
       </main>
       <Footer />

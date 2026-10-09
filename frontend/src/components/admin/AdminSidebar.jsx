@@ -54,6 +54,7 @@ const NAV_SECTIONS = [
     title: "System",
     items: [
       { label: "Settings", to: "/admin/settings", icon: SettingsIcon },
+      { label: "Audit Logs", to: "/admin/audit-logs", icon: ShieldCheckIcon },
     ],
   },
 ];
@@ -109,25 +110,25 @@ function AdminSidebar({ mobileOpen, setMobileOpen }) {
           className="flex items-center gap-2.5 no-underline hover:no-underline group"
           onClick={() => setMobileOpen && setMobileOpen(false)}
         >
-          <div className="w-8 h-8 rounded-lg bg-[#166534] flex items-center justify-center shrink-0 shadow-xs group-hover:bg-[#14532D] transition-colors">
+          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0 shadow-xs group-hover:bg-primary-dark transition-colors">
             <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
               <path
                 d="M10 3L3 7L10 11L17 7L10 3Z"
-                stroke="#DCFCE7"
+                stroke="#DBEAFE"
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
               <path
                 d="M5.5 8.5V13.5C5.5 13.5 7 15.5 10 15.5C13 15.5 14.5 13.5 14.5 13.5V8.5"
-                stroke="#22C55E"
+                stroke="#3B82F6"
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
               <path
                 d="M17 7V12"
-                stroke="#DCFCE7"
+                stroke="#DBEAFE"
                 strokeWidth="2"
                 strokeLinecap="round"
               />
@@ -138,7 +139,7 @@ function AdminSidebar({ mobileOpen, setMobileOpen }) {
               <span className="text-slate-900 font-bold text-sm tracking-tight leading-none">
                 RecruitReady
               </span>
-              <span className="text-[10px] font-bold uppercase tracking-wider bg-[#DCFCE7] text-[#14532D] px-1.5 py-0.5 rounded leading-none border border-[#BBF7D0]">
+              <span className="text-[10px] font-bold uppercase tracking-wider bg-primary-tint text-primary-dark px-1.5 py-0.5 rounded leading-none border border-primary-border">
                 Admin
               </span>
             </div>
@@ -152,7 +153,7 @@ function AdminSidebar({ mobileOpen, setMobileOpen }) {
           <button
             type="button"
             onClick={() => setMobileOpen(false)}
-            className="md:hidden min-w-[44px] min-h-[44px] p-2 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 flex items-center justify-center transition-colors focus-visible:outline-2 focus-visible:outline-[#166534] cursor-pointer"
+            className="md:hidden min-w-[44px] min-h-[44px] p-2 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 flex items-center justify-center transition-colors focus-visible:outline-2 focus-visible:outline-primary cursor-pointer"
             aria-label="Close navigation drawer"
           >
             <CloseIcon className="w-5 h-5" />
@@ -180,14 +181,14 @@ function AdminSidebar({ mobileOpen, setMobileOpen }) {
                   onClick={() => setMobileOpen && setMobileOpen(false)}
                   className={`min-h-[38px] flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all no-underline ${
                     active
-                      ? "bg-[#DCFCE7] text-[#166534] font-semibold border-l-3 border-[#166534] shadow-xs"
+                      ? "bg-primary-tint text-primary font-semibold border-l-3 border-primary shadow-xs"
                       : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 border-l-3 border-transparent"
                   }`}
                   aria-current={active ? "page" : undefined}
                 >
                   <Icon
                     className={`w-4 h-4 shrink-0 transition-colors ${
-                      active ? "text-[#166534]" : "text-slate-500"
+                      active ? "text-primary" : "text-slate-500"
                     }`}
                   />
                   <span className="truncate">{item.label}</span>

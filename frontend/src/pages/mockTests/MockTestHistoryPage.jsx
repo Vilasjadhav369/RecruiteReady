@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { getMockHistory } from '../../services/mockTestService.js';
 import { formatDateTime } from '../../utils/formatters.js';
 import { 
   PageHeader, 
   Card, 
-  CardContent,
   CardFooter,
   Badge, 
   StatusBadge, 
@@ -26,7 +25,6 @@ import {
   DocumentIcon, 
   ChevronLeftIcon, 
   ChevronRightIcon, 
-  EyeIcon,
   TrophyIcon,
   CheckCircleIcon,
   ArrowRightIcon,
@@ -94,15 +92,9 @@ export default function MockTestHistoryPage() {
           </Badge>
         }
         actions={
-          <Link to="/mock-tests">
-            <Button 
-              variant="outline"
-              size="sm"
-              iconLeft={<DocumentIcon className="w-4 h-4" />}
-            >
+          <Button to="/mock-tests" variant="outline" size="sm" iconLeft={<DocumentIcon className="w-4 h-4" />}>
               All Assessments
             </Button>
-          </Link>
         }
       />
 
@@ -149,11 +141,9 @@ export default function MockTestHistoryPage() {
               title="No mock test attempts recorded yet" 
               description="Complete a timed assessment to measure your readiness and review answer walkthroughs."
               action={
-                <Link to="/mock-tests">
-                  <Button variant="primary" size="sm">
+                <Button to="/mock-tests" variant="primary" size="sm">
                     Explore Assessments
                   </Button>
-                </Link>
               }
             />
           </div>

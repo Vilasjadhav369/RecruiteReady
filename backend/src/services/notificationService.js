@@ -85,6 +85,43 @@ export const createAdminNotification = async ({
 };
 
 /**
+ * Broadcast a notification to active students safely.
+ */
+export const broadcastStudentNotification = async ({
+  type,
+  title,
+  message,
+  link = '',
+  metadata = {},
+  limit = 100,
+}) => {
+  try {
+    const students = await User.find({ role: 'student', isActive: true })
+      .select('_id')
+      .limit(limit)
+      .lean();
+    if (!students || students.length === 0) return [];
+
+    const createdList = [];
+    for (const student of students) {
+      const notif = await createNotification({
+        recipient: student._id,
+        type,
+        title,
+        message,
+        link,
+        metadata,
+      });
+      if (notif) createdList.push(notif);
+    }
+    return createdList;
+  } catch (error) {
+    console.error('[NotificationService] Failed to broadcast student notifications:', error.message);
+    return [];
+  }
+};
+
+/**
  * Retrieve paginated notifications for the authenticated user.
  */
 export const getUserNotifications = async (
@@ -170,6 +207,7 @@ export const deleteNotification = async (userId, notificationId) => {
 export default {
   createNotification,
   createAdminNotification,
+  broadcastStudentNotification,
   getUserNotifications,
   getUnreadCount,
   markAsRead,

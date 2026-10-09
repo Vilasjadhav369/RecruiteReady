@@ -30,6 +30,7 @@ import {
   ChevronRightIcon,
   CheckCircleIcon,
   ArrowLeftIcon,
+  ExternalLinkIcon,
 } from '../../components/ui/index.js';
 
 export default function CodingHistoryPage() {
@@ -85,15 +86,9 @@ export default function CodingHistoryPage() {
           </Badge>
         }
         actions={
-          <Link to="/coding">
-            <Button
-              variant="primary"
-              size="sm"
-              iconLeft={<ArrowLeftIcon className="w-3.5 h-3.5" />}
-            >
-              Coding Arena
+          <Button to="/coding" variant="outline" size="sm" iconLeft={<ArrowLeftIcon className="w-3.5 h-3.5" />}>
+              Back to Problems
             </Button>
-          </Link>
         }
       />
 
@@ -112,7 +107,7 @@ export default function CodingHistoryPage() {
           label="Total Submissions"
           value={pagination.total}
           subtext="Code evaluations recorded"
-          icon={<CodingIcon className="w-4 h-4 text-blue-600" />}
+          icon={<CodingIcon className="w-4 h-4 text-brand-dark" />}
         />
         <StatCard
           label="Accepted (Page)"
@@ -130,7 +125,7 @@ export default function CodingHistoryPage() {
           label="Filtered Scope"
           value={problemId ? 'Specific Problem' : 'All Problems'}
           subtext={problemId ? 'Single problem filter active' : 'Complete platform history'}
-          icon={<CalendarIcon className="w-4 h-4 text-amber-600" />}
+          icon={<CalendarIcon className="w-4 h-4 text-brand-dark" />}
         />
       </div>
 
@@ -144,11 +139,9 @@ export default function CodingHistoryPage() {
             </CardDescription>
           </div>
           {problemId && (
-            <Link to="/coding/history">
-              <Button variant="ghost" size="sm">
+            <Button to="/coding/history" variant="ghost" size="sm">
                 Clear Problem Filter
               </Button>
-            </Link>
           )}
         </CardHeader>
 
@@ -178,11 +171,9 @@ export default function CodingHistoryPage() {
                 title="No coding submissions recorded"
                 description="Select a coding challenge and submit your solution to track evaluations."
                 action={
-                  <Link to="/coding">
-                    <Button variant="primary" size="sm">
+                  <Button to="/coding" variant="primary" size="sm">
                       Solve a Problem
                     </Button>
-                  </Link>
                 }
               />
             </div>
@@ -201,7 +192,6 @@ export default function CodingHistoryPage() {
               <TableBody>
                 {submissions.map((sub) => {
                   const dateStr = formatDateTime(sub.submittedAt);
-
                   const problemTitle = sub.problem?.title || 'Coding Challenge';
                   const problemSlug = sub.problem?.slug || sub.problem?._id;
 
@@ -211,7 +201,7 @@ export default function CodingHistoryPage() {
                         {problemSlug ? (
                           <Link
                             to={`/coding/problem/${problemSlug}`}
-                            className="hover:text-blue-600 transition-colors"
+                            className="hover:text-brand-dark transition-colors font-medium text-slate-900 hover:underline"
                           >
                             {problemTitle}
                           </Link>
@@ -239,11 +229,9 @@ export default function CodingHistoryPage() {
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Link to={`/coding/submission/${sub._id}`}>
-                          <Button variant="ghost" size="sm">
+                        <Button to={`/coding/submission/${sub._id}`} variant="ghost" size="sm" iconRight={<ExternalLinkIcon className="w-3.5 h-3.5" />}>
                             View Code
                           </Button>
-                        </Link>
                       </TableCell>
                     </TableRow>
                   );

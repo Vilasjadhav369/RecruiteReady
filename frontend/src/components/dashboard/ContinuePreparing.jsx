@@ -1,21 +1,15 @@
 import React from "react";
-import { Link } from "react-router-dom";
 import { Card } from "../ui/Card.jsx";
 import { Button } from "../ui/Button.jsx";
-import { StatusBadge } from "../ui/StatusBadge.jsx";
-import { Badge } from "../ui/Badge.jsx";
 import {
   AptitudeIcon,
   CodingIcon,
   MockTestIcon,
+  CompaniesIcon,
   ArrowRightIcon,
   ClockIcon,
-  CheckIcon,
 } from "../ui/Icons.jsx";
 
-/**
- * Format timestamp into friendly relative or localized time.
- */
 function formatRelativeTime(ts) {
   if (!ts) return "";
   try {
@@ -37,124 +31,126 @@ function formatRelativeTime(ts) {
       day: "numeric",
     });
   } catch {
-    return String(ts);
+    return "";
   }
 }
 
 /**
  * ContinuePreparing — In-Progress / Resume preparation card.
- * If user has recent activity, offers a direct resume action.
- * If user has no attempts yet, offers a structured diagnostic start point.
+ * Answers: "What should I do next?" and "Where did I leave off?"
+ * Displays either real unfinished activity with direct resume link,
+ * or clean onboarding module selector if no unfinished work exists.
  */
-export function ContinuePreparing({ activities = [] }) {
-  const latest = activities && activities.length > 0 ? activities[0] : null;
+export function ContinuePreparing({ continueActivity = null, activities = [] }) {
+  // If dedicated continueActivity object provided, prioritize it
+  const activeItem = continueActivity || (activities && activities.length > 0 ? activities[0] : null);
 
-  if (latest) {
-    const targetUrl =
-      latest.type === "aptitude"
-        ? "/aptitude"
-        : latest.type === "coding"
-        ? "/coding"
-        : latest.type === "mock_test"
-        ? "/mock-tests"
-        : "/aptitude";
-
+  if (activeItem) {
     const getIcon = () => {
-      switch (latest.type) {
+      switch (activeItem.type) {
         case "aptitude":
-          return <AptitudeIcon className="w-5 h-5 text-[#166534]" />;
+          return <AptitudeIcon className="w-5 h-5 text-primary" />;
         case "coding":
-          return <CodingIcon className="w-5 h-5 text-[#166534]" />;
+          return <CodingIcon className="w-5 h-5 text-primary" />;
         case "mock_test":
-          return <MockTestIcon className="w-5 h-5 text-[#166534]" />;
+          return <MockTestIcon className="w-5 h-5 text-primary" />;
         default:
-          return <ClockIcon className="w-5 h-5 text-[#166534]" />;
+          return <ClockIcon className="w-5 h-5 text-primary" />;
       }
     };
 
+    const targetUrl =
+      activeItem.actionLink ||
+      (activeItem.type === "aptitude"
+        ? "/aptitude"
+        : activeItem.type === "coding"
+        ? "/coding"
+        : activeItem.type === "mock_test"
+        ? "/mock-tests"
+        : "/aptitude");
+
+    const actionText = activeItem.actionText || "Resume";
+
     return (
-      <Card className="p-5 sm:p-6 bg-gradient-to-r from-white via-white to-[#F0FDF4] border border-[#22C55E]/30 shadow-xs">
+      <Card className="p-5 sm:p-6 bg-gradient-to-r from-white via-white to-primary/5 border border-primary/20 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-start gap-3.5 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-[#DCFCE7] border border-[#BBF7D0] flex items-center justify-center shrink-0 mt-0.5">
+            <div className="w-10 h-10 rounded-xl bg-primary-tint border border-primary-border flex items-center justify-center shrink-0 mt-0.5">
               {getIcon()}
             </div>
 
             <div className="min-w-0 space-y-1">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#166534] bg-[#DCFCE7] px-2 py-0.5 rounded-full border border-[#BBF7D0]">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-primary bg-primary-tint px-2 py-0.5 rounded-full border border-primary-border">
                   Continue Where You Left Off
                 </span>
-                <span className="text-xs text-slate-400 font-mono">
-                  {formatRelativeTime(latest.timestamp)}
-                </span>
+                {activeItem.startedAt && (
+                  <span className="text-xs text-slate-400 font-mono">
+                    {formatRelativeTime(activeItem.startedAt)}
+                  </span>
+                )}
               </div>
 
               <h3 className="text-base font-bold text-slate-900 truncate">
-                {latest.title}
+                {activeItem.title}
               </h3>
 
               <div className="flex items-center gap-2.5 text-xs text-slate-600 flex-wrap">
-                <span>{latest.subtitle}</span>
-                <span className="text-slate-300">•</span>
-                <StatusBadge status={latest.status} />
+                <span>{activeItem.subtitle}</span>
+                {activeItem.progress && (
+                  <>
+                    <span className="text-slate-300">•</span>
+                    <span className="font-medium text-primary">{activeItem.progress}</span>
+                  </>
+                )}
               </div>
             </div>
           </div>
 
           <div className="shrink-0 self-start sm:self-center">
-            <Link to={targetUrl} className="no-underline">
-              <Button
-                variant="primary"
-                size="md"
-                iconRight={<ArrowRightIcon className="w-3.5 h-3.5" />}
-              >
-                Resume Practice
-              </Button>
-            </Link>
+            <Button
+              to={targetUrl}
+              variant="primary"
+              size="md"
+              iconRight={<ArrowRightIcon className="w-3.5 h-3.5" />}
+            >
+              {actionText}
+            </Button>
           </div>
         </div>
       </Card>
     );
   }
 
-  // Fallback for new students with zero attempts yet (honest recommendation)
+  // Meaningful Empty State: No unfinished work
   return (
-    <Card className="p-5 sm:p-6 bg-gradient-to-r from-white to-[#F0FDF4] border border-[#22C55E]/30 shadow-xs">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-start gap-3.5 min-w-0">
-          <div className="w-10 h-10 rounded-xl bg-[#DCFCE7] border border-[#BBF7D0] flex items-center justify-center shrink-0 mt-0.5 text-[#166534]">
-            <AptitudeIcon className="w-5 h-5" />
-          </div>
-
-          <div className="min-w-0 space-y-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <Badge variant="brand" size="sm">
-                Recommended First Step
-              </Badge>
-              <span className="text-xs text-slate-500">Diagnostic Practice</span>
-            </div>
-
-            <h3 className="text-base font-bold text-slate-900">
-              Start with Quantitative Aptitude Foundations
-            </h3>
-
-            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-xl">
-              Establish your preparation baseline. Attempt foundational questions in number systems, percentages, and logical deduction.
-            </p>
-          </div>
+    <Card className="p-5 sm:p-6 bg-white border border-slate-200/90 shadow-xs">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="space-y-1">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">
+            Start Your Preparation
+          </span>
+          <h3 className="text-base font-bold text-slate-900">
+            No active session in progress
+          </h3>
+          <p className="text-xs text-slate-500">
+            Pick a core placement module below to begin today's practice session.
+          </p>
         </div>
 
-        <div className="shrink-0 self-start sm:self-center">
-          <Link to="/aptitude" className="no-underline">
-            <Button
-              variant="primary"
-              size="md"
-              iconRight={<ArrowRightIcon className="w-3.5 h-3.5" />}
-            >
-              Start First Practice
-            </Button>
-          </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button to="/aptitude" variant="outline" size="sm" iconLeft={<AptitudeIcon className="w-3.5 h-3.5 text-primary" />}>
+            Aptitude
+          </Button>
+          <Button to="/coding" variant="outline" size="sm" iconLeft={<CodingIcon className="w-3.5 h-3.5 text-primary" />}>
+            Coding
+          </Button>
+          <Button to="/mock-tests" variant="outline" size="sm" iconLeft={<MockTestIcon className="w-3.5 h-3.5 text-primary" />}>
+            Mock Test
+          </Button>
+          <Button to="/companies" variant="outline" size="sm" iconLeft={<CompaniesIcon className="w-3.5 h-3.5 text-primary" />}>
+            Companies
+          </Button>
         </div>
       </div>
     </Card>

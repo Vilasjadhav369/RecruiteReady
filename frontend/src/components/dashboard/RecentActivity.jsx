@@ -43,7 +43,7 @@ function RecentActivity({ activities = [] }) {
   const getActivityIcon = (type) => {
     switch (type) {
       case "aptitude":
-        return <AptitudeIcon className="w-4 h-4 text-[#166534]" />;
+        return <AptitudeIcon className="w-4 h-4 text-primary" />;
       case "coding":
         return <CodingIcon className="w-4 h-4 text-emerald-600" />;
       case "mock_test":
@@ -59,7 +59,7 @@ function RecentActivity({ activities = [] }) {
         <CardHeader className="pb-3 border-b border-slate-100">
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-md bg-[#DCFCE7] text-[#166534] flex items-center justify-center shrink-0">
+              <div className="w-6 h-6 rounded-md bg-primary-tint text-primary flex items-center justify-center shrink-0">
                 <ClockIcon className="w-3.5 h-3.5" />
               </div>
               <CardTitle>Recent Activity</CardTitle>
@@ -67,7 +67,7 @@ function RecentActivity({ activities = [] }) {
             {hasActivity && (
               <Link
                 to="/progress"
-                className="text-xs font-semibold text-[#166534] hover:text-[#14532D] no-underline hover:underline"
+                className="text-xs font-semibold text-primary hover:text-primary-dark no-underline hover:underline"
               >
                 View Analytics
               </Link>
@@ -118,16 +118,9 @@ function RecentActivity({ activities = [] }) {
       </div>
 
       <div className="px-5 py-3.5 bg-slate-50/60 border-t border-slate-100 flex items-center justify-between">
-        <Link to="/aptitude" className="w-full no-underline">
-          <Button
-            variant="outline"
-            size="sm"
-            fullWidth
-            iconRight={<ArrowRightIcon className="w-3.5 h-3.5" />}
-          >
+        <Button to="/aptitude" variant="outline" size="sm" fullWidth iconRight={<ArrowRightIcon className="w-3.5 h-3.5" />} className="w-full">
             Start Practicing
           </Button>
-        </Link>
       </div>
     </Card>
   );

@@ -1,4 +1,4 @@
-﻿import ProgressBar from "./ProgressBar.jsx";
+import ProgressBar from "./ProgressBar.jsx";
 import MetricCard from "./MetricCard.jsx";
 
 /**
@@ -10,9 +10,9 @@ import MetricCard from "./MetricCard.jsx";
  */
 
 const DEMO_PROGRESS = [
-  { label: "Aptitude",    value: 82, color: "bg-[#2563EB]" },
-  { label: "Coding",      value: 71, color: "bg-[#102A43]" },
-  { label: "Mock Tests",  value: 60, color: "bg-[#C9A227]" },
+  { label: "Aptitude",    value: 82, color: "bg-primary" },
+  { label: "Coding",      value: 71, color: "bg-emerald-600" },
+  { label: "Mock Tests",  value: 60, color: "bg-amber-600" },
 ];
 
 const DEMO_ACTIVITY = [
@@ -32,33 +32,33 @@ function DashboardPreview() {
       {/* Preview label — clearly marks this as a UI mockup */}
       <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
         <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-[#52606D] bg-white border border-[#D9E2EC] px-3 py-1 rounded-full shadow-sm">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#2563EB]" />
+          <span className="w-1.5 h-1.5 rounded-full bg-primary" />
           Illustrative Preview
         </span>
       </div>
 
       <div className="w-full bg-white border border-[#D9E2EC] rounded-2xl shadow-xl overflow-hidden select-none">
         {/* Dashboard header */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#D9E2EC] bg-[#F8FAFC]">
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#D9E2EC] bg-background">
           <div>
             <span className="text-xs text-[#52606D] block">Welcome back,</span>
             <span className="text-sm font-bold text-[#172B4D] block">Student</span>
             <span className="text-[10px] text-[#9FB3C8] block mt-0.5">Keep practising. Consistency leads to success.</span>
           </div>
-          <div className="w-8 h-8 bg-[#2563EB] rounded-full flex items-center justify-center">
+          <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
             <span className="text-white text-xs font-bold">S</span>
           </div>
         </div>
 
         <div className="flex h-[340px]">
           {/* Sidebar */}
-          <div className="w-32 border-r border-[#D9E2EC] bg-[#F8FAFC] py-3 flex-shrink-0">
+          <div className="w-32 border-r border-[#D9E2EC] bg-background py-3 flex-shrink-0">
             {["Dashboard", "Aptitude", "Coding", "Mock Tests", "Companies", "Study Materials", "Progress", "Profile"].map((item, i) => (
               <div
                 key={item}
                 className={`px-3 py-2 text-[10px] font-medium ${
                   i === 0
-                    ? "text-[#2563EB] bg-[#E8F1FF] border-r-2 border-[#2563EB]"
+                    ? "text-primary bg-primary-tint border-r-2 border-primary"
                     : "text-[#52606D]"
                 }`}
               >
@@ -103,7 +103,7 @@ function DashboardPreview() {
                 </span>
                 <div className="space-y-1.5">
                   {DEMO_ACTIVITY.map((a) => (
-                    <div key={a.text} className="bg-[#F8FAFC] rounded-lg p-2">
+                    <div key={a.text} className="bg-background rounded-lg p-2">
                       <span className="text-[9px] font-medium text-[#172B4D] leading-tight block">{a.text}</span>
                       <span className="text-[8px] text-[#9FB3C8] block mt-0.5">{a.time}</span>
                     </div>
@@ -118,12 +118,12 @@ function DashboardPreview() {
                 </span>
                 <div className="space-y-1.5">
                   {DEMO_UPCOMING.map((t) => (
-                    <div key={t.name} className="bg-[#F8FAFC] border border-[#D9E2EC] rounded-lg p-2 flex items-center justify-between gap-1">
+                    <div key={t.name} className="bg-background border border-[#D9E2EC] rounded-lg p-2 flex items-center justify-between gap-1">
                       <div className="min-w-0">
                         <span className="text-[9px] font-semibold text-[#172B4D] block truncate">{t.name}</span>
                         <span className="text-[8px] text-[#9FB3C8] block">{t.date}</span>
                       </div>
-                      <span className="text-[8px] font-semibold text-[#2563EB] bg-[#E8F1FF] px-1.5 py-0.5 rounded flex-shrink-0">
+                      <span className="text-[8px] font-semibold text-primary bg-primary-tint px-1.5 py-0.5 rounded flex-shrink-0">
                         Register
                       </span>
                     </div>

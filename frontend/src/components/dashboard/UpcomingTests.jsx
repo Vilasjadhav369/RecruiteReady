@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardContent } from "../ui/Card.jsx";
-import { MockTestIcon, ArrowRightIcon, ClockIcon } from "../ui/Icons.jsx";
+import { MockTestIcon, ArrowRightIcon } from "../ui/Icons.jsx";
 import { Badge } from "../ui/Badge.jsx";
 import { Button } from "../ui/Button.jsx";
 
@@ -25,7 +25,7 @@ function UpcomingTests({ tests = [] }) {
         <CardHeader className="pb-3 border-b border-slate-100">
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-md bg-[#DCFCE7] text-[#166534] flex items-center justify-center shrink-0">
+              <div className="w-6 h-6 rounded-md bg-primary-tint text-primary flex items-center justify-center shrink-0">
                 <MockTestIcon className="w-3.5 h-3.5" />
               </div>
               <CardTitle>Upcoming Assessments</CardTitle>
@@ -33,7 +33,7 @@ function UpcomingTests({ tests = [] }) {
             {hasTests && (
               <Link
                 to="/mock-tests"
-                className="text-xs font-semibold text-[#166534] hover:text-[#14532D] no-underline hover:underline"
+                className="text-xs font-semibold text-primary hover:text-primary-dark no-underline hover:underline"
               >
                 View All
               </Link>
@@ -63,11 +63,9 @@ function UpcomingTests({ tests = [] }) {
                     </div>
                   </div>
 
-                  <Link to="/mock-tests" className="shrink-0 no-underline">
-                    <Button variant="outline" size="sm">
+                  <Button to="/mock-tests" variant="outline" size="sm" className="shrink-0">
                       Start
                     </Button>
-                  </Link>
                 </div>
               ))}
             </div>
@@ -86,16 +84,9 @@ function UpcomingTests({ tests = [] }) {
       </div>
 
       <div className="px-5 py-3.5 bg-slate-50/60 border-t border-slate-100 flex items-center justify-between">
-        <Link to="/mock-tests" className="w-full no-underline">
-          <Button
-            variant="outline"
-            size="sm"
-            fullWidth
-            iconRight={<ArrowRightIcon className="w-3.5 h-3.5" />}
-          >
+        <Button to="/mock-tests" variant="outline" size="sm" fullWidth iconRight={<ArrowRightIcon className="w-3.5 h-3.5" />} className="w-full">
             Explore Mock Tests
           </Button>
-        </Link>
       </div>
     </Card>
   );

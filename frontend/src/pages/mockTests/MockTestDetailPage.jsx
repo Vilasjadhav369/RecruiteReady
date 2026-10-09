@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useFeedback } from '../../components/ui/FeedbackProvider.jsx';
+import { useParams, useNavigate } from 'react-router-dom';
 import { getMockTest, startMockTest } from '../../services/mockTestService.js';
 import {
   PageHeader,
@@ -25,8 +26,10 @@ import {
   EyeIcon,
   TrophyIcon,
 } from '../../components/ui/Icons.jsx';
+import BookmarkButton from '../../components/bookmarks/BookmarkButton.jsx';
 
 export default function MockTestDetailPage() {
+  const { notify } = useFeedback();
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -67,7 +70,7 @@ export default function MockTestDetailPage() {
       }
     } catch (err) {
       console.error('Failed to start mock test:', err);
-      alert(err.response?.data?.message || 'Could not start this test.');
+      notify({ variant: 'error', title: 'Unable to start test', message: err.response?.data?.message || 'Could not start this test. Please try again.' });
     } finally {
       setStarting(false);
     }
@@ -112,15 +115,17 @@ export default function MockTestDetailPage() {
           { label: test.title },
         ]}
         actions={
-          <Link to="/mock-tests">
-            <Button
-              variant="outline"
-              size="sm"
-              iconLeft={<ChevronLeftIcon className="w-4 h-4" />}
-            >
-              All Assessments
-            </Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <BookmarkButton
+              itemType="mock_test"
+              itemId={test._id}
+              variant="button"
+              showLabel
+            />
+            <Button to="/mock-tests" variant="outline" size="sm" iconLeft={<ChevronLeftIcon className="w-4 h-4" />}>
+                All Assessments
+              </Button>
+          </div>
         }
       />
 

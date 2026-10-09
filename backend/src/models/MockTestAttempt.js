@@ -100,6 +100,7 @@ const mockTestAttemptSchema = new mongoose.Schema(
 );
 
 mockTestAttemptSchema.index({ user: 1, mockTest: 1, createdAt: -1 });
+mockTestAttemptSchema.index({ user: 1, status: 1, createdAt: -1 });
 
 const MockTestAttempt = mongoose.model('MockTestAttempt', mockTestAttemptSchema);
 

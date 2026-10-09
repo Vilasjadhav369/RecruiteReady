@@ -83,6 +83,7 @@ const mockTestSchema = new mongoose.Schema(
 );
 
 mockTestSchema.index({ isPublished: 1, createdAt: -1 });
+mockTestSchema.index({ isPublished: 1, difficulty: 1, createdAt: -1 });
 
 const MockTest = mongoose.model('MockTest', mockTestSchema);
 

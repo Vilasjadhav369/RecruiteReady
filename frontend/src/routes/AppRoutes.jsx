@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout.jsx";
 import StudentLayout from "../layouts/StudentLayout.jsx";
@@ -8,71 +9,108 @@ import AdminRoute from "../components/AdminRoute.jsx";
 import HomePage from "../pages/HomePage.jsx";
 import LoginPage from "../pages/LoginPage.jsx";
 import RegisterPage from "../pages/RegisterPage.jsx";
-import DashboardPage from "../pages/DashboardPage.jsx";
-import ProfilePage from "../pages/ProfilePage.jsx";
-import NotificationsPage from "../pages/NotificationsPage.jsx";
+const ForgotPasswordPage = lazy(() => import("../pages/auth/ForgotPasswordPage.jsx"));
+const ResetPasswordPage = lazy(() => import("../pages/auth/ResetPasswordPage.jsx"));
+const VerifyEmailPage = lazy(() => import("../pages/auth/VerifyEmailPage.jsx"));
+const AuthCallbackPage = lazy(() => import("../pages/auth/AuthCallbackPage.jsx"));
+const DashboardPage = lazy(() => import("../pages/DashboardPage.jsx"));
+const ProfilePage = lazy(() => import("../pages/ProfilePage.jsx"));
+const NotificationsPage = lazy(() => import("../pages/NotificationsPage.jsx"));
+const SavedPage = lazy(() => import("../pages/SavedPage.jsx"));
+const OnboardingPage = lazy(() => import("../pages/OnboardingPage.jsx"));
 import NotFoundPage from "../pages/NotFoundPage.jsx";
 
 // Phase 7 — Aptitude Practice
-import AptitudePracticePage from "../pages/aptitude/AptitudePracticePage.jsx";
-import AptitudeSessionPage from "../pages/aptitude/AptitudeSessionPage.jsx";
-import AptitudeResultPage from "../pages/aptitude/AptitudeResultPage.jsx";
-import AptitudeHistoryPage from "../pages/aptitude/AptitudeHistoryPage.jsx";
+const AptitudePracticePage = lazy(() => import("../pages/aptitude/AptitudePracticePage.jsx"));
+const AptitudeSessionPage = lazy(() => import("../pages/aptitude/AptitudeSessionPage.jsx"));
+const AptitudeResultPage = lazy(() => import("../pages/aptitude/AptitudeResultPage.jsx"));
+const AptitudeHistoryPage = lazy(() => import("../pages/aptitude/AptitudeHistoryPage.jsx"));
 
 // Phase 8 — Coding Practice
-import CodingListPage from "../pages/coding/CodingListPage.jsx";
-import CodingProblemPage from "../pages/coding/CodingProblemPage.jsx";
-import CodingHistoryPage from "../pages/coding/CodingHistoryPage.jsx";
-import CodingSubmissionPage from "../pages/coding/CodingSubmissionPage.jsx";
+const CodingListPage = lazy(() => import("../pages/coding/CodingListPage.jsx"));
+const CodingProblemPage = lazy(() => import("../pages/coding/CodingProblemPage.jsx"));
+const CodingHistoryPage = lazy(() => import("../pages/coding/CodingHistoryPage.jsx"));
+const CodingSubmissionPage = lazy(() => import("../pages/coding/CodingSubmissionPage.jsx"));
 
 // Phase 9 — Company Preparation
-import CompanyListPage from "../pages/companies/CompanyListPage.jsx";
-import CompanyDetailPage from "../pages/companies/CompanyDetailPage.jsx";
+const CompanyListPage = lazy(() => import("../pages/companies/CompanyListPage.jsx"));
+const CompanyDetailPage = lazy(() => import("../pages/companies/CompanyDetailPage.jsx"));
 
 // Phase 10 — Study Materials
-import ResourceListPage from "../pages/resources/ResourceListPage.jsx";
-import ResourceDetailPage from "../pages/resources/ResourceDetailPage.jsx";
+const ResourceListPage = lazy(() => import("../pages/resources/ResourceListPage.jsx"));
+const ResourceDetailPage = lazy(() => import("../pages/resources/ResourceDetailPage.jsx"));
 
 // Phase 11 — Mock Tests
-import MockTestListPage from "../pages/mockTests/MockTestListPage.jsx";
-import MockTestDetailPage from "../pages/mockTests/MockTestDetailPage.jsx";
-import MockTestSessionPage from "../pages/mockTests/MockTestSessionPage.jsx";
-import MockTestResultPage from "../pages/mockTests/MockTestResultPage.jsx";
-import MockTestHistoryPage from "../pages/mockTests/MockTestHistoryPage.jsx";
+const MockTestListPage = lazy(() => import("../pages/mockTests/MockTestListPage.jsx"));
+const MockTestDetailPage = lazy(() => import("../pages/mockTests/MockTestDetailPage.jsx"));
+const MockTestSessionPage = lazy(() => import("../pages/mockTests/MockTestSessionPage.jsx"));
+const MockTestResultPage = lazy(() => import("../pages/mockTests/MockTestResultPage.jsx"));
+const MockTestHistoryPage = lazy(() => import("../pages/mockTests/MockTestHistoryPage.jsx"));
 
 // Phase 12 — Progress & Analytics
-import ProgressPage from "../pages/ProgressPage.jsx";
+const ProgressPage = lazy(() => import("../pages/ProgressPage.jsx"));
 
 // Phase 13 — Reviews & Leaderboard
-import ReviewsPage from "../pages/ReviewsPage.jsx";
-import LeaderboardPage from "../pages/LeaderboardPage.jsx";
+const ReviewsPage = lazy(() => import("../pages/ReviewsPage.jsx"));
+const LeaderboardPage = lazy(() => import("../pages/LeaderboardPage.jsx"));
 
 // Admin Pages & Layout
-import AdminLayout from "../layouts/AdminLayout.jsx";
-import AdminDashboardPage from "../pages/admin/AdminDashboardPage.jsx";
-import AdminStudentsPage from "../pages/admin/AdminStudentsPage.jsx";
-import AdminAptitudePage from "../pages/admin/AdminAptitudePage.jsx";
-import AdminCodingPage from "../pages/admin/AdminCodingPage.jsx";
-import AdminCompaniesPage from "../pages/admin/AdminCompaniesPage.jsx";
-import AdminResourcesPage from "../pages/admin/AdminResourcesPage.jsx";
-import AdminMockTestsPage from "../pages/admin/AdminMockTestsPage.jsx";
-import AdminReviewsPage from "../pages/admin/AdminReviewsPage.jsx";
-import AdminAnalyticsPage from "../pages/admin/AdminAnalyticsPage.jsx";
-import AdminSettingsPage from "../pages/admin/AdminSettingsPage.jsx";
+const AdminLayout = lazy(() => import("../layouts/AdminLayout.jsx"));
+const AdminDashboardPage = lazy(() => import("../pages/admin/AdminDashboardPage.jsx"));
+const AdminStudentsPage = lazy(() => import("../pages/admin/AdminStudentsPage.jsx"));
+const AdminAptitudePage = lazy(() => import("../pages/admin/AdminAptitudePage.jsx"));
+const AdminCodingPage = lazy(() => import("../pages/admin/AdminCodingPage.jsx"));
+const AdminCompaniesPage = lazy(() => import("../pages/admin/AdminCompaniesPage.jsx"));
+const AdminResourcesPage = lazy(() => import("../pages/admin/AdminResourcesPage.jsx"));
+const AdminMockTestsPage = lazy(() => import("../pages/admin/AdminMockTestsPage.jsx"));
+const AdminReviewsPage = lazy(() => import("../pages/admin/AdminReviewsPage.jsx"));
+const AdminAnalyticsPage = lazy(() => import("../pages/admin/AdminAnalyticsPage.jsx"));
+const AdminSettingsPage = lazy(() => import("../pages/admin/AdminSettingsPage.jsx"));
+const AdminAuditLogsPage = lazy(() => import("../pages/admin/AdminAuditLogsPage.jsx"));
 
 /**
  * AppRoutes — Central application routing registry.
  * All Phases 1–13 are wired with real page components.
  */
+function PageFallback() {
+  return (
+    <div
+      className="min-h-[50vh] flex flex-col items-center justify-center gap-3 p-8"
+      role="status"
+      aria-live="polite"
+    >
+      <div className="w-9 h-9 border-[3px] border-primary/20 border-t-primary rounded-full animate-spin" />
+      <span className="text-sm text-slate-500">Loading…</span>
+    </div>
+  );
+}
+
 function AppRoutes() {
   return (
+    <Suspense fallback={<PageFallback />}>
     <Routes>
       {/* ── Public Layout Routes ───────────────────────── */}
       <Route element={<MainLayout />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/verify-email" element={<VerifyEmailPage />} />
       </Route>
+
+      {/* ── OAuth Callback Route ────────────────────────── */}
+      <Route path="/auth/callback" element={<AuthCallbackPage />} />
+
+      {/* ── Student Onboarding Wizard ────────────────────── */}
+      <Route
+        path="/onboarding"
+        element={
+          <ProtectedRoute>
+            <OnboardingPage />
+          </ProtectedRoute>
+        }
+      />
 
       {/* ── Authenticated Student Dashboard Routes ─────── */}
       <Route
@@ -85,6 +123,8 @@ function AppRoutes() {
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/notifications" element={<NotificationsPage />} />
+        <Route path="/saved" element={<SavedPage />} />
+        <Route path="/bookmarks" element={<SavedPage />} />
 
         {/* Phase 7 — Aptitude Practice */}
         <Route path="/aptitude" element={<AptitudePracticePage />} />
@@ -141,12 +181,14 @@ function AppRoutes() {
         <Route path="/admin/reviews" element={<AdminReviewsPage />} />
         <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
         <Route path="/admin/settings" element={<AdminSettingsPage />} />
+        <Route path="/admin/audit-logs" element={<AdminAuditLogsPage />} />
         <Route path="/admin/notifications" element={<NotificationsPage />} />
       </Route>
 
       {/* ── 404 Catch-All ─────────────────────────────── */}
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
+    </Suspense>
   );
 }
 

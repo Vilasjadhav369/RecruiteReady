@@ -25,9 +25,7 @@ import {
 } from '../components/ui/index.js';
 import {
   TrophyIcon,
-  AptitudeIcon,
   CodingIcon,
-  MockTestIcon,
   ChartBarIcon,
   CheckCircleIcon,
   InfoIcon,
@@ -140,7 +138,7 @@ export default function LeaderboardPage() {
       ) : leaderboard.length === 0 ? (
         /* Empty State: 0 ranked students in entire platform */
         <EmptyState
-          icon={<TrophyIcon className="w-8 h-8 text-[#166534]" />}
+          icon={<TrophyIcon className="w-8 h-8 text-primary" />}
           title="No leaderboard data yet"
           description="The leaderboard will appear as students complete aptitude assessments, mock tests, and coding problems."
           action={
@@ -175,7 +173,7 @@ export default function LeaderboardPage() {
                 label="Your Standing"
                 value={`#${currentUser.rank}`}
                 subtext="Campus competition rank"
-                icon={<TrophyIcon className="w-4 h-4 text-[#166534]" />}
+                icon={<TrophyIcon className="w-4 h-4 text-primary" />}
               />
               <StatCard
                 label="Leaderboard Score"
@@ -187,7 +185,7 @@ export default function LeaderboardPage() {
                 label="Completed Activities"
                 value={currentUser.completedActivities ?? 0}
                 subtext={`${currentUser.aptitudeCompleted || 0} apt • ${currentUser.codingProblemsSolved || 0} code • ${currentUser.mockTestsCompleted || 0} mock`}
-                icon={<CheckCircleIcon className="w-4 h-4 text-[#166534]" />}
+                icon={<CheckCircleIcon className="w-4 h-4 text-primary" />}
               />
               <StatCard
                 label="Coding Solved"
@@ -230,7 +228,7 @@ export default function LeaderboardPage() {
           <Card className="border-slate-200/80 bg-slate-50/70 shadow-xs">
             <CardContent className="p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div className="flex items-start sm:items-center gap-3.5">
-                <div className="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-200/80 text-[#166534] font-mono font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
+                <div className="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-200/80 text-primary font-mono font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
                   fx
                 </div>
                 <div>
@@ -246,7 +244,7 @@ export default function LeaderboardPage() {
                 </div>
               </div>
               <div className="flex items-center gap-2 text-[11px] text-slate-500 font-medium bg-white px-3 py-1.5 rounded-lg border border-slate-200/80 shrink-0">
-                <InfoIcon className="w-3.5 h-3.5 text-[#166534]" />
+                <InfoIcon className="w-3.5 h-3.5 text-primary" />
                 <span>Duplicate coding submissions never inflate score</span>
               </div>
             </CardContent>
@@ -262,7 +260,7 @@ export default function LeaderboardPage() {
                 const isCurrentUser = currentUserId && item.student?.id === currentUserId;
 
                 const borderStyle = isFirst
-                  ? 'border-emerald-200 bg-[#F0FDF4]/60'
+                  ? 'border-emerald-200 bg-primary-soft/60'
                   : 'border-slate-200/80 bg-white';
 
                 const badgeVariant = isFirst ? 'brand' : isSecond ? 'secondary' : 'default';
@@ -302,7 +300,7 @@ export default function LeaderboardPage() {
                           {item.completedActivities} completed {item.completedActivities === 1 ? 'activity' : 'activities'}
                         </span>
                         <div className="flex items-baseline gap-1">
-                          <span className="text-xl font-bold font-mono text-[#166534]">
+                          <span className="text-xl font-bold font-mono text-primary">
                             {item.score.toLocaleString()}
                           </span>
                           <span className="text-xs text-slate-400 font-normal">pts</span>
@@ -353,7 +351,7 @@ export default function LeaderboardPage() {
 
                       let rowClass = 'hover:bg-slate-50/60 transition-colors';
                       if (isCurrentUser) {
-                        rowClass = 'bg-[#F0FDF4] border-l-4 border-l-[#166534] hover:bg-[#DCFCE7]/40 font-medium';
+                        rowClass = 'bg-primary-soft border-l-4 border-l-primary hover:bg-primary-tint/40 font-medium';
                       } else if (isRank1) {
                         rowClass = 'bg-emerald-50/30 hover:bg-emerald-50/50';
                       }
@@ -366,7 +364,7 @@ export default function LeaderboardPage() {
                               <span
                                 className={`inline-flex items-center justify-center w-7 h-7 rounded-lg text-xs font-bold border ${
                                   item.rank === 1
-                                    ? 'bg-[#DCFCE7] text-[#14532D] border-[#BBF7D0]'
+                                    ? 'bg-primary-tint text-primary-dark border-primary-border'
                                     : item.rank === 2
                                     ? 'bg-slate-200 text-slate-800 border-slate-300'
                                     : 'bg-slate-100 text-slate-700 border-slate-200'
@@ -422,7 +420,7 @@ export default function LeaderboardPage() {
                           </TableCell>
 
                           {/* Leaderboard Score */}
-                          <TableCell className="text-right font-mono font-bold text-[#166534] text-sm sm:text-base">
+                          <TableCell className="text-right font-mono font-bold text-primary text-sm sm:text-base">
                             {(item.score ?? 0).toLocaleString()} <span className="text-xs font-normal text-slate-400">pts</span>
                           </TableCell>
                         </TableRow>
@@ -442,7 +440,7 @@ export default function LeaderboardPage() {
                     <div
                       key={item.student.id}
                       className={`p-4 space-y-3 ${
-                        isCurrentUser ? 'bg-[#F0FDF4] border-l-4 border-l-[#166534]' : isRank1 ? 'bg-emerald-50/20' : ''
+                        isCurrentUser ? 'bg-primary-soft border-l-4 border-l-primary' : isRank1 ? 'bg-emerald-50/20' : ''
                       }`}
                     >
                       <div className="flex items-center justify-between">
@@ -463,7 +461,7 @@ export default function LeaderboardPage() {
                         </div>
 
                         <div className="text-right">
-                          <span className="text-base font-bold font-mono text-[#166534] block">
+                          <span className="text-base font-bold font-mono text-primary block">
                             {item.score.toLocaleString()} <span className="text-xs font-normal text-slate-400">pts</span>
                           </span>
                           {isCurrentUser && (

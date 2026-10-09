@@ -19,7 +19,6 @@ import {
   TableCell,
   Skeleton,
   ErrorState,
-  EmptyState,
 } from '../../components/ui/index.js';
 import {
   ProfileIcon,
@@ -169,7 +168,7 @@ function ActivityVolumeChart({ data = [] }) {
         {areaPath && (
           <polygon
             points={areaPath}
-            fill="#F0FDF4"
+            fill="#EAF2FF"
             opacity="0.9"
           />
         )}
@@ -178,7 +177,7 @@ function ActivityVolumeChart({ data = [] }) {
         {points.length > 1 && (
           <polyline
             fill="none"
-            stroke="#166534"
+            stroke="#2563EB"
             strokeWidth="2.5"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -194,7 +193,7 @@ function ActivityVolumeChart({ data = [] }) {
               cy={p.y}
               r="4.5"
               fill="#FFFFFF"
-              stroke="#166534"
+              stroke="#2563EB"
               strokeWidth="2.5"
               className="transition-transform group-hover:scale-150"
             />
@@ -645,7 +644,7 @@ export default function AdminAnalyticsPage() {
                 {
                   label: 'Aptitude Practice Attempts',
                   value: aptAttempts,
-                  color: 'bg-[#166534]',
+                  color: 'bg-primary',
                   icon: AptitudeIcon,
                 },
                 {
@@ -712,11 +711,9 @@ export default function AdminAnalyticsPage() {
                     Status of student-submitted platform feedback
                   </CardDescription>
                 </div>
-                <Link to="/admin/reviews">
-                  <Button variant="ghost" size="sm" iconRight={<ArrowRightIcon className="w-3.5 h-3.5" />}>
+                <Button to="/admin/reviews" variant="ghost" size="sm" iconRight={<ArrowRightIcon className="w-3.5 h-3.5" />}>
                     Moderate
                   </Button>
-                </Link>
               </div>
             </CardHeader>
             <CardContent className="p-5 space-y-3">
@@ -781,7 +778,7 @@ export default function AdminAnalyticsPage() {
                 <TableRow>
                   <TableCell className="font-semibold text-slate-900">
                     <div className="flex items-center gap-2.5">
-                      <AptitudeIcon className="w-4 h-4 text-[#166534]" />
+                      <AptitudeIcon className="w-4 h-4 text-primary" />
                       <span>Quantitative & Logical Aptitude</span>
                     </div>
                   </TableCell>
@@ -792,7 +789,7 @@ export default function AdminAnalyticsPage() {
                     {aptAttempts.toLocaleString()} completed attempts
                   </TableCell>
                   <TableCell>
-                    <Link to="/admin/aptitude" className="text-xs text-[#166534] hover:text-[#14532D] font-semibold hover:underline">
+                    <Link to="/admin/aptitude" className="text-xs text-primary hover:text-primary-dark font-semibold hover:underline">
                       Manage Aptitude →
                     </Link>
                   </TableCell>
@@ -812,7 +809,7 @@ export default function AdminAnalyticsPage() {
                     {codingSubmissions.toLocaleString()} submissions
                   </TableCell>
                   <TableCell>
-                    <Link to="/admin/coding" className="text-xs text-[#166534] hover:text-[#14532D] font-semibold hover:underline">
+                    <Link to="/admin/coding" className="text-xs text-primary hover:text-primary-dark font-semibold hover:underline">
                       Manage Coding →
                     </Link>
                   </TableCell>
@@ -832,7 +829,7 @@ export default function AdminAnalyticsPage() {
                     {mockAttempts.toLocaleString()} attempts
                   </TableCell>
                   <TableCell>
-                    <Link to="/admin/mock-tests" className="text-xs text-[#166534] hover:text-[#14532D] font-semibold hover:underline">
+                    <Link to="/admin/mock-tests" className="text-xs text-primary hover:text-primary-dark font-semibold hover:underline">
                       Manage Mock Tests →
                     </Link>
                   </TableCell>
@@ -852,7 +849,7 @@ export default function AdminAnalyticsPage() {
                     Placement recruitment patterns
                   </TableCell>
                   <TableCell>
-                    <Link to="/admin/companies" className="text-xs text-[#166534] hover:text-[#14532D] font-semibold hover:underline">
+                    <Link to="/admin/companies" className="text-xs text-primary hover:text-primary-dark font-semibold hover:underline">
                       Manage Companies →
                     </Link>
                   </TableCell>
@@ -872,7 +869,7 @@ export default function AdminAnalyticsPage() {
                     Verified reference resources
                   </TableCell>
                   <TableCell>
-                    <Link to="/admin/resources" className="text-xs text-[#166534] hover:text-[#14532D] font-semibold hover:underline">
+                    <Link to="/admin/resources" className="text-xs text-primary hover:text-primary-dark font-semibold hover:underline">
                       Manage Resources →
                     </Link>
                   </TableCell>

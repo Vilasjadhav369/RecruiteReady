@@ -22,6 +22,7 @@ import {
   CheckCircleIcon,
   CheckIcon,
   AlertTriangleIcon,
+  AptitudeIcon,
 } from '../../components/ui/index.js';
 
 /**
@@ -203,6 +204,27 @@ export default function AptitudeSessionPage() {
   const isTimeCritical = remainingSeconds < 120 && remainingSeconds > 0;
   const isCurrentMarked = currentQ ? markedForReview.has(currentQ._id) : false;
 
+  // Keyboard shortcuts: A–D / 1–4 select an option, ←/→ move, M marks for review.
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName || '')) return;
+      const k = e.key.toLowerCase();
+      const idx = 'abcd'.includes(k) && k.length === 1 ? 'abcd'.indexOf(k) : '1234'.includes(k) && k.length === 1 ? Number(k) - 1 : -1;
+      if (idx >= 0 && sanitizedOptions[idx]) {
+        handleSelectOption(sanitizedOptions[idx].key);
+      } else if (e.key === 'ArrowRight') {
+        setCurrentIndex((i) => Math.min(i + 1, questions.length - 1));
+      } else if (e.key === 'ArrowLeft') {
+        setCurrentIndex((i) => Math.max(i - 1, 0));
+      } else if (k === 'm' && currentQ) {
+        toggleMarkForReview(currentQ._id);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  });
+
   if (loading) {
     return (
       <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">
@@ -253,17 +275,17 @@ export default function AptitudeSessionPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] pb-12">
+    <div className="min-h-screen bg-background pb-12">
       {/* ── Top Focused Header ── */}
       <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-xs border-b border-slate-200 shadow-xs">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-[#166534] flex items-center justify-center shrink-0 text-white font-bold text-sm">
+            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0 text-white font-bold text-sm">
               <AptitudeIcon className="w-4 h-4 text-white" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-[#166534]">
+                <span className="text-xs font-bold uppercase tracking-wider text-primary">
                   {attempt?.category || 'Aptitude Practice'}
                 </span>
                 <span className="text-slate-300 hidden sm:inline">•</span>
@@ -368,16 +390,16 @@ export default function AptitudeSessionPage() {
                             handleSelectOption(opt.key);
                           }
                         }}
-                        className={`w-full text-left p-4 rounded-xl border transition-all duration-150 flex items-start gap-3.5 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#166534] ${
+                        className={`w-full text-left p-4 rounded-xl border transition-all duration-150 flex items-start gap-3.5 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
                           isSelected
-                            ? 'border-[#166534] bg-[#F0FDF4] ring-2 ring-[#22C55E]/20 shadow-xs'
+                            ? 'border-primary bg-primary-soft ring-2 ring-primary-light/20 shadow-xs'
                             : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/60 bg-white'
                         }`}
                       >
                         <span
                           className={`inline-flex items-center justify-center w-6 h-6 rounded-md text-xs font-bold font-mono shrink-0 transition-colors ${
                             isSelected
-                              ? 'bg-[#166534] text-white shadow-xs'
+                              ? 'bg-primary text-white shadow-xs'
                               : 'bg-slate-100 text-slate-700'
                           }`}
                         >
@@ -391,7 +413,7 @@ export default function AptitudeSessionPage() {
                           {opt.text}
                         </span>
                         {isSelected && (
-                          <span className="w-5 h-5 rounded-full bg-[#22C55E] text-white flex items-center justify-center shrink-0 mt-0.5">
+                          <span className="w-5 h-5 rounded-full bg-primary-light text-white flex items-center justify-center shrink-0 mt-0.5">
                             <CheckIcon className="w-3.5 h-3.5" />
                           </span>
                         )}
@@ -477,12 +499,12 @@ export default function AptitudeSessionPage() {
                       ariaLabel = `Question ${idx + 1}: Marked for review`;
                     } else if (isAnswered) {
                       btnStyle =
-                        'bg-[#DCFCE7] text-[#14532D] border-[#BBF7D0] font-semibold';
+                        'bg-primary-tint text-primary-dark border-primary-border font-semibold';
                       ariaLabel = `Question ${idx + 1}: Answered`;
                     }
 
                     if (isCurrent) {
-                      btnStyle += ' ring-2 ring-[#166534] ring-offset-1 font-bold';
+                      btnStyle += ' ring-2 ring-primary ring-offset-1 font-bold';
                     }
 
                     return (
@@ -504,7 +526,7 @@ export default function AptitudeSessionPage() {
                 <div className="pt-4 border-t border-slate-100 space-y-2 text-xs text-slate-600">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="w-3.5 h-3.5 rounded bg-[#DCFCE7] border border-[#BBF7D0] shrink-0" />
+                      <span className="w-3.5 h-3.5 rounded bg-primary-tint border border-primary-border shrink-0" />
                       <span>Answered</span>
                     </div>
                     <span className="font-mono font-semibold text-slate-900">{answeredCount}</span>
@@ -527,7 +549,7 @@ export default function AptitudeSessionPage() {
                   </div>
 
                   <div className="flex items-center gap-2 pt-1 border-t border-slate-100 text-slate-500">
-                    <span className="w-3.5 h-3.5 rounded ring-2 ring-[#166534] shrink-0" />
+                    <span className="w-3.5 h-3.5 rounded ring-2 ring-primary shrink-0" />
                     <span>Current Question</span>
                   </div>
                 </div>
@@ -585,7 +607,7 @@ export default function AptitudeSessionPage() {
               <span className="text-[10px] font-bold uppercase text-slate-400 block">
                 Answered
               </span>
-              <span className="text-base font-bold text-[#166534] font-mono block">
+              <span className="text-base font-bold text-primary font-mono block">
                 {answeredCount}
               </span>
             </div>

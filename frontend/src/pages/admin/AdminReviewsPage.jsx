@@ -4,6 +4,7 @@ import {
   approveReview,
   rejectReview,
   deleteReview,
+  bulkUpdateReviewStatus,
 } from '../../services/adminService.js';
 import {
   PageHeader,
@@ -27,15 +28,11 @@ import {
 } from '../../components/ui/index.js';
 import {
   StarIcon,
-  CheckIcon,
-  CloseIcon,
   EyeIcon,
   DocumentIcon,
-  CheckCircleIcon,
-  ClockIcon,
   TrashIcon,
 } from '../../components/ui/Icons.jsx';
-import { formatDateTime, formatDate } from '../../utils/formatters.js';
+import { formatDate } from '../../utils/formatters.js';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -132,6 +129,58 @@ export default function AdminReviewsPage() {
     rejected: 0,
     all: 0,
   });
+
+  // ── Bulk Selection State ──
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [bulkLoading, setBulkLoading] = useState(false);
+
+  // Clear selection on tab change
+  useEffect(() => {
+    setSelectedIds([]);
+  }, [activeTab]);
+
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      const pageIds = filteredReviews.map((r) => r._id);
+      setSelectedIds(Array.from(new Set([...selectedIds, ...pageIds])));
+    } else {
+      const pageIds = new Set(filteredReviews.map((r) => r._id));
+      setSelectedIds(selectedIds.filter((id) => !pageIds.has(id)));
+    }
+  };
+
+  const handleSelectRow = (id) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const isAllOnPageSelected =
+    filteredReviews.length > 0 &&
+    filteredReviews.every((r) => selectedIds.includes(r._id));
+
+  const handleExecuteBulkModeration = async (status) => {
+    if (selectedIds.length === 0) return;
+    setBulkLoading(true);
+    try {
+      const res = await bulkUpdateReviewStatus(selectedIds, status);
+      showToast(
+        'success',
+        'Bulk Moderation Complete',
+        res.message || `Marked ${selectedIds.length} review(s) as ${status}.`
+      );
+      setSelectedIds([]);
+      fetchReviews();
+    } catch (err) {
+      showToast(
+        'error',
+        'Bulk Moderation Failed',
+        err.response?.data?.message || 'Failed to update selected reviews.'
+      );
+    } finally {
+      setBulkLoading(false);
+    }
+  };
 
   // ── View Detail Modal ──
   const [viewReview, setViewReview] = useState(null);
@@ -419,7 +468,7 @@ export default function AdminReviewsPage() {
               }}
               className={`px-4 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 ${
                 isActive
-                  ? 'bg-[#166534] text-white shadow-xs'
+                  ? 'bg-primary text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
               }`}
             >
@@ -465,7 +514,7 @@ export default function AdminReviewsPage() {
             <button
               type="button"
               onClick={clearAllFilters}
-              className="text-xs font-medium text-[#166534] hover:text-[#14532D] transition-colors"
+              className="text-xs font-medium text-primary hover:text-primary-dark transition-colors"
             >
               Clear all filters
             </button>
@@ -515,12 +564,60 @@ export default function AdminReviewsPage() {
         />
       ) : (
         <>
+          {/* ── Bulk Moderation Bar ── */}
+          {selectedIds.length > 0 && (
+            <div className="sticky top-4 z-20 bg-slate-900 text-white rounded-xl p-3 px-4 shadow-xl flex items-center justify-between gap-4 border border-slate-800 transition-all mb-4">
+              <div className="flex items-center gap-3">
+                <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                <span className="text-xs font-semibold font-mono">
+                  {selectedIds.length} review(s) selected
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="bg-emerald-700 text-white border-emerald-600 hover:bg-emerald-600"
+                  onClick={() => handleExecuteBulkModeration('approved')}
+                  disabled={bulkLoading}
+                >
+                  Approve Selected
+                </Button>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={() => handleExecuteBulkModeration('rejected')}
+                  disabled={bulkLoading}
+                >
+                  Reject Selected
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-slate-400 hover:text-white"
+                  onClick={() => setSelectedIds([])}
+                >
+                  Clear
+                </Button>
+              </div>
+            </div>
+          )}
+
           {/* ── Desktop Moderation Table ── */}
           <div className="hidden md:block bg-white border border-slate-200/80 rounded-xl overflow-hidden">
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-10">
+                      <input
+                        type="checkbox"
+                        checked={isAllOnPageSelected}
+                        onChange={handleSelectAll}
+                        className="rounded border-slate-300 text-primary focus:ring-primary cursor-pointer"
+                        aria-label="Select all reviews"
+                      />
+                    </TableHead>
                     <TableHead className="min-w-[220px]">Student</TableHead>
                     <TableHead>Rating</TableHead>
                     <TableHead className="min-w-[300px]">Review Feedback</TableHead>
@@ -533,8 +630,18 @@ export default function AdminReviewsPage() {
                   {filteredReviews.map((review) => {
                     const studentName = getStudentName(review.user);
                     const college = review.user?.college || '';
+                    const isSelected = selectedIds.includes(review._id);
                     return (
-                      <TableRow key={review._id}>
+                      <TableRow key={review._id} className={isSelected ? "bg-slate-50/70" : ""}>
+                        <TableCell className="w-10">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleSelectRow(review._id)}
+                            className="rounded border-slate-300 text-primary focus:ring-primary cursor-pointer"
+                            aria-label={`Select review by ${studentName}`}
+                          />
+                        </TableCell>
                         {/* Student Info */}
                         <TableCell>
                           <div className="flex items-center gap-3">

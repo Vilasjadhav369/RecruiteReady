@@ -6,11 +6,11 @@
 
 export const COLORS = {
   // Brand & Accents
-  brandGreen: '#166534',
-  brandGreenDark: '#14532D',
-  brandGreenFresh: '#22C55E',
-  brandMint: '#DCFCE7',
-  brandMintSoft: '#F0FDF4',
+  brandGreen: '#2563EB', primary: '#2563EB',
+  brandGreenDark: '#1D4ED8',
+  brandGreenFresh: '#3B82F6',
+  brandMint: '#DBEAFE',
+  brandMintSoft: '#EAF2FF',
   
   // Surfaces & Backgrounds
   background: '#F8FAFC',
@@ -28,8 +28,8 @@ export const COLORS = {
   
   // Feedback & Semantic Status
   success: '#16A34A',
-  successLight: '#F0FDF4',
-  successBorder: '#BBF7D0',
+  successLight: '#EAF2FF',
+  successBorder: '#BFDBFE',
   
   warning: '#D97706',
   warningLight: '#FFFBEB',
@@ -39,15 +39,15 @@ export const COLORS = {
   dangerLight: '#FEF2F2',
   dangerBorder: '#FECACA',
   
-  info: '#2563EB',
-  infoLight: '#EFF6FF',
-  infoBorder: '#BFDBFE',
+  info: '#0284C7',
+  infoLight: '#F0F9FF',
+  infoBorder: '#BAE6FD',
 
   // Backward Compatibility Aliases
   navy: '#0F172A',
-  blue: '#166534',
-  blueDark: '#14532D',
-  blueLight: '#F0FDF4',
+  blue: '#2563EB',
+  blueDark: '#1D4ED8',
+  blueLight: '#EAF2FF',
 };
 
 export const TYPOGRAPHY = {

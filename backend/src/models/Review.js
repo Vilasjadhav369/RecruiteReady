@@ -65,6 +65,8 @@ reviewSchema.pre('save', function (next) {
 });
 
 reviewSchema.index({ status: 1, createdAt: -1 });
+reviewSchema.index({ user: 1, createdAt: -1 });
+reviewSchema.index({ status: 1, rating: -1 });
 
 const Review = mongoose.model('Review', reviewSchema);
 

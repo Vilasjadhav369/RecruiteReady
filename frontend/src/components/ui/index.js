@@ -31,3 +31,4 @@ export * from './Tooltip.jsx';
 export * from './ProgressBar.jsx';
 export * from './Divider.jsx';
 export * from './Toast.jsx';
+export * from './FeedbackProvider.jsx';

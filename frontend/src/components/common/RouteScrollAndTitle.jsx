@@ -37,11 +37,20 @@ const ROUTE_TITLES = {
  * dynamically on every route transition without jarring behavior.
  */
 export function RouteScrollAndTitle() {
-  const { pathname } = useLocation();
+  const { pathname, hash } = useLocation();
 
   useEffect(() => {
-    // Scroll window to top
-    window.scrollTo(0, 0);
+    // In-page anchors (/#features) scroll to their section; everything else resets to top.
+    if (hash) {
+      const el = document.getElementById(decodeURIComponent(hash.slice(1)));
+      if (el) {
+        requestAnimationFrame(() => el.scrollIntoView({ block: "start" }));
+      } else {
+        window.scrollTo(0, 0);
+      }
+    } else {
+      window.scrollTo(0, 0);
+    }
 
     // Determine matching title
     let title = ROUTE_TITLES[pathname];
@@ -71,7 +80,7 @@ export function RouteScrollAndTitle() {
     }
 
     document.title = title;
-  }, [pathname]);
+  }, [pathname, hash]);
 
   return null;
 }

@@ -143,7 +143,7 @@ export function StatCard({
       >
         <div>
           <div className="flex items-center justify-between mb-3.5">
-            <div className="w-9 h-9 rounded-lg bg-[#DCFCE7] text-[#14532D] flex items-center justify-center shrink-0 group-hover:bg-[#166534] group-hover:text-white transition-colors duration-150">
+            <div className="w-9 h-9 rounded-lg bg-primary-tint text-primary-dark flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-white transition-colors duration-150">
               {renderStatIcon(icon, 'w-4 h-4')}
             </div>
             <span className="text-[11px] font-semibold text-slate-600 bg-slate-100/90 px-2 py-0.5 rounded-full border border-slate-200/80">
@@ -151,7 +151,7 @@ export function StatCard({
             </span>
           </div>
 
-          <h3 className="text-sm font-semibold text-slate-900 group-hover:text-[#166534] transition-colors">
+          <h3 className="text-sm font-semibold text-slate-900 group-hover:text-primary transition-colors">
             {displayLabel}
           </h3>
 
@@ -174,7 +174,7 @@ export function StatCard({
         <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
           <Link
             to={to}
-            className="inline-flex items-center gap-1 text-xs font-semibold text-[#166534] hover:text-[#14532D] no-underline group-hover:underline"
+            className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary-dark no-underline group-hover:underline"
           >
             <span>{hasActivity ? 'Continue Practice' : 'Start Practicing'}</span>
             <ArrowRightIcon className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />

@@ -113,6 +113,9 @@ const codingProblemSchema = new mongoose.Schema(
 );
 
 codingProblemSchema.index({ difficulty: 1, isActive: 1 });
+codingProblemSchema.index({ isActive: 1, createdAt: -1 });
+codingProblemSchema.index({ category: 1, isActive: 1 });
+codingProblemSchema.index({ topics: 1, isActive: 1 });
 
 const CodingProblem = mongoose.model('CodingProblem', codingProblemSchema);
 

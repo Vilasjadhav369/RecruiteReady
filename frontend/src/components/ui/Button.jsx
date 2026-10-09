@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { SpinnerIcon } from './Icons.jsx';
 
 /**
@@ -14,25 +15,26 @@ export function Button({
   iconLeft,
   iconRight,
   type = 'button',
+  to,
   className = '',
   children,
   onClick,
   ...props
 }) {
   const base =
-    'inline-flex items-center justify-center font-medium transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#166534] disabled:opacity-50 disabled:cursor-not-allowed select-none active:scale-[0.99] cursor-pointer';
+    'inline-flex items-center justify-center font-medium transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:cursor-not-allowed select-none active:scale-[0.99] cursor-pointer';
 
   const variants = {
     primary:
-      'bg-[#166534] hover:bg-[#14532D] active:bg-[#0f3d21] text-white shadow-xs border border-[#166534]',
+      'bg-primary hover:bg-primary-dark active:bg-primary-darker text-white shadow-xs border border-primary',
     brand:
-      'bg-[#166534] hover:bg-[#14532D] active:bg-[#0f3d21] text-white shadow-xs border border-[#166534]',
+      'bg-primary hover:bg-primary-dark active:bg-primary-darker text-white shadow-xs border border-primary',
     secondary:
       'bg-slate-900 hover:bg-slate-800 active:bg-slate-950 text-white shadow-xs border border-slate-900',
     outline:
       'bg-white hover:bg-emerald-50/50 active:bg-emerald-100/50 text-slate-800 border border-slate-200 shadow-xs hover:border-emerald-300',
     ghost:
-      'bg-transparent hover:bg-emerald-50 active:bg-emerald-100 text-slate-700 hover:text-[#166534]',
+      'bg-transparent hover:bg-emerald-50 active:bg-emerald-100 text-slate-700 hover:text-primary',
     danger:
       'bg-red-600 hover:bg-red-700 active:bg-red-800 text-white shadow-xs border border-red-600',
     success:
@@ -47,12 +49,24 @@ export function Button({
     lg: 'min-h-[44px] h-11 px-5 text-sm sm:text-base gap-2.5 rounded-lg',
   };
 
+  const classes = `${base} ${variants[variant] || variants.primary} ${sizes[size] || sizes.md} ${fullWidth ? 'w-full' : ''} ${className} ${to ? 'no-underline hover:no-underline' : ''}`;
+
+  if (to) {
+    return (
+      <Link to={to} className={classes} onClick={onClick} {...props}>
+        {iconLeft && <span className="shrink-0">{iconLeft}</span>}
+        <span>{children}</span>
+        {iconRight && <span className="shrink-0">{iconRight}</span>}
+      </Link>
+    );
+  }
+
   return (
     <button
       type={type}
       disabled={disabled || loading}
       onClick={onClick}
-      className={`${base} ${variants[variant] || variants.primary} ${sizes[size] || sizes.md} ${fullWidth ? 'w-full' : ''} ${className}`}
+      className={classes}
       {...props}
     >
       {loading ? (

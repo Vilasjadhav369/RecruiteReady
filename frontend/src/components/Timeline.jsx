@@ -49,19 +49,19 @@ function TimelineStep({ step, isLast }) {
     <div className="flex md:flex-col items-start gap-4 md:gap-0">
       {/* Number badge + vertical line (mobile) */}
       <div className="flex-shrink-0 flex flex-col items-center">
-        <div className="w-14 h-14 rounded-full border-2 border-[#D9E2EC] bg-white flex items-center justify-center md:mb-5 shadow-sm">
-          <span className="text-sm font-bold text-[#2563EB]">{step.number}</span>
+        <div className="w-14 h-14 rounded-full border-2 border-slate-200 bg-white flex items-center justify-center md:mb-5 shadow-xs">
+          <span className="text-sm font-bold text-primary">{step.number}</span>
         </div>
         {/* Mobile vertical connector */}
         {!isLast && (
-          <div className="md:hidden w-px flex-1 min-h-[2rem] bg-[#D9E2EC] my-1" aria-hidden="true" />
+          <div className="md:hidden w-px flex-1 min-h-[2rem] bg-slate-200 my-1" aria-hidden="true" />
         )}
       </div>
 
       {/* Content */}
       <div className="pb-8 md:pb-0 pt-1 md:pt-0">
-        <h3 className="text-[#172B4D] font-semibold text-base mb-2">{step.title}</h3>
-        <p className="text-[#52606D] text-sm leading-relaxed">{step.description}</p>
+        <h3 className="text-slate-900 font-semibold text-base mb-2">{step.title}</h3>
+        <p className="text-slate-600 text-sm leading-relaxed">{step.description}</p>
       </div>
     </div>
   );

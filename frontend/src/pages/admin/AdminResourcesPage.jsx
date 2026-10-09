@@ -5,6 +5,7 @@ import {
   getAdminResourceById,
   updateResource,
   updateResourceStatus,
+  deleteResource,
 } from "../../services/adminService.js";
 import {
   PageHeader,
@@ -34,11 +35,10 @@ import {
   EyeIcon,
   ExternalLinkIcon,
   DocumentIcon,
+  TrashIcon,
 } from "../../components/ui/Icons.jsx";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-
-const RESOURCE_TYPES = ["pdf", "video", "article", "link", "note"];
 
 const RESOURCE_TYPE_LABELS = {
   pdf: "PDF",
@@ -176,6 +176,11 @@ export default function AdminResourcesPage() {
   const [toggleTarget, setToggleTarget] = useState(null);
   const [isToggleModalOpen, setIsToggleModalOpen] = useState(false);
   const [togglingId, setTogglingId] = useState(null);
+
+  // ── Delete Confirmation ──
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // ── Toast ──
   const [toast, setToast] = useState(null);
@@ -393,6 +398,37 @@ export default function AdminResourcesPage() {
     } finally {
       setTogglingId(null);
       setToggleTarget(null);
+    }
+  };
+
+  // ── Delete Study Resource ──
+  const handleRequestDelete = (resource) => {
+    setDeleteTarget(resource);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      setIsDeleting(true);
+      await deleteResource(deleteTarget._id);
+      showToast(
+        "success",
+        "Resource Deleted",
+        "Study material permanently removed from library."
+      );
+      setIsDeleteModalOpen(false);
+      setDeleteTarget(null);
+      fetchResources();
+    } catch (err) {
+      console.error("Error deleting resource:", err);
+      showToast(
+        "error",
+        "Delete Failed",
+        err.response?.data?.message || "Failed to delete study material."
+      );
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -651,6 +687,15 @@ export default function AdminResourcesPage() {
                             >
                               {res.isActive ? "Deactivate" : "Activate"}
                             </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRequestDelete(res)}
+                              title="Delete resource"
+                              className="text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+                            >
+                              <TrashIcon className="w-3.5 h-3.5" />
+                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -786,6 +831,15 @@ export default function AdminResourcesPage() {
                       onClick={() => handleRequestToggle(res)}
                     >
                       {res.isActive ? "Deactivate" : "Activate"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-rose-600 border-rose-200 hover:bg-rose-50 px-2.5"
+                      onClick={() => handleRequestDelete(res)}
+                      title="Delete resource"
+                    >
+                      <TrashIcon className="w-3.5 h-3.5" />
                     </Button>
                   </div>
                 </div>
@@ -1165,6 +1219,61 @@ export default function AdminResourcesPage() {
             </div>
             <p className="text-xs text-slate-500 mt-1">
               {toggleTarget.category || "—"} • {toggleTarget.topic || "—"}
+            </p>
+          </div>
+        )}
+      </Modal>
+
+      {/* ─── Delete Confirmation Modal ───────────────────────────── */}
+      <Modal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setDeleteTarget(null);
+        }}
+        title="Delete Study Material?"
+        description="Are you sure you want to permanently delete this study material from the platform?"
+        maxWidth="max-w-md"
+        footer={
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={isDeleting}
+              onClick={() => {
+                setIsDeleteModalOpen(false);
+                setDeleteTarget(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              loading={isDeleting}
+              onClick={handleConfirmDelete}
+            >
+              Delete
+            </Button>
+          </>
+        }
+      >
+        {deleteTarget && (
+          <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
+            <div className="flex items-center gap-2.5">
+              <Badge
+                variant={getTypeVariant(deleteTarget.type)}
+                size="sm"
+              >
+                {RESOURCE_TYPE_LABELS[deleteTarget.type] ||
+                  (deleteTarget.type || "—").toUpperCase()}
+              </Badge>
+              <p className="text-sm font-medium text-slate-900">
+                {deleteTarget.title || "—"}
+              </p>
+            </div>
+            <p className="text-xs text-slate-500 mt-1">
+              {deleteTarget.category || "—"} • {deleteTarget.topic || "—"}
             </p>
           </div>
         )}

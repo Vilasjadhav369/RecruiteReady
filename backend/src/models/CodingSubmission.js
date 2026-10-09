@@ -69,6 +69,8 @@ const codingSubmissionSchema = new mongoose.Schema(
 );
 
 codingSubmissionSchema.index({ user: 1, problem: 1, submittedAt: -1 });
+codingSubmissionSchema.index({ user: 1, status: 1 });
+codingSubmissionSchema.index({ user: 1, submittedAt: -1 });
 
 const CodingSubmission = mongoose.model('CodingSubmission', codingSubmissionSchema);
 

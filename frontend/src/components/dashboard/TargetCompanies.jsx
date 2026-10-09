@@ -5,8 +5,8 @@ import { CompanyIcon, ArrowRightIcon } from "../ui/Icons.jsx";
 import { Button } from "../ui/Button.jsx";
 
 /**
- * TargetCompanies — Displays student's actual target companies from their profile.
- * Zero fabricated company entries.
+ * TargetCompanies — Displays student's actual target companies from their profile/summary.
+ * Uses real MongoDB company records and logos where matched. Zero fabricated entries.
  */
 function TargetCompanies({ companies = [] }) {
   const hasCompanies = Array.isArray(companies) && companies.length > 0;
@@ -17,7 +17,7 @@ function TargetCompanies({ companies = [] }) {
         <CardHeader className="pb-3 border-b border-slate-100">
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-md bg-[#DCFCE7] text-[#166534] flex items-center justify-center shrink-0">
+              <div className="w-6 h-6 rounded-md bg-primary-tint text-primary flex items-center justify-center shrink-0">
                 <CompanyIcon className="w-3.5 h-3.5" />
               </div>
               <CardTitle>Target Companies</CardTitle>
@@ -25,7 +25,7 @@ function TargetCompanies({ companies = [] }) {
             {hasCompanies && (
               <Link
                 to="/profile"
-                className="text-xs font-semibold text-[#166534] hover:text-[#14532D] no-underline hover:underline"
+                className="text-xs font-semibold text-primary hover:text-primary-dark no-underline hover:underline"
               >
                 Edit Targets
               </Link>
@@ -36,18 +36,35 @@ function TargetCompanies({ companies = [] }) {
         <CardContent className="pt-3 pb-2">
           {hasCompanies ? (
             <div className="flex flex-wrap gap-2 pt-1">
-              {companies.map((company, idx) => (
-                <Link
-                  key={idx}
-                  to={`/companies?search=${encodeURIComponent(company)}`}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-800 hover:border-slate-300 hover:bg-slate-100 transition-colors no-underline"
-                >
-                  <div className="w-5 h-5 rounded bg-[#DCFCE7] text-[#166534] border border-[#BBF7D0] flex items-center justify-center text-[10px] font-bold shrink-0">
-                    {company[0]?.toUpperCase() ?? "C"}
-                  </div>
-                  <span className="truncate max-w-[140px]">{company}</span>
-                </Link>
-              ))}
+              {companies.map((comp, idx) => {
+                const name = typeof comp === "object" ? comp.name : comp;
+                const logoUrl = typeof comp === "object" ? comp.logoUrl : "";
+                const targetLink =
+                  typeof comp === "object" && comp.id
+                    ? `/companies/${comp.id}`
+                    : `/companies?search=${encodeURIComponent(name)}`;
+
+                return (
+                  <Link
+                    key={idx}
+                    to={targetLink}
+                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-800 hover:border-slate-300 hover:bg-slate-100 transition-colors no-underline"
+                  >
+                    {logoUrl ? (
+                      <img
+                        src={logoUrl}
+                        alt={name}
+                        className="w-4 h-4 rounded object-contain shrink-0"
+                      />
+                    ) : (
+                      <div className="w-4 h-4 rounded bg-primary-tint text-primary border border-primary-border flex items-center justify-center text-[9px] font-bold shrink-0">
+                        {name?.[0]?.toUpperCase() ?? "C"}
+                      </div>
+                    )}
+                    <span className="truncate max-w-[140px]">{name}</span>
+                  </Link>
+                );
+              })}
             </div>
           ) : (
             <div className="py-6 text-center space-y-2">
@@ -64,16 +81,9 @@ function TargetCompanies({ companies = [] }) {
       </div>
 
       <div className="px-5 py-3.5 bg-slate-50/60 border-t border-slate-100 flex items-center justify-between">
-        <Link to="/companies" className="w-full no-underline">
-          <Button
-            variant="outline"
-            size="sm"
-            fullWidth
-            iconRight={<ArrowRightIcon className="w-3.5 h-3.5" />}
-          >
-            {hasCompanies ? "Explore Companies" : "Set Target Companies"}
-          </Button>
-        </Link>
+        <Button to="/companies" variant="outline" size="sm" fullWidth iconRight={<ArrowRightIcon className="w-3.5 h-3.5" />} className="w-full">
+          {hasCompanies ? "Explore All Companies" : "Set Target Companies"}
+        </Button>
       </div>
     </Card>
   );

@@ -11,14 +11,14 @@ function QuickActionCard({ title, description, icon: Icon, to }) {
     <Link to={to} className="group no-underline block h-full">
       <Card
         hoverable
-        className="p-5 flex flex-col justify-between h-full group-hover:border-[#22C55E]/50 group-hover:shadow-xs transition-all duration-150"
+        className="p-5 flex flex-col justify-between h-full group-hover:border-primary-light/50 group-hover:shadow-xs transition-all duration-150"
       >
         <div>
-          <div className="w-10 h-10 rounded-xl bg-slate-100 group-hover:bg-[#DCFCE7] text-slate-700 group-hover:text-[#166534] flex items-center justify-center transition-colors duration-150 mb-3.5">
+          <div className="w-10 h-10 rounded-xl bg-slate-100 group-hover:bg-primary-tint text-slate-700 group-hover:text-primary flex items-center justify-center transition-colors duration-150 mb-3.5">
             <Icon className="w-5 h-5" />
           </div>
 
-          <h3 className="text-sm font-semibold text-slate-900 group-hover:text-[#166534] transition-colors mb-1">
+          <h3 className="text-sm font-semibold text-slate-900 group-hover:text-primary transition-colors mb-1">
             {title}
           </h3>
 
@@ -27,7 +27,7 @@ function QuickActionCard({ title, description, icon: Icon, to }) {
           </p>
         </div>
 
-        <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-[#166534] group-hover:text-[#14532D]">
+        <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-primary group-hover:text-primary-dark">
           <span>Start Module</span>
           <ArrowRightIcon className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
         </div>
