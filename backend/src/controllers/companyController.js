@@ -8,6 +8,8 @@ import AptitudeAttempt from '../models/AptitudeAttempt.js';
 import AptitudeQuestion from '../models/AptitudeQuestion.js';
 import CodingProblem from '../models/CodingProblem.js';
 import CodingSubmission from '../models/CodingSubmission.js';
+import MockTest from '../models/MockTest.js';
+import MockTestAttempt from '../models/MockTestAttempt.js';
 
 /**
  * Helper: Find active company by ObjectId or slug
@@ -379,6 +381,7 @@ export const getCompanyPreparation = async (req, res, next) => {
       aptQuestionCounts,
       codingProblemCounts,
       bookmarkExists,
+      companyMockTests,
     ] = await Promise.all([
       User.findById(userId).lean(),
       CompanyPreparationProgress.find({ user: userId, company: company._id }).lean(),
@@ -398,7 +401,24 @@ export const getCompanyPreparation = async (req, res, next) => {
         { $project: { topics: 1, category: 1 } },
       ]),
       Bookmark.exists({ user: userId, itemType: 'company', itemId: company._id }),
+      MockTest.find({ company: company._id, isPublished: true })
+        .select('title description durationMinutes totalQuestions categories difficulty instructions questions createdAt')
+        .sort({ createdAt: -1 })
+        .lean(),
     ]);
+
+    // Query attempts only if company has associated mock tests
+    const companyMockTestIds = (companyMockTests || []).map((t) => t._id);
+    let studentMockAttempts = [];
+    if (companyMockTestIds.length > 0) {
+      studentMockAttempts = await MockTestAttempt.find({
+        user: userId,
+        mockTest: { $in: companyMockTestIds },
+      })
+        .select('mockTest status score percentage submittedAt startedAt timeLimitSeconds')
+        .sort({ createdAt: -1 })
+        .lean();
+    }
 
     // Fast lookup maps
     const completedChecklistKeys = new Set(
@@ -492,17 +512,60 @@ export const getCompanyPreparation = async (req, res, next) => {
       };
     });
 
-    // Real Trackable Calculation
-    const totalTrackableItems =
-      aptitudeItems.length + codingItems.length + interviewItems.length + resourceItems.length;
+    // 5. Company-Specific Mock Assessments
+    const mockTestItems = (companyMockTests || []).map((test) => {
+      const trueTotalQuestions = (test.questions && test.questions.length > 0) ? test.questions.length : (test.totalQuestions || 0);
+      const latestAttempt = studentMockAttempts.find(
+        (a) => a.mockTest.toString() === test._id.toString()
+      );
 
+      // Must be a submitted attempt according to product rules (not expired/abandoned)
+      const isSubmitted = latestAttempt?.status === 'submitted';
+      const isCompleted = isSubmitted;
+
+      let attemptStatus = 'not_started';
+      if (latestAttempt) {
+        attemptStatus = latestAttempt.status;
+      }
+
+      return {
+        _id: test._id,
+        title: test.title,
+        description: test.description || '',
+        durationMinutes: test.durationMinutes,
+        totalQuestions: trueTotalQuestions,
+        difficulty: test.difficulty,
+        categories: test.categories || [],
+        isCompleted,
+        verifiedByActivity: isSubmitted,
+        attemptStatus,
+        score: latestAttempt?.score ?? null,
+        percentage: latestAttempt?.percentage ?? null,
+        submittedAt: latestAttempt?.submittedAt || null,
+        practiceUrl: `/mock-tests/${test._id}`,
+      };
+    });
+
+    // Real Trackable Calculation
     const completedAptitudeCount = aptitudeItems.filter((i) => i.isCompleted).length;
     const completedCodingCount = codingItems.filter((i) => i.isCompleted).length;
     const completedInterviewCount = interviewItems.filter((i) => i.isCompleted).length;
     const completedResourceCount = resourceItems.filter((i) => i.isCompleted).length;
+    const completedMockTestCount = mockTestItems.filter((i) => i.isCompleted).length;
+
+    const totalTrackableItems =
+      aptitudeItems.length +
+      codingItems.length +
+      interviewItems.length +
+      resourceItems.length +
+      mockTestItems.length;
 
     const totalCompletedItems =
-      completedAptitudeCount + completedCodingCount + completedInterviewCount + completedResourceCount;
+      completedAptitudeCount +
+      completedCodingCount +
+      completedInterviewCount +
+      completedResourceCount +
+      completedMockTestCount;
 
     const progressPercentage =
       totalTrackableItems > 0 ? Math.round((totalCompletedItems / totalTrackableItems) * 100) : null;
@@ -592,6 +655,22 @@ export const getCompanyPreparation = async (req, res, next) => {
       });
     }
 
+    // Step 6: Full-Length Company Mock Assessments (included only when company-specific mock tests exist)
+    if (mockTestItems.length > 0) {
+      roadmapSteps.push({
+        stepNumber: roadmapSteps.length + 1,
+        id: 'mock-tests',
+        title: 'Full-Length Company Mock Assessments',
+        description: `Simulate actual ${company.name} recruitment rounds with ${mockTestItems.length} curated mock assessment${mockTestItems.length > 1 ? 's' : ''}.`,
+        status: completedMockTestCount === mockTestItems.length ? 'completed' : completedMockTestCount > 0 ? 'in_progress' : 'pending',
+        isCompleted: completedMockTestCount === mockTestItems.length,
+        completedCount: completedMockTestCount,
+        totalCount: mockTestItems.length,
+        actionUrl: '#company-mock-tests',
+        actionLabel: 'Take Mock Tests',
+      });
+    }
+
     res.status(200).json({
       success: true,
       data: {
@@ -632,6 +711,11 @@ export const getCompanyPreparation = async (req, res, next) => {
             total: resourceItems.length,
             completed: completedResourceCount,
             items: resourceItems,
+          },
+          mockTests: {
+            total: mockTestItems.length,
+            completed: completedMockTestCount,
+            items: mockTestItems,
           },
         },
         studentProgress: {
@@ -724,7 +808,7 @@ export const updateCompanyProgress = async (req, res, next) => {
       },
       {
         upsert: true,
-        new: true,
+        returnDocument: 'after',
         setDefaultsOnInsert: true,
       }
     );

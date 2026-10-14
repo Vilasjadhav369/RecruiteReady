@@ -17,11 +17,11 @@ export function Card({
     default: 'bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden',
     compact: 'bg-white border border-slate-200 rounded-lg shadow-xs overflow-hidden',
     elevated: 'bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden',
-    interactive: 'bg-white border border-slate-200 rounded-xl shadow-xs hover:border-emerald-300 hover:shadow-sm transition-all duration-150 cursor-pointer overflow-hidden',
+    interactive: 'bg-white border border-slate-200 rounded-xl shadow-xs hover:border-primary-border hover:shadow-sm transition-all duration-150 cursor-pointer overflow-hidden',
   };
 
   const interactiveClass = isInteractive && variant !== 'interactive'
-    ? 'hover:border-emerald-300 hover:shadow-xs transition-all duration-150 cursor-pointer'
+    ? 'hover:border-primary-border hover:shadow-xs transition-all duration-150 cursor-pointer'
     : '';
 
   return (

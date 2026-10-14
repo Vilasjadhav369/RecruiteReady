@@ -267,6 +267,17 @@ async function runPerformanceObservabilitySuite() {
     });
     assert(resourcesRes.status === 200, 'GET /api/resources returns 200 OK');
     assert(Array.isArray(resourcesRes.data?.data?.resources), 'GET /api/resources returns resources array');
+    assert(resourcesRes.data?.data?.pagination !== undefined, 'GET /api/resources returns pagination metadata');
+    assert(resourcesRes.data?.data?.pagination?.page === 1, 'Default resource page is 1');
+    assert(resourcesRes.data?.data?.pagination?.limit === 12, 'Default resource limit is 12');
+
+    // Test clamped boundary and pagination parameter handling
+    const clampedRes = await request('/api/resources?page=-5&limit=500', {
+      headers: studentHeaders,
+    });
+    assert(clampedRes.status === 200, 'GET /api/resources with out-of-bound params returns 200 OK');
+    assert(clampedRes.data?.data?.pagination?.page === 1, 'Page clamped to minimum 1');
+    assert(clampedRes.data?.data?.pagination?.limit === 50, 'Limit clamped to maximum 50');
 
     const mockTestsRes = await request('/api/mock-tests', {
       headers: studentHeaders,
@@ -306,6 +317,25 @@ async function runPerformanceObservabilitySuite() {
       isActive: true,
     });
 
+    // Verify metadata returns accurate difficulty breakdowns (P1.5 Step 2)
+    const metaRes = await request('/api/aptitude/metadata', {
+      headers: studentHeaders,
+    });
+    assert(metaRes.status === 200, 'GET /api/aptitude/metadata returns 200 OK');
+    assert(Array.isArray(metaRes.data?.data?.categories), 'Metadata contains categories array');
+    assert(metaRes.data?.data?.countsByDifficulty !== undefined, 'Metadata contains countsByDifficulty breakdown');
+    assert(metaRes.data?.data?.countsByTopicAndDifficulty !== undefined, 'Metadata contains countsByTopicAndDifficulty breakdown');
+    assert(
+      typeof metaRes.data?.data?.countsByDifficulty?.['Quantitative Aptitude']?.easy === 'number' &&
+      metaRes.data?.data?.countsByDifficulty?.['Quantitative Aptitude']?.easy >= 1,
+      'Metadata countsByDifficulty accurately tallies active easy questions for Quantitative Aptitude'
+    );
+    assert(
+      typeof metaRes.data?.data?.countsByTopicAndDifficulty?.['Arithmetic']?.easy === 'number' &&
+      metaRes.data?.data?.countsByTopicAndDifficulty?.['Arithmetic']?.easy >= 1,
+      'Metadata countsByTopicAndDifficulty accurately tallies active easy questions for topic Arithmetic'
+    );
+
     const startSessionRes = await request('/api/aptitude/sessions', {
       method: 'POST',
       headers: studentHeaders,
@@ -323,13 +353,16 @@ async function runPerformanceObservabilitySuite() {
     assert(sessionQuestions?.[0]?.correctOption === undefined, 'SECURITY: correctOption is strictly hidden from active session questions');
     assert(sessionQuestions?.[0]?.explanation === undefined, 'SECURITY: explanation is strictly hidden from active session questions');
 
+    // Find the option key that represents '30' from the session questions
+    const chosenOptionKey = sessionQuestions?.[0]?.options?.find((o) => o.text === '30')?.key || 'C';
+
     // Save answer
     const answerRes = await request(`/api/aptitude/sessions/${sessionId}/answers`, {
       method: 'PATCH',
       headers: studentHeaders,
       body: JSON.stringify({
         questionId: q1._id.toString(),
-        selectedOption: 'C',
+        selectedOption: chosenOptionKey,
       }),
     });
     assert(answerRes.status === 200, 'PATCH /api/aptitude/sessions/:id/answers saves chosen answer');

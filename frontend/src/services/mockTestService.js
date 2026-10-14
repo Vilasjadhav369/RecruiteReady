@@ -21,13 +21,27 @@ export const getMockAttempt = async (attemptId) => {
   return response.data?.data;
 };
 
-export const saveMockAnswer = async (attemptId, { questionId, selectedOption, codeSubmissionId }) => {
+export const saveMockAnswer = async (attemptId, { questionId, selectedOption, codeSubmissionId, version, clientTimestamp }) => {
   const response = await api.patch(`/mock-tests/attempts/${attemptId}/answers`, {
     questionId,
     selectedOption,
     codeSubmissionId,
+    version,
+    clientTimestamp,
   });
   return response.data?.data;
+};
+
+export const sendMockTelemetry = async (attemptId, { eventType, metadata }) => {
+  try {
+    const response = await api.post(`/mock-tests/attempts/${attemptId}/telemetry`, {
+      eventType,
+      metadata,
+    });
+    return response.data?.data;
+  } catch (err) {
+    return null;
+  }
 };
 
 export const submitMockTest = async (attemptId) => {
@@ -52,6 +66,7 @@ export default {
   startMockTest,
   getMockAttempt,
   saveMockAnswer,
+  sendMockTelemetry,
   submitMockTest,
   getMockResult,
   getMockHistory,

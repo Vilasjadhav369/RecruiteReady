@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   getMockAttempt,
   saveMockAnswer,
+  sendMockTelemetry,
   submitMockTest,
 } from '../../services/mockTestService.js';
 import { 
@@ -39,9 +40,120 @@ export default function MockTestSessionPage() {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [markedQuestions, setMarkedQuestions] = useState(new Set());
   const [showMobilePalette, setShowMobilePalette] = useState(false);
+  const [saveStatus, setSaveStatus] = useState('saved'); // 'saved' | 'saving' | 'offline_queued' | 'sync_error'
 
   const hasSubmittedRef = useRef(false);
   const timerRef = useRef(null);
+  const pendingQueueRef = useRef([]);
+  const versionMapRef = useRef({});
+  const isProcessingQueueRef = useRef(false);
+
+  // Background queue worker to sync answers safely with server (P0-D)
+  const processPendingQueue = useCallback(async () => {
+    if (isProcessingQueueRef.current || pendingQueueRef.current.length === 0) return;
+    isProcessingQueueRef.current = true;
+    setSaveStatus('saving');
+
+    while (pendingQueueRef.current.length > 0) {
+      const item = pendingQueueRef.current[0];
+      try {
+        await saveMockAnswer(id, {
+          questionId: item.questionId,
+          selectedOption: item.selectedOption,
+          codeSubmissionId: item.codeSubmissionId,
+          version: item.version,
+          clientTimestamp: item.clientTimestamp,
+        });
+        pendingQueueRef.current.shift();
+      } catch (err) {
+        console.warn('Mock autosave sync failed:', err);
+        const statusCode = err.response?.status;
+        if (statusCode === 401 || statusCode === 403) {
+          // Unauthenticated or forbidden — terminate retrying to avoid unauthorized spam
+          pendingQueueRef.current = [];
+          setSaveStatus('sync_error');
+          isProcessingQueueRef.current = false;
+          return;
+        }
+        if (statusCode === 400 || statusCode === 404) {
+          // Terminal client error (e.g., test submitted/expired or invalid question)
+          pendingQueueRef.current.shift();
+          if (err.response?.data?.message?.includes('already')) {
+            navigate(`/mock-tests/result/${id}`, { replace: true });
+            return;
+          }
+        }
+        if (typeof navigator !== 'undefined' && !navigator.onLine) {
+          setSaveStatus('offline_queued');
+        } else {
+          setSaveStatus('sync_error');
+        }
+        isProcessingQueueRef.current = false;
+        return;
+      }
+    }
+
+    setSaveStatus('saved');
+    isProcessingQueueRef.current = false;
+  }, [id]);
+
+  // Network recovery: immediately process queue on window 'online' event
+  useEffect(() => {
+    const handleOnline = () => {
+      if (pendingQueueRef.current.length > 0) {
+        processPendingQueue();
+      }
+    };
+    window.addEventListener('online', handleOnline);
+    return () => window.removeEventListener('online', handleOnline);
+  }, [processPendingQueue]);
+
+  // Periodic retry for pending items
+  useEffect(() => {
+    const retryInterval = setInterval(() => {
+      if (pendingQueueRef.current.length > 0 && !isProcessingQueueRef.current) {
+        processPendingQueue();
+      }
+    }, 4000);
+    return () => clearInterval(retryInterval);
+  }, [processPendingQueue]);
+
+  // P0-E: Non-punitive focus and visibility telemetry
+  useEffect(() => {
+    if (loading || submitting) return;
+    let lastEventTime = 0;
+
+    const emitTelemetry = (eventType) => {
+      const now = Date.now();
+      if (now - lastEventTime < 1500) return;
+      lastEventTime = now;
+      sendMockTelemetry(id, {
+        eventType,
+        metadata: { timestamp: new Date().toISOString() },
+      });
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        emitTelemetry('tab_hidden');
+      } else {
+        emitTelemetry('tab_visible');
+      }
+    };
+
+    const handleBlur = () => emitTelemetry('window_blur');
+    const handleFocus = () => emitTelemetry('window_focus');
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('blur', handleBlur);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('blur', handleBlur);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [id, loading, submitting]);
 
   const performSubmission = useCallback(async (isAuto = false) => {
     if (hasSubmittedRef.current) return;
@@ -49,14 +161,20 @@ export default function MockTestSessionPage() {
     setSubmitting(true);
 
     try {
+      if (pendingQueueRef.current.length > 0) {
+        await processPendingQueue();
+      }
       await submitMockTest(id);
+      try {
+        sessionStorage.removeItem(`mock_answers_${id}`);
+      } catch (e) {}
       navigate(`/mock-tests/result/${id}`, { replace: true });
     } catch (err) {
       console.error('Submit error:', err);
       // Even if error indicates already finalized, redirect to result
       navigate(`/mock-tests/result/${id}`, { replace: true });
     }
-  }, [id, navigate]);
+  }, [id, navigate, processPendingQueue]);
 
   useEffect(() => {
     let isMounted = true;
@@ -81,8 +199,21 @@ export default function MockTestSessionPage() {
           if (a.selectedOption) {
             ansMap[a.questionId] = a.selectedOption;
           }
+          if (a.version) {
+            versionMapRef.current[a.questionId] = a.version;
+          }
         });
-        setSelectedAnswers(ansMap);
+
+        // Merge sessionStorage cached answers if available
+        let localCache = {};
+        try {
+          const raw = sessionStorage.getItem(`mock_answers_${id}`);
+          if (raw) localCache = JSON.parse(raw);
+        } catch (e) {
+          // ignore parsing error
+        }
+
+        setSelectedAnswers({ ...ansMap, ...localCache });
       } catch (err) {
         console.error('Failed to load mock attempt:', err);
         setError(err.response?.data?.message || 'Failed to load test session.');
@@ -114,21 +245,36 @@ export default function MockTestSessionPage() {
     return () => clearInterval(timerRef.current);
   }, [loading, remainingSeconds, performSubmission]);
 
-  const handleSelectOption = async (optionKey) => {
+  const handleSelectOption = (optionKey) => {
     const currentQ = questions[currentIndex];
     if (!currentQ || submitting) return;
 
     const newOption = selectedAnswers[currentQ._id] === optionKey ? '' : optionKey;
-    setSelectedAnswers((prev) => ({ ...prev, [currentQ._id]: newOption }));
+    const newAnswers = { ...selectedAnswers, [currentQ._id]: newOption };
+    setSelectedAnswers(newAnswers);
 
+    // Persist to sessionStorage fallback buffer (P0-D)
     try {
-      await saveMockAnswer(id, {
-        questionId: currentQ._id,
-        selectedOption: newOption,
-      });
-    } catch (err) {
-      console.error('Failed to save answer:', err);
+      sessionStorage.setItem(`mock_answers_${id}`, JSON.stringify(newAnswers));
+    } catch (e) {
+      // ignore quota errors
     }
+
+    // Sequence / version increment
+    const currentVersion = (versionMapRef.current[currentQ._id] || 0) + 1;
+    versionMapRef.current[currentQ._id] = currentVersion;
+
+    // Queue for network dispatch
+    pendingQueueRef.current = pendingQueueRef.current.filter((item) => item.questionId !== currentQ._id);
+    pendingQueueRef.current.push({
+      questionId: currentQ._id,
+      selectedOption: newOption,
+      version: currentVersion,
+      clientTimestamp: new Date().toISOString(),
+    });
+
+    setSaveStatus('saving');
+    processPendingQueue();
   };
 
   const handleManualSubmit = () => {
@@ -201,6 +347,46 @@ export default function MockTestSessionPage() {
         </div>
 
         <div className="flex items-center gap-2.5 sm:gap-4">
+          {/* Autosave Status Pill (P0-D) */}
+          <div
+            className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium border transition-colors ${
+              saveStatus === 'saved'
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                : saveStatus === 'saving'
+                ? 'bg-blue-50 text-blue-700 border-blue-200 animate-pulse'
+                : saveStatus === 'offline_queued'
+                ? 'bg-amber-50 text-amber-700 border-amber-200'
+                : 'bg-rose-50 text-rose-700 border-rose-200'
+            }`}
+            title={
+              saveStatus === 'saved'
+                ? 'All answers synced with server'
+                : saveStatus === 'saving'
+                ? 'Syncing answers with server...'
+                : saveStatus === 'offline_queued'
+                ? 'Answers saved locally in browser. Syncing when connection is restored.'
+                : 'Unable to reach server. Retrying automatically.'
+            }
+          >
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${
+                saveStatus === 'saved'
+                  ? 'bg-emerald-500'
+                  : saveStatus === 'saving'
+                  ? 'bg-blue-500 animate-ping'
+                  : saveStatus === 'offline_queued'
+                  ? 'bg-amber-500'
+                  : 'bg-rose-500'
+              }`}
+            />
+            <span>
+              {saveStatus === 'saved' && 'Saved'}
+              {saveStatus === 'saving' && 'Saving...'}
+              {saveStatus === 'offline_queued' && 'Saved locally'}
+              {saveStatus === 'sync_error' && 'Sync retrying'}
+            </span>
+          </div>
+
           {/* Accessible Timer Display */}
           <div
             role="timer"

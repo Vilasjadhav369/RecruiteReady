@@ -54,7 +54,7 @@ export const maskIp = (ip = '') => {
 /**
  * Creates an active session record in the database.
  */
-export const createSession = async ({ user, req, expiresInMs = 7 * 24 * 60 * 60 * 1000 }) => {
+export const createSession = async ({ user, req, token = null, tokenHash = null, expiresInMs = 7 * 24 * 60 * 60 * 1000 }) => {
   const userAgent = req?.headers?.['user-agent'] || 'Unknown Device';
   const ipAddress =
     req?.ip ||
@@ -63,12 +63,16 @@ export const createSession = async ({ user, req, expiresInMs = 7 * 24 * 60 * 60 
     'unknown';
 
   const expiresAt = new Date(Date.now() + expiresInMs);
-  // Temporary placeholder tokenHash; will be updated with actual token hash
-  const initialHash = crypto.randomBytes(32).toString('hex');
+  let resolvedHash = tokenHash;
+  if (!resolvedHash) {
+    resolvedHash = token
+      ? crypto.createHash('sha256').update(token).digest('hex')
+      : crypto.randomBytes(32).toString('hex');
+  }
 
   const session = await Session.create({
     user: user._id,
-    tokenHash: initialHash,
+    tokenHash: resolvedHash,
     userAgent,
     ipAddress,
     lastUsedAt: new Date(),
@@ -90,11 +94,17 @@ export const attachTokenHashToSession = async (sessionId, token) => {
 
 /**
  * Validates whether a session is valid, active, and not revoked.
+ * If rawToken is supplied, validates token hash integrity against stored SHA-256 digest.
  */
-export const verifySession = async (sessionId, userId) => {
-  if (!sessionId) return null;
+export const verifySession = async (sessionId, userId, rawToken = null) => {
+  if (!sessionId || !userId) return null;
 
-  const session = await Session.findById(sessionId);
+  let session;
+  try {
+    session = await Session.findById(sessionId).select('+tokenHash');
+  } catch {
+    return null;
+  }
   if (!session) return null;
 
   // Revocation check
@@ -109,6 +119,17 @@ export const verifySession = async (sessionId, userId) => {
 
   // User ownership check
   if (session.user.toString() !== userId.toString()) return null;
+
+  // Token hash verification:
+  // If rawToken is supplied and stored hash is standard 64-char SHA-256 hex digest
+  if (rawToken && session.tokenHash && session.tokenHash.length === 64) {
+    const computedHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+    const computedBuf = Buffer.from(computedHash, 'hex');
+    const storedBuf = Buffer.from(session.tokenHash, 'hex');
+    if (computedBuf.length !== storedBuf.length || !crypto.timingSafeEqual(computedBuf, storedBuf)) {
+      return null;
+    }
+  }
 
   // Throttle lastUsedAt update: update at most once every 60 seconds
   const now = Date.now();

@@ -7,6 +7,7 @@ import {
   getSessionResult,
   getAptitudeHistory,
   getAptitudeMetadata,
+  recordTelemetry,
 } from '../controllers/aptitudeController.js';
 import protect from '../middleware/auth.js';
 
@@ -19,6 +20,7 @@ router.get('/metadata', getAptitudeMetadata);
 router.post('/sessions', startSession);
 router.get('/sessions/:id', getSession);
 router.patch('/sessions/:id/answers', saveAnswer);
+router.post('/sessions/:id/telemetry', recordTelemetry);
 router.post('/sessions/:id/submit', submitSession);
 router.get('/results/:id', getSessionResult);
 router.get('/history', getAptitudeHistory);

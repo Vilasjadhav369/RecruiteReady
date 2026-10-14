@@ -29,12 +29,71 @@ export const getLeaderboard = async (req, res, next) => {
   try {
     const currentUserId = req.user?._id?.toString();
 
-    // 1. Fetch all active student accounts
-    const students = await User.find({ role: 'student', isActive: { $ne: false } })
-      .select('firstName lastName profilePhoto createdAt')
-      .lean();
+    // 1. Perform authentic aggregations directly on indexed attempt/submission records
+    const [aptitudeAgg, codingAgg, mockAgg] = await Promise.all([
+      // Aptitude completed sessions (status: submitted or expired)
+      AptitudeAttempt.aggregate([
+        {
+          $match: {
+            status: { $in: ['submitted', 'expired'] },
+          },
+        },
+        {
+          $group: {
+            _id: '$user',
+            completedSessions: { $sum: 1 },
+            correctTotal: { $sum: '$correctAnswers' },
+            questionsAttempted: { $sum: '$totalQuestions' },
+          },
+        },
+      ]),
 
-    if (!students || students.length === 0) {
+      // Coding problems solved: DISTINCT problems per user with status: accepted
+      // Grouping by { user, problem } first guarantees duplicates never inflate count
+      CodingSubmission.aggregate([
+        {
+          $match: {
+            status: 'accepted',
+          },
+        },
+        {
+          $group: {
+            _id: { user: '$user', problem: '$problem' },
+          },
+        },
+        {
+          $group: {
+            _id: '$_id.user',
+            distinctSolved: { $sum: 1 },
+          },
+        },
+      ]),
+
+      // Mock tests completed: status strictly submitted (expired/abandoned excluded)
+      MockTestAttempt.aggregate([
+        {
+          $match: {
+            status: 'submitted',
+          },
+        },
+        {
+          $group: {
+            _id: '$user',
+            completedTests: { $sum: 1 },
+            correctTotal: { $sum: '$correctAnswers' },
+          },
+        },
+      ]),
+    ]);
+
+    // 2. Identify candidate student IDs who have qualifying activity (plus current user)
+    const candidateIds = new Set();
+    aptitudeAgg.forEach((a) => { if (a._id) candidateIds.add(a._id.toString()); });
+    codingAgg.forEach((c) => { if (c._id) candidateIds.add(c._id.toString()); });
+    mockAgg.forEach((m) => { if (m._id) candidateIds.add(m._id.toString()); });
+    if (currentUserId) candidateIds.add(currentUserId);
+
+    if (candidateIds.size === 0) {
       return res.status(200).json({
         success: true,
         data: {
@@ -59,67 +118,14 @@ export const getLeaderboard = async (req, res, next) => {
       });
     }
 
-    const studentIds = students.map((s) => s._id);
-
-    // 2. Perform authentic aggregations matching M11 source of truth
-    const [aptitudeAgg, codingAgg, mockAgg] = await Promise.all([
-      // Aptitude completed sessions (status: submitted or expired)
-      AptitudeAttempt.aggregate([
-        {
-          $match: {
-            user: { $in: studentIds },
-            status: { $in: ['submitted', 'expired'] },
-          },
-        },
-        {
-          $group: {
-            _id: '$user',
-            completedSessions: { $sum: 1 },
-            correctTotal: { $sum: '$correctAnswers' },
-            questionsAttempted: { $sum: '$totalQuestions' },
-          },
-        },
-      ]),
-
-      // Coding problems solved: DISTINCT problems per user with status: accepted
-      // Grouping by { user, problem } first guarantees duplicates never inflate count
-      CodingSubmission.aggregate([
-        {
-          $match: {
-            user: { $in: studentIds },
-            status: 'accepted',
-          },
-        },
-        {
-          $group: {
-            _id: { user: '$user', problem: '$problem' },
-          },
-        },
-        {
-          $group: {
-            _id: '$_id.user',
-            distinctSolved: { $sum: 1 },
-          },
-        },
-      ]),
-
-      // Mock tests completed: status strictly submitted (expired/abandoned excluded)
-      MockTestAttempt.aggregate([
-        {
-          $match: {
-            user: { $in: studentIds },
-            status: 'submitted',
-          },
-        },
-        {
-          $group: {
-            _id: '$user',
-            completedTests: { $sum: 1 },
-            correctTotal: { $sum: '$correctAnswers' },
-          },
-        },
-      ]),
-    ]);
+    // 3. Fetch ONLY active student accounts for participants with real activity (or current user)
+    const students = await User.find({
+      _id: { $in: Array.from(candidateIds) },
+      role: 'student',
+      isActive: { $ne: false },
+    })
+      .select('firstName lastName profilePhoto createdAt')
+      .lean();
 
     const aptMap = new Map(aptitudeAgg.map((a) => [a._id.toString(), a]));
     const codeMap = new Map(codingAgg.map((c) => [c._id.toString(), c]));
@@ -235,7 +241,10 @@ export const getLeaderboard = async (req, res, next) => {
       }
     }
 
-    // 8. Public payload stripping any internal/unneeded data
+    // 8. Public payload stripping any internal/unneeded data with safe limit bounding
+    const parsedLimit = req.query.limit ? parseInt(req.query.limit, 10) : 100;
+    const limit = Math.min(100, Math.max(1, isNaN(parsedLimit) ? 100 : parsedLimit));
+
     const publicLeaderboard = rankedParticipants.map((p) => ({
       rank: p.rank,
       student: {
@@ -255,7 +264,7 @@ export const getLeaderboard = async (req, res, next) => {
     res.status(200).json({
       success: true,
       data: {
-        leaderboard: publicLeaderboard,
+        leaderboard: publicLeaderboard.slice(0, limit),
         currentUser: currentUserContext,
         scoringRules: {
           aptitudeWeight: SCORING_WEIGHTS.aptitudeSession,

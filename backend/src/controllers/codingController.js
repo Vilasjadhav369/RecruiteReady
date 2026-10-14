@@ -269,6 +269,7 @@ export const getSubmissions = async (req, res, next) => {
     const total = await CodingSubmission.countDocuments(query);
     const submissions = await CodingSubmission.find(query)
       .populate('problem', 'title slug difficulty')
+      .select('-code')
       .sort({ submittedAt: -1 })
       .skip(skip)
       .limit(limitNum)

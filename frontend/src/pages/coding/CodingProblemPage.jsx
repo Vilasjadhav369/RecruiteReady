@@ -21,6 +21,7 @@ import {
   ArrowLeftIcon,
   PlayIcon,
   AlertTriangleIcon,
+  InfoIcon,
 } from '../../components/ui/index.js';
 import BookmarkButton from '../../components/bookmarks/BookmarkButton.jsx';
 
@@ -626,13 +627,25 @@ export default function CodingProblemPage() {
                         </div>
 
                         <Badge
-                          variant={isAccepted ? 'brand' : 'warning'}
+                          variant={isAccepted ? 'brand' : submissionStatus === 'execution_unavailable' ? 'default' : 'warning'}
                           size="md"
                           dot
                         >
-                          {isAccepted ? 'Accepted' : submissionStatus?.replace(/_/g, ' ') || 'Submitted'}
+                          {isAccepted ? 'Accepted' : submissionStatus === 'execution_unavailable' ? 'Execution Unavailable' : submissionStatus?.replace(/_/g, ' ') || 'Submitted'}
                         </Badge>
                       </div>
+
+                      {submissionStatus === 'execution_unavailable' && (
+                        <div className="p-3 bg-amber-50/70 border border-amber-200/80 rounded-xl flex items-start gap-2.5 text-xs text-amber-900 leading-relaxed">
+                          <InfoIcon className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                          <div className="space-y-1">
+                            <span className="font-semibold block">External Sandbox Runner Inactive</span>
+                            <p className="text-[11px] text-amber-800">
+                              Your solution has been saved securely to your account. However, automated test evaluation is currently unavailable because an isolated code execution sandbox runner is not configured. You can continue drafting solutions or test your code locally in your development environment.
+                            </p>
+                          </div>
+                        </div>
+                      )}
 
                       <div className="p-3.5 bg-slate-950 rounded-xl border border-slate-800 text-xs font-mono text-slate-200 space-y-1.5">
                         <div className="text-[11px] text-slate-400 font-sans font-semibold border-b border-slate-800 pb-1 flex justify-between">
@@ -670,6 +683,18 @@ export default function CodingProblemPage() {
                             : runResult.status?.replace(/_/g, ' ') || 'Completed'}
                         </Badge>
                       </div>
+
+                      {runResult.status === 'execution_unavailable' && (
+                        <div className="p-3 bg-amber-50/70 border border-amber-200/80 rounded-xl flex items-start gap-2.5 text-xs text-amber-900 leading-relaxed">
+                          <InfoIcon className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                          <div className="space-y-1">
+                            <span className="font-semibold block">Sandbox Runner Unavailable</span>
+                            <p className="text-[11px] text-amber-800">
+                              Automated test execution requires an external isolated sandbox runner which is not currently reachable. Your code syntax and solution structure remain intact in the editor.
+                            </p>
+                          </div>
+                        </div>
+                      )}
 
                       <div className="p-3.5 bg-slate-950 rounded-xl border border-slate-800 text-xs font-mono text-slate-200 space-y-1.5">
                         <div className="text-[11px] text-slate-400 font-sans font-semibold border-b border-slate-800 pb-1">

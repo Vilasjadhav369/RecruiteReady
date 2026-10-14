@@ -36,7 +36,7 @@ export function Tabs({
               onClick={() => onChange && onChange(id)}
               className={`pb-3 px-3.5 text-xs sm:text-sm font-semibold transition-all border-b-2 flex items-center gap-1.5 shrink-0 cursor-pointer ${
                 isActive
-                  ? 'border-blue-600 text-blue-600'
+                  ? 'border-primary text-primary'
                   : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
               }`}
             >
@@ -45,7 +45,7 @@ export function Tabs({
               {count !== undefined && (
                 <span
                   className={`text-[11px] px-1.5 py-0.2 rounded-full font-mono ${
-                    isActive ? 'bg-blue-100 text-blue-800' : 'bg-slate-100 text-slate-600'
+                    isActive ? 'bg-primary-soft text-primary-dark' : 'bg-slate-100 text-slate-600'
                   }`}
                 >
                   {count}

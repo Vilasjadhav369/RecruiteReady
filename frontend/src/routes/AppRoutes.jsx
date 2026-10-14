@@ -122,6 +122,7 @@ function AppRoutes() {
       >
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/settings" element={<ProfilePage defaultTab="security" />} />
         <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/saved" element={<SavedPage />} />
         <Route path="/bookmarks" element={<SavedPage />} />

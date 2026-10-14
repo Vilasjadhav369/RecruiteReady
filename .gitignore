@@ -1,4 +1,4 @@
-﻿# ==============================
+# ==============================
 # RecruitReady - Root .gitignore
 # ==============================
 
@@ -33,6 +33,11 @@ Thumbs.db
 # Coverage
 coverage/
 
-# Temporary files
+# Temporary files & test artifacts
 *.tmp
 *.temp
+test-results/
+playwright-report/
+
+RecruitReady-Claude-Review.zip
+RecruitReady-Claude-Review/

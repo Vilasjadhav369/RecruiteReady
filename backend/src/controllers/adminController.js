@@ -10,8 +10,10 @@ import MockTest from '../models/MockTest.js';
 import MockTestAttempt from '../models/MockTestAttempt.js';
 import Review from '../models/Review.js';
 import AuditLog from '../models/AuditLog.js';
+import Session from '../models/Session.js';
 import { logSecurityEvent } from '../services/securityLogger.js';
 import notificationService from '../services/notificationService.js';
+import sessionService from '../services/sessionService.js';
 
 // ─── ADMIN DASHBOARD ──────────────────────────────────────────────────────────
 
@@ -564,6 +566,11 @@ export const updateStudentStatus = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Student not found' });
     }
 
+    // Revoke all active sessions immediately if account is deactivated
+    if (!isActive) {
+      await sessionService.revokeAllSessions(student._id);
+    }
+
     await logSecurityEvent({
       action: 'admin_update_student_status',
       user: req.user?._id,
@@ -603,6 +610,14 @@ export const bulkUpdateStudentStatus = async (req, res, next) => {
       { _id: { $in: validIds }, role: 'student' },
       { $set: { isActive } }
     );
+
+    // Revoke all active sessions for deactivated students
+    if (!isActive) {
+      await Session.updateMany(
+        { user: { $in: validIds }, revokedAt: null },
+        { $set: { revokedAt: new Date() } }
+      );
+    }
 
     await logSecurityEvent({
       action: 'admin_bulk_update_student_status',
@@ -1745,6 +1760,7 @@ export const getAdminMockTests = async (req, res, next) => {
 
     const total = await MockTest.countDocuments();
     const mockTests = await MockTest.find()
+      .populate('company', 'name slug logoUrl isActive')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limitNum)
@@ -1764,7 +1780,7 @@ export const getAdminMockTests = async (req, res, next) => {
 
 export const createMockTest = async (req, res, next) => {
   try {
-    const { title, description, durationMinutes, categories, difficulty, instructions, questions, isPublished } = req.body;
+    const { title, description, durationMinutes, categories, difficulty, instructions, questions, isPublished, company } = req.body;
 
     if (!title || durationMinutes === undefined || durationMinutes === null) {
       return res.status(400).json({ success: false, message: 'Title and duration in minutes are required' });
@@ -1773,6 +1789,19 @@ export const createMockTest = async (req, res, next) => {
     const dur = Number(durationMinutes);
     if (!dur || dur <= 0 || isNaN(dur)) {
       return res.status(400).json({ success: false, message: 'Duration must be greater than 0 minutes' });
+    }
+
+    // Validate optional company assignment
+    let assignedCompanyId = null;
+    if (company !== undefined && company !== null && company !== '') {
+      if (!mongoose.Types.ObjectId.isValid(company)) {
+        return res.status(400).json({ success: false, message: 'Invalid company ID format' });
+      }
+      const companyExists = await Company.exists({ _id: company });
+      if (!companyExists) {
+        return res.status(400).json({ success: false, message: 'Selected company does not exist' });
+      }
+      assignedCompanyId = company;
     }
 
     if (Array.isArray(questions) && questions.length > 0) {
@@ -1803,8 +1832,11 @@ export const createMockTest = async (req, res, next) => {
       questions: Array.isArray(questions) ? questions : [],
       totalQuestions: Array.isArray(questions) ? questions.length : 0,
       isPublished: isPublished !== undefined ? isPublished : true,
+      company: assignedCompanyId,
       createdBy: req.user._id,
     });
+
+    await test.populate('company', 'name slug logoUrl isActive');
 
     if (test.isPublished) {
       notificationService
@@ -1832,7 +1864,8 @@ export const createMockTest = async (req, res, next) => {
 
 export const getAdminMockTestById = async (req, res, next) => {
   try {
-    const mockTest = await MockTest.findById(req.params.id);
+    const mockTest = await MockTest.findById(req.params.id)
+      .populate('company', 'name slug logoUrl isActive');
     if (!mockTest) {
       return res.status(404).json({ success: false, message: 'Mock test not found' });
     }
@@ -1853,6 +1886,21 @@ export const updateMockTest = async (req, res, next) => {
         return res.status(400).json({ success: false, message: 'Duration must be greater than 0 minutes' });
       }
       updates.durationMinutes = dur;
+    }
+
+    // Validate optional company assignment update (or detachment)
+    if (updates.company !== undefined) {
+      if (updates.company === null || updates.company === '') {
+        updates.company = null;
+      } else {
+        if (!mongoose.Types.ObjectId.isValid(updates.company)) {
+          return res.status(400).json({ success: false, message: 'Invalid company ID format' });
+        }
+        const companyExists = await Company.exists({ _id: updates.company });
+        if (!companyExists) {
+          return res.status(400).json({ success: false, message: 'Selected company does not exist' });
+        }
+      }
     }
 
     if (updates.questions && Array.isArray(updates.questions)) {
@@ -1878,7 +1926,7 @@ export const updateMockTest = async (req, res, next) => {
       req.params.id,
       { $set: updates },
       { returnDocument: 'after', runValidators: true }
-    );
+    ).populate('company', 'name slug logoUrl isActive');
 
     if (!mockTest) {
       return res.status(404).json({ success: false, message: 'Mock test not found' });

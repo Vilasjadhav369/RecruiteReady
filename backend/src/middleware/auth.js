@@ -40,7 +40,7 @@ export const protect = async (req, res, next) => {
 
     // Server-side session verification if token is bound to a session
     if (decoded.sessionId) {
-      const activeSession = await sessionService.verifySession(decoded.sessionId, decoded.id);
+      const activeSession = await sessionService.verifySession(decoded.sessionId, decoded.id, token);
       if (!activeSession) {
         return res.status(401).json({
           success: false,
@@ -80,6 +80,7 @@ export const protect = async (req, res, next) => {
 /**
  * optionalAuth — Middleware for public routes that optionally enrich the request
  * with the authenticated user if a valid Bearer token is provided.
+ * Rejects expired or revoked sessions to prevent authentication state leakage.
  */
 export const optionalAuth = async (req, res, next) => {
   try {
@@ -98,6 +99,17 @@ export const optionalAuth = async (req, res, next) => {
     }
 
     if (decoded?.id) {
+      // Validate session status if token is bound to a server session
+      if (decoded.sessionId) {
+        const activeSession = await sessionService.verifySession(decoded.sessionId, decoded.id, token);
+        if (!activeSession) {
+          // Session is expired or revoked: do not attach user, proceed anonymously
+          return next();
+        }
+        req.sessionId = decoded.sessionId;
+        req.session = activeSession;
+      }
+
       const user = await User.findById(decoded.id);
       if (user && user.isActive) {
         req.user = user;

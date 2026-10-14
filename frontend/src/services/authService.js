@@ -76,7 +76,11 @@ export const getCurrentUser = async () => {
  */
 export const updateProfile = async (profileData) => {
   const response = await api.put("/auth/profile", profileData);
-  return response.data?.data?.user;
+  const data = response.data?.data;
+  if (!data?.user) return data;
+  // Attach goalSyncPending directly onto user object for consumer convenience
+  data.user.goalSyncPending = Boolean(data.goalSyncPending);
+  return data.user;
 };
 
 /**

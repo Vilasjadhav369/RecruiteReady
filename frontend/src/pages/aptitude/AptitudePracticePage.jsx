@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getAptitudeMetadata, startAptitudeSession, getAptitudeHistory } from '../../services/aptitudeService.js';
 import { formatDate } from '../../utils/formatters.js';
 import {
@@ -67,6 +67,9 @@ const TIME_LIMIT_OPTIONS = [
 
 export default function AptitudePracticePage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const configFormRef = useRef(null);
+
   const [metadata, setMetadata] = useState(null);
   const [recentAttempts, setRecentAttempts] = useState([]);
   const [totalAttemptsCount, setTotalAttemptsCount] = useState(0);
@@ -94,8 +97,79 @@ export default function AptitudePracticePage() {
       ]);
 
       setMetadata(metaData);
-      if (metaData?.categories?.length > 0) {
-        setCategory(metaData.categories[0]);
+
+      const topicParam = searchParams.get('topic');
+      const categoryParam = searchParams.get('category');
+
+      let targetCategory = metaData?.categories?.length > 0 ? metaData.categories[0] : '';
+      let targetTopic = 'all';
+
+      // 1. If category param is present, try to match it
+      if (categoryParam && metaData?.categories?.length > 0) {
+        const matchedCat = metaData.categories.find(
+          (c) => c.toLowerCase().trim() === categoryParam.toLowerCase().trim()
+        );
+        if (matchedCat) {
+          targetCategory = matchedCat;
+        }
+      }
+
+      // 2. If topic param is present, try case-insensitive match against metadata.topics
+      if (topicParam && metaData?.topics?.length > 0) {
+        const matchedTopic = metaData.topics.find(
+          (t) => t.toLowerCase().trim() === topicParam.toLowerCase().trim()
+        );
+        if (matchedTopic) {
+          targetTopic = matchedTopic;
+
+          // Check if topic is known to belong to a particular category (fallback map)
+          const TOPIC_CATEGORY_FALLBACK = {
+            'time and work': 'Quantitative Aptitude',
+            'profit and loss': 'Quantitative Aptitude',
+            'average': 'Quantitative Aptitude',
+            'ratio and proportion': 'Quantitative Aptitude',
+            'permutations and combinations': 'Quantitative Aptitude',
+            'probability': 'Quantitative Aptitude',
+            'number systems': 'Quantitative Aptitude',
+            'compound interest': 'Quantitative Aptitude',
+            'boats and streams': 'Quantitative Aptitude',
+            'blood relations': 'Logical Reasoning',
+            'coding-decoding': 'Logical Reasoning',
+            'syllogisms': 'Logical Reasoning',
+            'number series': 'Logical Reasoning',
+            'directions': 'Logical Reasoning',
+            'seating arrangement': 'Logical Reasoning',
+            'venn diagrams': 'Logical Reasoning',
+            'vocabulary': 'Verbal Ability',
+            'sentence correction': 'Verbal Ability',
+            'sentence completion': 'Verbal Ability',
+            'para jumbles': 'Verbal Ability',
+          };
+
+          const mappedCat = TOPIC_CATEGORY_FALLBACK[matchedTopic.toLowerCase().trim()];
+          if (mappedCat && metaData.categories.includes(mappedCat)) {
+            targetCategory = mappedCat;
+          }
+        }
+      }
+
+      setCategory(targetCategory);
+      setTopic(targetTopic);
+
+      // If a topic or category deep link was provided, scroll smoothly to the configuration form
+      if (topicParam || categoryParam) {
+        setTimeout(() => {
+          if (configFormRef.current) {
+            const prefersReducedMotion =
+              typeof window !== 'undefined' &&
+              window.matchMedia &&
+              window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            configFormRef.current.scrollIntoView({
+              behavior: prefersReducedMotion ? 'auto' : 'smooth',
+              block: 'start',
+            });
+          }
+        }, 100);
       }
 
       setRecentAttempts(historyData?.attempts || []);
@@ -110,7 +184,7 @@ export default function AptitudePracticePage() {
 
   useEffect(() => {
     loadPageData();
-  }, []);
+  }, [searchParams]);
 
   const getCategoryCount = (cat) => {
     return metadata?.countsByCategory?.[cat] || 0;
@@ -174,6 +248,37 @@ export default function AptitudePracticePage() {
       setStarting(false);
     }
   };
+
+  // Compute accurate question counts by difficulty for currently selected category or topic
+  const difficultyBreakdown = useMemo(() => {
+    if (!metadata) return null;
+
+    // If specific topic is selected and we have topic-level counts
+    if (topic && topic !== 'all' && metadata.countsByTopicAndDifficulty?.[topic]) {
+      const counts = metadata.countsByTopicAndDifficulty[topic];
+      return {
+        easy: counts.easy || 0,
+        medium: counts.medium || 0,
+        hard: counts.hard || 0,
+        total: (counts.easy || 0) + (counts.medium || 0) + (counts.hard || 0),
+        scope: topic,
+      };
+    }
+
+    // Otherwise use category-level difficulty breakdown
+    if (category && metadata.countsByDifficulty?.[category]) {
+      const counts = metadata.countsByDifficulty[category];
+      return {
+        easy: counts.easy || 0,
+        medium: counts.medium || 0,
+        hard: counts.hard || 0,
+        total: (counts.easy || 0) + (counts.medium || 0) + (counts.hard || 0),
+        scope: category,
+      };
+    }
+
+    return null;
+  }, [metadata, category, topic]);
 
   // Build topic options for the selected category
   const topicOptions = [
@@ -370,7 +475,7 @@ export default function AptitudePracticePage() {
           </Card>
 
           {/* ── 4. Practice Configuration ── */}
-          <Card>
+          <Card id="practice-configuration" ref={configFormRef}>
             <CardContent className="p-5 sm:p-6">
               <div className="mb-5">
                 <h2 className="text-sm font-semibold text-slate-900 tracking-tight">
@@ -411,6 +516,32 @@ export default function AptitudePracticePage() {
                   options={TIME_LIMIT_OPTIONS}
                 />
               </div>
+
+              {/* ── Difficulty Question Pool Breakdown ── */}
+              {difficultyBreakdown && difficultyBreakdown.total > 0 && (
+                <div className="mt-4 pt-3.5 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-slate-500 font-medium">Question Pool for {difficultyBreakdown.scope}:</span>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200/80">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                        Easy: {difficultyBreakdown.easy}
+                      </span>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-200/80">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
+                        Medium: {difficultyBreakdown.medium}
+                      </span>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-rose-50 text-rose-800 border border-rose-200/80">
+                        <span className="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
+                        Hard: {difficultyBreakdown.hard}
+                      </span>
+                    </div>
+                  </div>
+                  <span className="text-[11px] text-slate-400 font-mono">
+                    {difficultyBreakdown.total} available total
+                  </span>
+                </div>
+              )}
             </CardContent>
 
             {/* ── 5. Start Practice Area & Session Summary ── */}

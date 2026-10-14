@@ -12,6 +12,14 @@ const aptitudeAnswerSchema = new mongoose.Schema(
       enum: ['A', 'B', 'C', 'D', ''],
       default: '',
     },
+    version: {
+      type: Number,
+      default: 1,
+    },
+    clientTimestamp: {
+      type: Date,
+      default: null,
+    },
     isCorrect: {
       type: Boolean,
       default: null,
@@ -19,6 +27,55 @@ const aptitudeAnswerSchema = new mongoose.Schema(
     marksObtained: {
       type: Number,
       default: 0,
+    },
+  },
+  { _id: false }
+);
+
+const questionSnapshotSchema = new mongoose.Schema(
+  {
+    questionId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+    },
+    questionType: {
+      type: String,
+      default: 'aptitude',
+    },
+    question: {
+      type: String,
+      required: true,
+    },
+    options: [
+      {
+        key: { type: String, required: true },
+        text: { type: String, required: true },
+        originalKey: { type: String, default: '' },
+      },
+    ],
+    correctOption: {
+      type: String,
+      required: true,
+    },
+    explanation: {
+      type: String,
+      default: '',
+    },
+    marks: {
+      type: Number,
+      default: 1,
+    },
+    category: {
+      type: String,
+      default: '',
+    },
+    topic: {
+      type: String,
+      default: '',
+    },
+    difficulty: {
+      type: String,
+      default: 'medium',
     },
   },
   { _id: false }
@@ -38,8 +95,32 @@ const aptitudeAttemptSchema = new mongoose.Schema(
         ref: 'AptitudeQuestion',
       },
     ],
+    questionSnapshots: {
+      type: [questionSnapshotSchema],
+      default: [],
+    },
     answers: {
       type: [aptitudeAnswerSchema],
+      default: [],
+    },
+    integrityEvents: {
+      type: [
+        {
+          eventType: {
+            type: String,
+            enum: ['tab_hidden', 'tab_visible', 'window_blur', 'window_focus', 'fullscreen_exit'],
+            required: true,
+          },
+          timestamp: {
+            type: Date,
+            default: Date.now,
+          },
+          metadata: {
+            type: mongoose.Schema.Types.Mixed,
+            default: {},
+          },
+        },
+      ],
       default: [],
     },
     category: {
@@ -111,6 +192,10 @@ aptitudeAttemptSchema.index({ user: 1, createdAt: -1 });
 aptitudeAttemptSchema.index({ user: 1, status: 1, createdAt: -1 });
 aptitudeAttemptSchema.index({ user: 1, category: 1 });
 aptitudeAttemptSchema.index({ user: 1, topic: 1 });
+aptitudeAttemptSchema.index(
+  { user: 1, category: 1, topic: 1, difficulty: 1 },
+  { unique: true, partialFilterExpression: { status: 'in_progress' } }
+);
 
 const AptitudeAttempt = mongoose.model('AptitudeAttempt', aptitudeAttemptSchema);
 

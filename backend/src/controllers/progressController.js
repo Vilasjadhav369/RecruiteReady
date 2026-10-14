@@ -124,46 +124,87 @@ export const getProgressSummary = async (req, res, next) => {
   try {
     const userId = req.user._id;
 
-    // Fetch user profile and all domain records in parallel
+    // Fetch user profile and all domain records in parallel with strict projections
     const [
       user,
       allAptitudeAttempts,
-      completedAptitudeAttempts,
       allCodingSubmissions,
       allMockAttempts,
-      submittedMockAttempts,
       userBookmarks,
     ] = await Promise.all([
-      User.findById(userId).lean(),
-      AptitudeAttempt.find({ user: userId }).sort({ createdAt: -1 }).lean(),
-      AptitudeAttempt.find({ user: userId, status: { $in: ['submitted', 'expired'] } })
-        .sort({ createdAt: 1 })
+      User.findById(userId)
+        .select('firstName lastName college branch graduationYear preparationLevel targetCompanies preparationGoals')
+        .lean(),
+      AptitudeAttempt.find({ user: userId })
+        .select('category topic difficulty score percentage correctAnswers wrongAnswers unanswered totalQuestions status submittedAt createdAt')
+        .sort({ createdAt: -1 })
         .lean(),
       CodingSubmission.find({ user: userId })
         .populate('problem', 'title difficulty topics category')
+        .select('problem status language submittedAt createdAt')
         .sort({ submittedAt: -1 })
         .lean(),
-      MockTestAttempt.find({ user: userId }).sort({ createdAt: -1 }).lean(),
-      MockTestAttempt.find({ user: userId, status: 'submitted' })
+      MockTestAttempt.find({ user: userId })
         .populate('mockTest', 'title totalQuestions durationMinutes categories difficulty')
-        .sort({ createdAt: 1 })
+        .select('mockTest score percentage correctAnswers wrongAnswers totalQuestions status submittedAt createdAt')
+        .sort({ createdAt: -1 })
         .lean(),
       Bookmark.find({ user: userId, itemType: 'company' }).select('itemId').lean(),
     ]);
 
-    // Profile Completion Calculation (Real transparent weights)
+    // Derive completed / submitted sets in-memory (chronological ascending order by createdAt)
+    const completedAptitudeAttempts = allAptitudeAttempts
+      .filter((a) => a.status === 'submitted' || a.status === 'expired')
+      .slice()
+      .reverse();
+
+    const submittedMockAttempts = allMockAttempts
+      .filter((m) => m.status === 'submitted')
+      .slice()
+      .reverse();
+
     const profileFields = [
-      Boolean(user?.firstName?.trim()),
-      Boolean(user?.lastName?.trim()),
-      Boolean(user?.college?.trim()),
-      Boolean(user?.branch?.trim()),
-      Boolean(user?.graduationYear),
-      Boolean(user?.preparationLevel?.trim()),
-      Array.isArray(user?.targetCompanies) && user.targetCompanies.length > 0,
-      Array.isArray(user?.preparationGoals) && user.preparationGoals.length > 0,
+      { key: 'firstName', weight: 10, check: typeof user?.firstName === 'string' && user.firstName.trim().length > 0 },
+      { key: 'lastName', weight: 10, check: typeof user?.lastName === 'string' && user.lastName.trim().length > 0 },
+      { key: 'college', weight: 15, check: typeof user?.college === 'string' && user.college.trim().length > 0 },
+      { key: 'branch', weight: 15, check: typeof user?.branch === 'string' && user.branch.trim().length > 0 },
+      {
+        key: 'graduationYear',
+        weight: 10,
+        check: (() => {
+          if (user?.graduationYear === null || user?.graduationYear === undefined || user?.graduationYear === '') return false;
+          const num = Number(user.graduationYear);
+          return !isNaN(num) && Number.isInteger(num) && num >= 2000 && num <= 2100;
+        })(),
+      },
+      { key: 'preparationLevel', weight: 15, check: typeof user?.preparationLevel === 'string' && user.preparationLevel.trim().length > 0 },
+      {
+        key: 'targetCompanies',
+        weight: 15,
+        check: Array.isArray(user?.targetCompanies) && user.targetCompanies.some((item) => {
+          if (!item) return false;
+          if (typeof item === 'string') return item.trim().length > 0;
+          if (typeof item === 'object') return Boolean(item._id || (typeof item.name === 'string' && item.name.trim().length > 0));
+          return true;
+        }),
+      },
+      {
+        key: 'preparationGoals',
+        weight: 10,
+        check: Array.isArray(user?.preparationGoals) && user.preparationGoals.some((item) => {
+          if (!item) return false;
+          if (typeof item === 'string') return item.trim().length > 0;
+          return true;
+        }),
+      },
     ];
-    const completedFieldsCount = profileFields.filter(Boolean).length;
-    const profileCompletionPct = Math.round((completedFieldsCount / profileFields.length) * 100);
+    let profileCompletionPct = 0;
+    profileFields.forEach((field) => {
+      if (field.check) {
+        profileCompletionPct += field.weight;
+      }
+    });
+    profileCompletionPct = Math.min(100, Math.round(profileCompletionPct));
 
     // ==========================================
     // 1. APTITUDE ANALYTICS

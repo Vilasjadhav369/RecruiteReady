@@ -9,6 +9,7 @@ import githubAuthService from '../services/githubAuthService.js';
 import emailService from '../services/emailService.js';
 import sessionService from '../services/sessionService.js';
 import securityLogger from '../services/securityLogger.js';
+import { reconcileGoalsFromStringArray } from '../services/goalService.js';
 
 /**
  * Strips all sensitive credentials and internal tokens from user payload.
@@ -60,14 +61,14 @@ export const register = async (req, res, next) => {
     } = req.body;
 
     // 1. Validation
-    if (!firstName || !firstName.trim()) {
-      return res.status(400).json({ success: false, message: 'First name is required' });
+    if (!firstName || typeof firstName !== 'string' || !firstName.trim()) {
+      return res.status(400).json({ success: false, message: 'First name is required and must be text' });
     }
-    if (!lastName || !lastName.trim()) {
-      return res.status(400).json({ success: false, message: 'Last name is required' });
+    if (!lastName || typeof lastName !== 'string' || !lastName.trim()) {
+      return res.status(400).json({ success: false, message: 'Last name is required and must be text' });
     }
-    if (!email || !email.trim()) {
-      return res.status(400).json({ success: false, message: 'Email is required' });
+    if (!email || typeof email !== 'string' || !email.trim()) {
+      return res.status(400).json({ success: false, message: 'Email is required and must be valid' });
     }
 
     const emailRegex = /^\S+@\S+\.\S+$/;
@@ -76,11 +77,19 @@ export const register = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Please provide a valid email address' });
     }
 
-    if (!password || password.length < 8) {
+    if (!password || typeof password !== 'string' || password.length < 8) {
       return res.status(400).json({
         success: false,
         message: 'Password must be at least 8 characters long',
       });
+    }
+
+    // Optional string fields type validation
+    if (college !== undefined && typeof college !== 'string') {
+      return res.status(400).json({ success: false, message: 'College must be text' });
+    }
+    if (branch !== undefined && typeof branch !== 'string') {
+      return res.status(400).json({ success: false, message: 'Branch must be text' });
     }
 
     // 2. Check if user already exists
@@ -206,6 +215,21 @@ export const login = async (req, res, next) => {
     }
 
     // 3. Compare password using bcryptjs
+    // If account was created via social OAuth and has no local password set, fail safely with generic message
+    if (!user.password) {
+      await securityLogger.logSecurityEvent({
+        action: 'auth.login_failure',
+        user,
+        req,
+        details: { reason: 'social_only_account_no_password' },
+        severity: 'warning',
+      });
+      return res.status(401).json({
+        success: false,
+        message: invalidCredentialsMsg,
+      });
+    }
+
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       await securityLogger.logSecurityEvent({
@@ -275,24 +299,33 @@ export const updateProfile = async (req, res, next) => {
       college,
       branch,
       graduationYear,
+      cgpa,
+      backlogs,
+      preparationLevel,
       targetCompanies,
       preparationGoals,
       profilePhoto,
     } = req.body;
 
     // Validations
-    if (firstName !== undefined && !firstName.trim()) {
-      return res.status(400).json({ success: false, message: 'First name cannot be empty' });
+    if (firstName !== undefined && (typeof firstName !== 'string' || !firstName.trim())) {
+      return res.status(400).json({ success: false, message: 'First name cannot be empty and must be text' });
     }
-    if (lastName !== undefined && !lastName.trim()) {
-      return res.status(400).json({ success: false, message: 'Last name cannot be empty' });
+    if (lastName !== undefined && (typeof lastName !== 'string' || !lastName.trim())) {
+      return res.status(400).json({ success: false, message: 'Last name cannot be empty and must be text' });
+    }
+    if (college !== undefined && college !== null && college !== '' && typeof college !== 'string') {
+      return res.status(400).json({ success: false, message: 'College must be text' });
+    }
+    if (branch !== undefined && branch !== null && branch !== '' && typeof branch !== 'string') {
+      return res.status(400).json({ success: false, message: 'Branch must be text' });
     }
 
     const updates = {};
     if (firstName !== undefined) updates.firstName = firstName.trim();
     if (lastName !== undefined) updates.lastName = lastName.trim();
-    if (college !== undefined) updates.college = college.trim();
-    if (branch !== undefined) updates.branch = branch.trim();
+    if (college !== undefined) updates.college = college ? String(college).trim() : '';
+    if (branch !== undefined) updates.branch = branch ? String(branch).trim() : '';
     if (graduationYear !== undefined) {
       if (graduationYear === '' || graduationYear === null) {
         updates.graduationYear = undefined;
@@ -304,6 +337,28 @@ export const updateProfile = async (req, res, next) => {
         updates.graduationYear = gradYearNum;
       }
     }
+    if (cgpa !== undefined) {
+      if (cgpa === '' || cgpa === null) {
+        updates.cgpa = null;
+      } else {
+        const cgpaNum = Number(cgpa);
+        if (isNaN(cgpaNum) || cgpaNum < 0 || cgpaNum > 10) {
+          return res.status(400).json({ success: false, message: 'CGPA must be a valid number between 0 and 10' });
+        }
+        updates.cgpa = Math.round(cgpaNum * 100) / 100;
+      }
+    }
+    if (backlogs !== undefined) {
+      if (backlogs === '' || backlogs === null) {
+        updates.backlogs = 0;
+      } else {
+        const backlogsNum = Number(backlogs);
+        if (isNaN(backlogsNum) || !Number.isInteger(backlogsNum) || backlogsNum < 0) {
+          return res.status(400).json({ success: false, message: 'Backlogs must be a non-negative whole number (0 or greater)' });
+        }
+        updates.backlogs = backlogsNum;
+      }
+    }
     if (targetCompanies !== undefined && Array.isArray(targetCompanies)) {
       updates.targetCompanies = targetCompanies.map((c) => String(c).trim()).filter(Boolean);
     }
@@ -312,9 +367,10 @@ export const updateProfile = async (req, res, next) => {
     }
     if (preparationLevel !== undefined) {
       const allowedLevels = ['Just Starting', 'Beginner', 'Intermediate', 'Advanced', 'Placement Ready', ''];
-      if (allowedLevels.includes(preparationLevel)) {
-        updates.preparationLevel = preparationLevel;
+      if (!allowedLevels.includes(preparationLevel)) {
+        return res.status(400).json({ success: false, message: 'Invalid preparation level value provided' });
       }
+      updates.preparationLevel = preparationLevel;
     }
     if (profilePhoto !== undefined) updates.profilePhoto = String(profilePhoto).trim();
 
@@ -329,6 +385,18 @@ export const updateProfile = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
+    // Recoverable synchronization of PreparationGoal documents if preparationGoals was passed
+    let goalSyncPending = false;
+    if (preparationGoals !== undefined && Array.isArray(preparationGoals)) {
+      try {
+        await reconcileGoalsFromStringArray(userId, updates.preparationGoals);
+      } catch (syncErr) {
+        goalSyncPending = true;
+        // Log error but do not fail the profile update request (non-blocking, recoverable)
+        console.error('Recoverable warning: Failed to reconcile PreparationGoal documents:', syncErr);
+      }
+    }
+
     const userResponse = updatedUser.toObject ? updatedUser.toObject() : { ...updatedUser };
     delete userResponse.password;
 
@@ -337,6 +405,7 @@ export const updateProfile = async (req, res, next) => {
       message: 'Profile updated successfully',
       data: {
         user: userResponse,
+        goalSyncPending,
       },
     });
   } catch (error) {
@@ -386,6 +455,13 @@ export const changePassword = async (req, res, next) => {
       return res.status(404).json({
         success: false,
         message: 'User account not found',
+      });
+    }
+
+    if (!user.password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Your account was created using social sign-in and does not have a local password set.',
       });
     }
 
@@ -555,9 +631,18 @@ export const googleLogin = async (req, res, next) => {
 
       // Safely link Google identity to existing account (role and permissions preserved)
       existingEmailUser.googleId = sub;
-      if (!existingEmailUser.emailVerified) {
+      const wasUnverified = !existingEmailUser.emailVerified;
+      if (wasUnverified) {
         existingEmailUser.emailVerified = true;
         existingEmailUser.emailVerifiedAt = new Date();
+        // Clear old unverified password/reset tokens to prevent takeover via previously set password
+        existingEmailUser.password = undefined;
+        existingEmailUser.passwordResetTokenHash = undefined;
+        existingEmailUser.passwordResetExpiresAt = undefined;
+        existingEmailUser.emailVerificationTokenHash = undefined;
+        existingEmailUser.emailVerificationExpiresAt = undefined;
+        // Invalidate all previously active sessions to eject any pre-existing unverified sessions
+        await sessionService.revokeAllSessions(existingEmailUser._id);
       }
       if (!existingEmailUser.profilePhoto && picture) {
         existingEmailUser.profilePhoto = picture;
@@ -775,9 +860,18 @@ export const githubCallback = async (req, res, next) => {
 
       // Safely link GitHub ID to existing account (role and permissions preserved)
       existingEmailUser.githubId = githubId;
-      if (!existingEmailUser.emailVerified) {
+      const wasUnverified = !existingEmailUser.emailVerified;
+      if (wasUnverified) {
         existingEmailUser.emailVerified = true;
         existingEmailUser.emailVerifiedAt = new Date();
+        // Clear old unverified password/reset tokens to prevent takeover via previously set password
+        existingEmailUser.password = undefined;
+        existingEmailUser.passwordResetTokenHash = undefined;
+        existingEmailUser.passwordResetExpiresAt = undefined;
+        existingEmailUser.emailVerificationTokenHash = undefined;
+        existingEmailUser.emailVerificationExpiresAt = undefined;
+        // Invalidate all previously active sessions to eject any pre-existing unverified sessions
+        await sessionService.revokeAllSessions(existingEmailUser._id);
       }
       if (!existingEmailUser.profilePhoto && profile.avatarUrl) {
         existingEmailUser.profilePhoto = profile.avatarUrl;
@@ -971,6 +1065,9 @@ export const resetPassword = async (req, res, next) => {
     user.passwordResetTokenHash = undefined;
     user.passwordResetExpiresAt = undefined;
     await user.save();
+
+    // Revoke all existing active sessions for this user upon password reset
+    await sessionService.revokeAllSessions(user._id);
 
     // Security alert notification
     try {

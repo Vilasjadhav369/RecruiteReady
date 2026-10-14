@@ -32,9 +32,9 @@ export function Button({
     secondary:
       'bg-slate-900 hover:bg-slate-800 active:bg-slate-950 text-white shadow-xs border border-slate-900',
     outline:
-      'bg-white hover:bg-emerald-50/50 active:bg-emerald-100/50 text-slate-800 border border-slate-200 shadow-xs hover:border-emerald-300',
+      'bg-white hover:bg-primary-soft active:bg-primary-tint text-slate-800 border border-slate-200 shadow-xs hover:border-primary-border',
     ghost:
-      'bg-transparent hover:bg-emerald-50 active:bg-emerald-100 text-slate-700 hover:text-primary',
+      'bg-transparent hover:bg-primary-soft active:bg-primary-tint text-slate-700 hover:text-primary',
     danger:
       'bg-red-600 hover:bg-red-700 active:bg-red-800 text-white shadow-xs border border-red-600',
     success:

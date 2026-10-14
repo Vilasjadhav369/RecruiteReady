@@ -1,4 +1,4 @@
-﻿import mongoose from 'mongoose';
+import mongoose from 'mongoose';
 
 const optionSchema = new mongoose.Schema(
   {
@@ -93,7 +93,10 @@ const aptitudeQuestionSchema = new mongoose.Schema(
   }
 );
 
-// Helpful compound indexes
+// Helpful indexes:
+// Standalone index: `topic: 1` is defined directly on schema field (line 55: index: true)
+// which powers standalone queries, aggregations, and topic-filtered sessions.
+// Compound index covers combined category-topic-difficulty lookups:
 aptitudeQuestionSchema.index({ category: 1, topic: 1, difficulty: 1, isActive: 1 });
 
 const AptitudeQuestion = mongoose.model('AptitudeQuestion', aptitudeQuestionSchema);

@@ -8,6 +8,7 @@ import {
   submitMockTestAttempt,
   getAttemptResult,
   getMockTestHistory,
+  recordMockTestTelemetry,
 } from '../controllers/mockTestController.js';
 import protect from '../middleware/auth.js';
 
@@ -19,6 +20,7 @@ router.get('/', getMockTests);
 router.get('/history', getMockTestHistory);
 router.get('/attempts/:id', getAttempt);
 router.patch('/attempts/:id/answers', saveAttemptAnswer);
+router.post('/attempts/:id/telemetry', recordMockTestTelemetry);
 router.post('/attempts/:id/submit', submitMockTestAttempt);
 router.get('/attempts/:id/result', getAttemptResult);
 router.get('/:id', getMockTestById);

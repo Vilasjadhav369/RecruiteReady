@@ -37,7 +37,7 @@ export function AuthCallbackPage() {
       try {
         const user = await loginWithToken(token);
         if (user?.role === "admin") {
-          navigate("/admin/dashboard", { replace: true });
+          navigate("/admin", { replace: true });
         } else if (!user?.onboardingCompleted) {
           navigate("/onboarding", { replace: true });
         } else {

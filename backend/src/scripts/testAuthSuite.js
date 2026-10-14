@@ -27,7 +27,11 @@ import cors from 'cors';
 import helmet from 'helmet';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 dotenv.config();
 
 import connectDB from '../config/db.js';
@@ -43,6 +47,7 @@ import githubAuthService from '../services/githubAuthService.js';
 import emailService from '../services/emailService.js';
 import sessionService from '../services/sessionService.js';
 import { generateToken, verifyToken } from '../utils/jwt.js';
+import { issueSessionAndToken } from '../controllers/authController.js';
 import errorHandler from '../middleware/errorHandler.js';
 
 const TEST_PORT = 5002;
@@ -457,6 +462,160 @@ const runTests = async () => {
       'Client cannot mark emailVerified as true through profile update'
     );
 
+    // TEST 15b: Valid preparationLevel, cgpa, and backlogs update succeeds
+    const res15b = await fetch(`${BASE_URL}/api/auth/profile`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${freshStudentToken}`,
+      },
+      body: JSON.stringify({
+        preparationLevel: 'Intermediate',
+        cgpa: 8.75,
+        backlogs: 0,
+      }),
+    });
+    const data15b = await res15b.json();
+    const studentDbCheck15b = await User.findById(localUser._id);
+    assert(
+      res15b.status === 200 &&
+        data15b.success &&
+        studentDbCheck15b.preparationLevel === 'Intermediate' &&
+        studentDbCheck15b.cgpa === 8.75 &&
+        studentDbCheck15b.backlogs === 0,
+      '15b',
+      'Client can update valid preparationLevel, cgpa, and backlogs without ReferenceError'
+    );
+
+    // TEST 15c: Invalid preparationLevel is rejected with 400 Bad Request
+    const res15c = await fetch(`${BASE_URL}/api/auth/profile`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${freshStudentToken}`,
+      },
+      body: JSON.stringify({ preparationLevel: 'InvalidLevel123' }),
+    });
+    assert(
+      res15c.status === 400,
+      '15c',
+      'Invalid preparationLevel is rejected with 400 Bad Request'
+    );
+
+    // TEST 15d: Invalid CGPA (< 0 or > 10) is rejected with 400 Bad Request
+    const res15d = await fetch(`${BASE_URL}/api/auth/profile`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${freshStudentToken}`,
+      },
+      body: JSON.stringify({ cgpa: 11.5 }),
+    });
+    assert(
+      res15d.status === 400,
+      '15d',
+      'Invalid CGPA (> 10) is rejected with 400 Bad Request'
+    );
+
+    // TEST 15e: Invalid backlogs (negative or fractional) is rejected with 400 Bad Request
+    const res15e = await fetch(`${BASE_URL}/api/auth/profile`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${freshStudentToken}`,
+      },
+      body: JSON.stringify({ backlogs: -1 }),
+    });
+    assert(
+      res15e.status === 400,
+      '15e',
+      'Negative backlogs count is rejected with 400 Bad Request'
+    );
+
+    // TEST 15f: Updating targetCompanies persists array and filters empty values
+    const res15f = await fetch(`${BASE_URL}/api/auth/profile`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${freshStudentToken}`,
+      },
+      body: JSON.stringify({
+        targetCompanies: ['Tata Consultancy Services', 'Amazon', '  Google  ', ''],
+      }),
+    });
+    const data15f = await res15f.json();
+    const studentDbCheck15f = await User.findById(localUser._id);
+    assert(
+      res15f.status === 200 &&
+        data15f.success &&
+        Array.isArray(studentDbCheck15f.targetCompanies) &&
+        studentDbCheck15f.targetCompanies.length === 3 &&
+        studentDbCheck15f.targetCompanies.includes('Google') &&
+        studentDbCheck15f.targetCompanies.includes('Amazon') &&
+        studentDbCheck15f.targetCompanies.includes('Tata Consultancy Services'),
+      '15f',
+      'Updating targetCompanies persists array and filters whitespace/empty strings'
+    );
+
+    // TEST 15g: Updating targetCompanies preserves existing academic fields (cgpa, backlogs, preparationLevel)
+    assert(
+      studentDbCheck15f.cgpa === 8.75 &&
+        studentDbCheck15f.backlogs === 0 &&
+        studentDbCheck15f.preparationLevel === 'Intermediate',
+      '15g',
+      'Target companies update strictly preserves existing academic values without accidental erasure'
+    );
+
+    // TEST 15h: Updating preparationGoals persists string array and filters whitespace/empty strings
+    const res15h = await fetch(`${BASE_URL}/api/auth/profile`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${freshStudentToken}`,
+      },
+      body: JSON.stringify({
+        preparationGoals: [
+          'Solve 100+ DSA and algorithmic problems',
+          '  Master Dynamic Programming and Graphs  ',
+          '',
+          'Complete 5 full-length placement mock tests',
+        ],
+      }),
+    });
+    const data15h = await res15h.json();
+    const studentDbCheck15h = await User.findById(localUser._id);
+    assert(
+      res15h.status === 200 &&
+        data15h.success &&
+        Array.isArray(studentDbCheck15h.preparationGoals) &&
+        studentDbCheck15h.preparationGoals.length === 3 &&
+        studentDbCheck15h.preparationGoals[1] === 'Master Dynamic Programming and Graphs' &&
+        studentDbCheck15h.targetCompanies.length === 3 &&
+        studentDbCheck15h.cgpa === 8.75,
+      '15h',
+      'Updating preparationGoals persists array and preserves existing targetCompanies and academic fields'
+    );
+
+    // TEST 15i: Clearing preparationGoals with empty array persists safely
+    const res15i = await fetch(`${BASE_URL}/api/auth/profile`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${freshStudentToken}`,
+      },
+      body: JSON.stringify({
+        preparationGoals: [],
+      }),
+    });
+    const studentDbCheck15i = await User.findById(localUser._id);
+    assert(
+      res15i.status === 200 &&
+        Array.isArray(studentDbCheck15i.preparationGoals) &&
+        studentDbCheck15i.preparationGoals.length === 0,
+      '15i',
+      'Clearing preparationGoals with empty array resets milestones safely'
+    );
+
     // =========================================================================
     // PART 3: PASSWORD & CREDENTIAL SECURITY (TESTS 16–20)
     // =========================================================================
@@ -474,7 +633,33 @@ const runTests = async () => {
       'Password hashes and sensitive token hashes are never returned in API payloads'
     );
 
-    // TEST 17: Password reset works
+    // TEST 17: Password reset works and revokes all active user sessions
+    // First, establish an active session for the student and an active session for another student
+    const preResetLogin = await fetch(`${BASE_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'student_local@auth-test.local', password: 'TestPassword123!' }),
+    });
+    const preResetToken = (await preResetLogin.json()).data?.token;
+
+    // Verify pre-reset token can access protected route
+    const preResetCheck = await fetch(`${BASE_URL}/api/auth/me`, {
+      headers: { Authorization: `Bearer ${preResetToken}` },
+    });
+    assert(
+      preResetCheck.status === 200,
+      '17-pre',
+      'Pre-reset session token is valid and accesses protected route'
+    );
+
+    // Establish a session for another student to verify cross-user isolation
+    const anotherStudentLogin = await fetch(`${BASE_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'other_student@auth-test.local', password: 'TestPassword123!' }),
+    });
+    const anotherStudentToken = (await anotherStudentLogin.json()).data?.token;
+
     lastResetEmailData = null;
     await fetch(`${BASE_URL}/api/auth/forgot-password`, {
       method: 'POST',
@@ -492,6 +677,42 @@ const runTests = async () => {
       res17.status === 200 && data17.success,
       17,
       'Password reset consumes valid one-time token and updates password'
+    );
+
+    // TEST 17b: Pre-reset session token is now rejected with 401 Unauthorized
+    const postResetCheck = await fetch(`${BASE_URL}/api/auth/me`, {
+      headers: { Authorization: `Bearer ${preResetToken}` },
+    });
+    assert(
+      postResetCheck.status === 401,
+      '17b',
+      'Successful password reset revokes all previously active sessions (pre-reset token rejected with 401)'
+    );
+
+    // TEST 17c: Cross-user session isolation: other user's active session is NOT revoked
+    const anotherUserCheck = await fetch(`${BASE_URL}/api/auth/me`, {
+      headers: { Authorization: `Bearer ${anotherStudentToken}` },
+    });
+    assert(
+      anotherUserCheck.status === 200,
+      '17c',
+      'Password reset session revocation is strictly user-scoped; other users remain authenticated'
+    );
+
+    // TEST 17d: Invalid reset token cannot revoke sessions
+    const preInvalidToken = anotherStudentToken;
+    const res17d = await fetch(`${BASE_URL}/api/auth/reset-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: 'bogus_invalid_reset_token_xyz', password: 'SomePassword2026!' }),
+    });
+    const checkAfterInvalid = await fetch(`${BASE_URL}/api/auth/me`, {
+      headers: { Authorization: `Bearer ${preInvalidToken}` },
+    });
+    assert(
+      res17d.status === 400 && checkAfterInvalid.status === 200,
+      '17d',
+      'Invalid reset token is rejected with 400 and cannot revoke existing sessions'
     );
 
     // TEST 18: Reset token expires
@@ -808,6 +1029,231 @@ const runTests = async () => {
       !bundleHasSecrets,
       34,
       'Frontend production bundle does not contain JWT secrets, OAuth secrets, or server keys'
+    );
+
+    // =========================================================================
+    // PART 7: PHASE 0A SECURITY PREFLIGHT & REGRESSION TESTS (TESTS 35–41)
+    // =========================================================================
+
+    // TEST 35: CR-1 Unverified local account linking safely clears old password & revokes existing sessions
+    // Register unverified student
+    const regRes35 = await fetch(`${BASE_URL}/api/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        firstName: 'Unverified',
+        lastName: 'Target',
+        email: 'unverified_target@auth-test.local',
+        password: 'AttackerPassword123!',
+      }),
+    });
+    const regData35 = await regRes35.json();
+    const unverifiedPreToken = regData35.data?.token;
+
+    // Link via Google OAuth
+    googleAuthService.verifyGoogleIdToken = async () => ({
+      sub: 'google_sub_unverified_35',
+      email: 'unverified_target@auth-test.local',
+      emailVerified: true,
+      name: 'Legit User',
+      givenName: 'Legit',
+      familyName: 'User',
+      picture: 'https://lh3.googleusercontent.com/legit',
+    });
+    const linkRes35 = await fetch(`${BASE_URL}/api/auth/google`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ credential: 'mock_google_token_35' }),
+    });
+    const linkData35 = await linkRes35.json();
+
+    // Check 1: Old pre-linking session token is now rejected with 401
+    const checkOldSess35 = await fetch(`${BASE_URL}/api/auth/me`, {
+      headers: { Authorization: `Bearer ${unverifiedPreToken}` },
+    });
+
+    // Check 2: Attacker cannot log in with previous unverified password
+    const loginOldPass35 = await fetch(`${BASE_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: 'unverified_target@auth-test.local',
+        password: 'AttackerPassword123!',
+      }),
+    });
+
+    // Check 3: User in database has password cleared and emailVerified true
+    const userInDb35 = await User.findOne({ email: 'unverified_target@auth-test.local' }).select('+password');
+    assert(
+      linkRes35.status === 200 &&
+        linkData35.success &&
+        checkOldSess35.status === 401 &&
+        loginOldPass35.status === 401 &&
+        userInDb35.emailVerified === true &&
+        userInDb35.password === undefined,
+      35,
+      'CR-1: Unverified local account linking safely clears old password and revokes previous active sessions'
+    );
+
+    // TEST 36: CR-4 Missing SMTP configuration never leaks raw token URLs in production mode
+    const origNodeEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+    emailService.sendPasswordResetEmail = origSendReset; // Restore actual emailService logic
+    emailService.sendVerificationEmail = origSendVerify;
+
+    let interceptedLogs = [];
+    const origConsoleError = console.error;
+    const origConsoleLog = console.log;
+    console.error = (...args) => interceptedLogs.push(args.join(' '));
+    console.log = (...args) => interceptedLogs.push(args.join(' '));
+
+    const resetDispatchResult = await emailService.sendPasswordResetEmail({
+      email: 'student_local@auth-test.local',
+      firstName: 'Student',
+      resetUrl: 'https://recruitready.local/reset-password?token=secret_raw_token_xyz999',
+      expiresInMinutes: 20,
+    });
+
+    console.error = origConsoleError;
+    console.log = origConsoleLog;
+    process.env.NODE_ENV = origNodeEnv;
+
+    const leakedTokenInLogs = interceptedLogs.some((l) => l.includes('secret_raw_token_xyz999'));
+    assert(
+      resetDispatchResult.success === false &&
+        resetDispatchResult.mode === 'unconfigured' &&
+        !leakedTokenInLogs,
+      36,
+      'CR-4: Missing SMTP configuration in production mode prevents token-bearing URL leakage in logs'
+    );
+
+    // TEST 37: CR-4 Production startup environment validator rejects missing or weak required configuration
+    const validateEnv = (await import('../config/validateEnv.js')).default;
+    const prodEnvFails = validateEnv(); // Tested under simulated variables
+    const origJwt = process.env.JWT_SECRET;
+    const origClientUrl = process.env.CLIENT_URL;
+
+    // Simulate invalid production environment
+    process.env.NODE_ENV = 'production';
+    process.env.JWT_SECRET = 'short';
+    process.env.CLIENT_URL = 'http://localhost:5173';
+    process.env.EMAIL_HOST = 'smtp.example.com';
+    const prodInvalidCheck = validateEnv();
+
+    // Restore environment
+    process.env.NODE_ENV = origNodeEnv;
+    process.env.JWT_SECRET = origJwt;
+    process.env.CLIENT_URL = origClientUrl;
+
+    assert(
+      prodInvalidCheck.isValid === false &&
+        prodInvalidCheck.errors.some((e) => e.includes('JWT_SECRET must be at least 32 characters')) &&
+        prodInvalidCheck.errors.some((e) => e.includes('CLIENT_URL cannot point to localhost')) &&
+        prodInvalidCheck.errors.some((e) => e.includes('smtp.example.com is not allowed')),
+      37,
+      'CR-4: Production startup environment validator identifies weak secrets, localhost URLs, and default SMTP'
+    );
+
+    // TEST 38: H-4 Social-only account password login returns generic 401 without crashing or leaking state
+    const socialOnlyUser = await User.create({
+      firstName: 'Social',
+      lastName: 'Only',
+      email: 'social_only@auth-test.local',
+      googleId: 'google_social_only_sub_99',
+      authProvider: 'google',
+      role: 'student',
+      isActive: true,
+      emailVerified: true,
+    });
+
+    const socialLoginRes = await fetch(`${BASE_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'social_only@auth-test.local', password: 'AttemptPassword123!' }),
+    });
+    const socialLoginData = await socialLoginRes.json();
+    assert(
+      socialLoginRes.status === 401 &&
+        socialLoginData.success === false &&
+        socialLoginData.message === 'Invalid email or password',
+      38,
+      'H-4: Social-only account password login fails safely with generic 401 without leaking account type'
+    );
+
+    // TEST 39: H-4 Social-only account change-password returns clean 400 without unhandled exception
+    const { token: socialToken } = await issueSessionAndToken(socialOnlyUser, {
+      ip: '127.0.0.1',
+      headers: { 'user-agent': 'TestAgent' },
+    });
+    const socialChangePassRes = await fetch(`${BASE_URL}/api/auth/change-password`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${socialToken}`,
+      },
+      body: JSON.stringify({
+        currentPassword: 'AnyPassword123!',
+        newPassword: 'BrandNewPassword2026!',
+        confirmPassword: 'BrandNewPassword2026!',
+      }),
+    });
+    const socialChangePassData = await socialChangePassRes.json();
+    assert(
+      socialChangePassRes.status === 400 &&
+        socialChangePassData.success === false &&
+        socialChangePassData.message.includes('social sign-in'),
+      39,
+      'H-4: Social-only account change-password returns clean 400 error without crashing server process'
+    );
+
+    // TEST 40: H-4 Invalid non-string registration or profile input rejected with 400
+    const nonStringRegRes = await fetch(`${BASE_URL}/api/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        firstName: { $ne: 'admin' },
+        lastName: ['Smith'],
+        email: { $gt: '' },
+        password: 12345678,
+      }),
+    });
+
+    // Obtain an active authenticated student session for profile update test
+    const loginStudent40 = await fetch(`${BASE_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'student_local@auth-test.local', password: 'UpdatedPassword2026!' }),
+    });
+    const activeStudentToken40 = (await loginStudent40.json()).data?.token;
+
+    const nonStringProfileRes = await fetch(`${BASE_URL}/api/auth/profile`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${activeStudentToken40}`,
+      },
+      body: JSON.stringify({
+        firstName: { evil: true },
+      }),
+    });
+    assert(
+      nonStringRegRes.status === 400 && nonStringProfileRes.status === 400,
+      40,
+      'H-4: Non-string inputs to registration and profile update are validated and rejected with 400 Bad Request'
+    );
+
+    // TEST 41: M-7 Administrator OAuth callback redirect destination verification
+    // Verify frontend AuthCallbackPage logic maps role: 'admin' strictly to '/admin' (not '/admin/dashboard')
+    const callbackPath = fs.existsSync(path.resolve(process.cwd(), 'frontend/src/pages/auth/AuthCallbackPage.jsx'))
+      ? path.resolve(process.cwd(), 'frontend/src/pages/auth/AuthCallbackPage.jsx')
+      : path.resolve(process.cwd(), '../frontend/src/pages/auth/AuthCallbackPage.jsx');
+    const authCallbackCode = fs.readFileSync(callbackPath, 'utf8');
+    const hasAdminDashboardRedirect = authCallbackCode.includes('navigate("/admin/dashboard"');
+    const hasCorrectAdminRedirect = authCallbackCode.includes('navigate("/admin", { replace: true })');
+    assert(
+      !hasAdminDashboardRedirect && hasCorrectAdminRedirect,
+      41,
+      'M-7: Administrator OAuth callback redirect destination correctly navigates to /admin'
     );
 
     // Cleanup test data

@@ -2,35 +2,28 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { getDashboardSummary } from "../services/dashboardService.js";
 
-// Widgets
-import WelcomeBanner from "../components/dashboard/WelcomeBanner.jsx";
-import RecommendationCard from "../components/dashboard/RecommendationCard.jsx";
-import ContinuePreparing from "../components/dashboard/ContinuePreparing.jsx";
-import QuickActions from "../components/dashboard/QuickActions.jsx";
-import PreparationOverview from "../components/dashboard/PreparationOverview.jsx";
-import PlacementReadinessCard from "../components/dashboard/PlacementReadinessCard.jsx";
-import WeakAreasCard from "../components/dashboard/WeakAreasCard.jsx";
-import TargetCompanies from "../components/dashboard/TargetCompanies.jsx";
-import ProfileCompletionCard from "../components/dashboard/ProfileCompletionCard.jsx";
-import RecentActivity from "../components/dashboard/RecentActivity.jsx";
-import UpcomingTests from "../components/dashboard/UpcomingTests.jsx";
-import PreparationStreak from "../components/dashboard/PreparationStreak.jsx";
-import DashboardBottomCTA from "../components/dashboard/DashboardBottomCTA.jsx";
+// High-Density, Streamlined P1 Dashboard Components
+import DashboardCommandBar from "../components/dashboard/DashboardCommandBar.jsx";
+import MissingFieldBanner from "../components/dashboard/MissingFieldBanner.jsx";
+import PreparationLaunchpad from "../components/dashboard/PreparationLaunchpad.jsx";
+import ActivityFeedTabs from "../components/dashboard/ActivityFeedTabs.jsx";
+import PlacementReadinessSidebar from "../components/dashboard/PlacementReadinessSidebar.jsx";
 
 // Feedback states
-import { SkeletonCard } from "../components/ui/Skeleton.jsx";
 import ErrorState from "../components/ui/ErrorState.jsx";
 
 /**
- * DashboardPage — Production student dashboard.
- * Designed according to Apple + Linear + Premium University design direction.
- * Purely data-driven with zero fabricated statistics or phantom numbers.
- * Personalized answering:
- * 1. Who am I? (WelcomeBanner)
- * 2. What should I do next? (ContinuePreparing & RecommendationCard)
- * 3. How am I progressing? (PreparationOverview & PlacementReadinessCard)
- * 4. What am I weak at? (WeakAreasCard)
- * 5. Which companies am I targeting? (TargetCompanies)
+ * DashboardPage — Production Student Dashboard (Phase 1 Refactor).
+ *
+ * Design Identity: Apple + Linear + Premium University
+ * Information Architecture:
+ * - Zone 1: Unified Command Bar (Greeting, credentials, streak, and singular next action)
+ * - Zone 1b: MissingFieldBanner (Incomplete profile setup checklist, hidden when 100%)
+ * - Zone 2: Singular Preparation Launchpad (Aptitude, Coding, Mock Tests, Companies with live metrics)
+ * - Zone 3: Asymmetric Desktop Grid (Left: Activity feed, Right: Placement intelligence)
+ * - Responsive Ordering: On mobile, intelligence and goals are prioritized before the activity feed.
+ *
+ * Target: Comfortably fits within <= 1.5 viewport heights on 1280x800 desktop.
  */
 function DashboardPage() {
   const { user } = useAuth();
@@ -56,44 +49,34 @@ function DashboardPage() {
     fetchSummary();
   }, [fetchSummary]);
 
-  // Loading State with Skeletons matching exact grid layout
+  // High-density loading skeleton
   if (loading) {
     return (
-      <div className="max-w-[1240px] mx-auto space-y-6">
-        {/* Welcome skeleton */}
-        <div className="h-32 bg-white border border-slate-200 rounded-xl animate-pulse" />
+      <div
+        className="max-w-[1240px] mx-auto space-y-4 sm:space-y-5 animate-pulse"
+        aria-busy="true"
+        aria-label="Loading dashboard"
+      >
+        {/* Command Bar Skeleton */}
+        <div className="h-28 bg-white border border-slate-200 rounded-xl" />
 
-        {/* Next step recommendation skeleton */}
-        <div className="h-24 bg-white border border-slate-200 rounded-xl animate-pulse" />
-
-        {/* Quick actions skeleton */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <SkeletonCard />
-          <SkeletonCard />
-          <SkeletonCard />
-          <SkeletonCard />
+        {/* Unified Launchpad Skeleton */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="h-24 bg-white border border-slate-200 rounded-xl" />
+          <div className="h-24 bg-white border border-slate-200 rounded-xl" />
+          <div className="h-24 bg-white border border-slate-200 rounded-xl" />
+          <div className="h-24 bg-white border border-slate-200 rounded-xl" />
         </div>
 
-        {/* Preparation overview skeleton */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <SkeletonCard />
-          <SkeletonCard />
-          <SkeletonCard />
-        </div>
-
-        {/* Continue preparing skeleton */}
-        <div className="h-24 bg-white border border-slate-200 rounded-xl animate-pulse" />
-
-        {/* Readiness and Weak areas skeleton */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <SkeletonCard />
-          <SkeletonCard />
-        </div>
-
-        {/* Target companies & Profile skeleton */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <SkeletonCard />
-          <SkeletonCard />
+        {/* Grid Skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+          <div className="lg:col-span-8 space-y-4">
+            <div className="h-64 bg-white border border-slate-200 rounded-xl" />
+          </div>
+          <div className="lg:col-span-4 space-y-4">
+            <div className="h-44 bg-white border border-slate-200 rounded-xl" />
+            <div className="h-36 bg-white border border-slate-200 rounded-xl" />
+          </div>
         </div>
       </div>
     );
@@ -108,62 +91,62 @@ function DashboardPage() {
     );
   }
 
-  // Merge context user with summary profile for immediate consistency
+  // Merge context user with summary profile for instant consistency
   const activeUser = { ...user, ...(summary?.profile || {}) };
+  const targetCompaniesList = summary?.targetCompanies || activeUser?.targetCompanies || [];
 
   return (
-    <div className="max-w-[1240px] mx-auto space-y-6 sm:space-y-7 pb-10">
-      {/* 1. Dashboard Header / Personalized Welcome Greeting */}
-      <WelcomeBanner
-        firstName={activeUser.firstName}
-        college={activeUser.college}
-        branch={activeUser.branch}
-        graduationYear={activeUser.graduationYear}
-        preparationLevel={activeUser.preparationLevel}
-      />
-
-      {/* 2. Today's Recommendation (Deterministic Next Step) */}
-      <RecommendationCard recommendation={summary?.recommendation} />
-
-      {/* 3. Continue Preparing (Resume In-Progress Assessment or Start Practice) */}
-      <ContinuePreparing
+    <div className="max-w-[1240px] mx-auto space-y-3.5 sm:space-y-4 pb-4">
+      {/* 1. Unified Command Bar: Greeting, Credentials, Streak & Singular Next Action */}
+      <DashboardCommandBar
+        user={activeUser}
+        readiness={summary?.readiness}
+        streakDays={summary?.streakDays || 0}
         continueActivity={summary?.continueActivity}
-        activities={summary?.recentActivity}
+        recommendation={summary?.recommendation}
       />
 
-      {/* 4. Quick Actions (4 primary modules: Aptitude, Coding, Mock Tests, Companies) */}
-      <QuickActions />
+      {/* 1b. Missing Field Setup Banner (compact checklist shown only when profile is incomplete) */}
+      <MissingFieldBanner profileCompletion={summary?.profileCompletion} />
 
-      {/* 5. Preparation Overview (Real aggregate metrics via StatCards) */}
-      <PreparationOverview preparation={summary?.preparation} />
+      {/* 2. Unified Preparation Launchpad: 4 Core Modules with Live Metrics */}
+      <PreparationLaunchpad
+        preparation={summary?.preparation}
+        targetCompaniesCount={targetCompaniesList.length}
+      />
 
-      {/* 6. Placement Readiness & Targeted Weak Areas */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6 items-stretch">
-        <PlacementReadinessCard readiness={summary?.readiness} />
-        <WeakAreasCard weakAreas={summary?.weakAreas} />
+      {/* 3. Primary Dashboard Layout: Asymmetric 8:4 Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+        {/* Left Column (8 cols on desktop): Accessible Tabbed Activity & Upcoming Assessments */}
+        <div className="lg:col-span-8 space-y-4 sm:space-y-5">
+          {/* Desktop Activity Feed */}
+          <div className="hidden lg:block">
+            <ActivityFeedTabs
+              activities={summary?.recentActivity || []}
+              upcomingTests={summary?.upcomingTests || []}
+            />
+          </div>
+        </div>
+
+        {/* Right Column (4 cols on desktop, ordered above activity feed on mobile): Placement Intelligence */}
+        <div className="lg:col-span-4">
+          <PlacementReadinessSidebar
+            readiness={summary?.readiness}
+            weakAreas={summary?.weakAreas}
+            targetCompanies={targetCompaniesList}
+            preparationGoals={summary?.preparationGoals || activeUser?.preparationGoals || []}
+            profileCompletion={summary?.profileCompletion}
+          />
+        </div>
+
+        {/* Mobile Activity Feed (rendered below sidebar on mobile so readiness is never buried) */}
+        <div className="block lg:hidden col-span-1">
+          <ActivityFeedTabs
+            activities={summary?.recentActivity || []}
+            upcomingTests={summary?.upcomingTests || []}
+          />
+        </div>
       </div>
-
-      {/* 7. Target Companies & Profile Completion */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6 items-stretch">
-        <TargetCompanies
-          companies={summary?.targetCompanies || activeUser.targetCompanies || []}
-        />
-        <ProfileCompletionCard user={activeUser} />
-      </div>
-
-      {/* 8. Two-Column Activity & Upcoming Assessments */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6 items-stretch">
-        <RecentActivity activities={summary?.recentActivity} />
-        <UpcomingTests tests={summary?.upcomingTests} />
-      </div>
-
-      {/* 9. Consistency Tracker / Preparation Streak */}
-      <div className="grid grid-cols-1 gap-5 sm:gap-6">
-        <PreparationStreak streakDays={summary?.streakDays || 0} />
-      </div>
-
-      {/* 10. Placement Season Guidance Strategy Banner */}
-      <DashboardBottomCTA />
     </div>
   );
 }

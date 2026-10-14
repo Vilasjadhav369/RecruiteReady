@@ -69,7 +69,11 @@ const mockTestSchema = new mongoose.Schema(
     isPublished: {
       type: Boolean,
       default: true,
-      index: true,
+    },
+    company: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Company',
+      default: null,
     },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
@@ -84,6 +88,7 @@ const mockTestSchema = new mongoose.Schema(
 
 mockTestSchema.index({ isPublished: 1, createdAt: -1 });
 mockTestSchema.index({ isPublished: 1, difficulty: 1, createdAt: -1 });
+mockTestSchema.index({ company: 1, isPublished: 1 });
 
 const MockTest = mongoose.model('MockTest', mockTestSchema);
 

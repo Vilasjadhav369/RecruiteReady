@@ -203,7 +203,7 @@ async function runSuite() {
     console.log('── GROUP 1: PUBLIC & STUDENT COMPANY DIRECTORY (Tests 1–6) ──');
 
     // Test 1: GET /api/companies returns 200 with pagination and active companies
-    const res1 = await request('/api/companies');
+    const res1 = await request('/api/companies?limit=50');
     assert(
       res1.status === 200 &&
       Array.isArray(res1.data?.data?.companies) &&
@@ -219,7 +219,7 @@ async function runSuite() {
     );
 
     // Test 3: Search filter works
-    const res3 = await request(`/api/companies?search=Apex`);
+    const res3 = await request(`/api/companies?search=${encodeURIComponent(activeCompany.name)}`);
     const foundSearch = res3.data?.data?.companies?.some(c => c._id === activeCompany._id.toString());
     assert(
       res3.status === 200 && foundSearch,
@@ -612,6 +612,38 @@ async function runSuite() {
       typeof adminApex.quality?.completenessPercentage === 'number' &&
       adminApex.quality?.completenessPercentage === 100,
       'Point 35: Admin endpoint calculates data completeness score (100% for fully populated company)'
+    );
+
+    // Test 36: Roadmap steps provide correct in-page anchors and practice links
+    const res36 = await request(`/api/companies/${activeCompany._id}/preparation`, {
+      headers: authHeadersA,
+    });
+    const prepData36 = res36.data?.data;
+    const overviewStep = prepData36?.roadmap?.find(s => s.id === 'overview');
+    const interviewStep = prepData36?.roadmap?.find(s => s.id === 'interview');
+    const resourcesStep = prepData36?.roadmap?.find(s => s.id === 'resources');
+    const aptStep = prepData36?.roadmap?.find(s => s.id === 'aptitude');
+    const codingStep = prepData36?.roadmap?.find(s => s.id === 'coding');
+
+    assert(
+      res36.status === 200 &&
+      overviewStep?.actionUrl === '#company-overview' &&
+      interviewStep?.actionUrl === '#interview-prep' &&
+      resourcesStep?.actionUrl === '#company-resources' &&
+      aptStep?.actionUrl === '/aptitude' &&
+      codingStep?.actionUrl === '/coding',
+      'Point 36: Roadmap steps provide correct in-page anchor hashes (#company-overview, #interview-prep, #company-resources) and base section URLs'
+    );
+
+    // Test 37: Section items provide encoded deep-link URLs for aptitude and coding practice
+    const aptSectionItem = prepData36?.sections?.aptitude?.items?.[0];
+    const codingSectionItem = prepData36?.sections?.coding?.items?.[0];
+    assert(
+      typeof aptSectionItem?.practiceUrl === 'string' &&
+      aptSectionItem.practiceUrl.startsWith('/aptitude?topic=') &&
+      typeof codingSectionItem?.practiceUrl === 'string' &&
+      codingSectionItem.practiceUrl.startsWith('/coding?topic='),
+      'Point 37: Company topic section items provide properly query-encoded practice URLs (/aptitude?topic=..., /coding?topic=...)'
     );
 
   } catch (err) {

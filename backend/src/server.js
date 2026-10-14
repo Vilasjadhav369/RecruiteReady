@@ -19,12 +19,23 @@ import profileRouter from './routes/profile.js';
 import notificationRouter from './routes/notification.js';
 import searchRouter from './routes/search.js';
 import bookmarkRouter from './routes/bookmark.js';
+import goalRouter from './routes/goal.js';
 import notFound from './middleware/notFound.js';
 import errorHandler from './middleware/errorHandler.js';
 import requestTracing from './middleware/requestTracing.js';
+import validateEnv from './config/validateEnv.js';
 
 // 1. Load environment variables
 dotenv.config();
+
+// 1b. Validate environment variables before initialization
+const envCheck = validateEnv();
+if (!envCheck.isValid) {
+  console.error('\n  FATAL: Environment configuration validation failed:');
+  envCheck.errors.forEach((err) => console.error(`    - ${err}`));
+  console.error('');
+  process.exit(1);
+}
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -107,6 +118,7 @@ app.use('/api/leaderboard', leaderboardRouter);
 app.use('/api/notifications', notificationRouter);
 app.use('/api/search', searchRouter);
 app.use('/api/bookmarks', bookmarkRouter);
+app.use('/api/goals', goalRouter);
 
 // 7. Register 404 and global error handlers
 app.use(notFound);

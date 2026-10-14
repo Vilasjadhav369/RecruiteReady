@@ -7,6 +7,7 @@ import {
   updateMockTestStatus,
   getAdminAptitudeQuestions,
   deleteMockTest,
+  getAdminCompanies,
 } from '../../services/adminService.js';
 import {
   PageHeader,
@@ -64,6 +65,7 @@ const INITIAL_FORM_STATE = {
   instructions:
     'Read each question carefully before answering. Each question carries marks as indicated. Submit before the timer expires.',
   isPublished: true,
+  company: '',
   questions: [],
 };
 
@@ -147,6 +149,19 @@ export default function AdminMockTestsPage() {
   const [loadingQuestions, setLoadingQuestions] = useState(false);
   const [questionSearch, setQuestionSearch] = useState('');
   const [showQuestionPicker, setShowQuestionPicker] = useState(false);
+
+  // ── Target Companies for Assessment Association ──
+  const [companies, setCompanies] = useState([]);
+
+  useEffect(() => {
+    getAdminCompanies({ limit: 100 })
+      .then((res) => {
+        setCompanies(res?.companies || []);
+      })
+      .catch((err) => {
+        console.error('Failed to load companies for mock test selector:', err);
+      });
+  }, []);
 
   // ── Toast State ──
   const [toast, setToast] = useState(null);
@@ -273,6 +288,7 @@ export default function AdminMockTestsPage() {
       categories: (test.categories || []).join(', '),
       instructions: test.instructions || '',
       isPublished: test.isPublished ?? true,
+      company: test.company?._id || test.company || '',
       questions: test.questions || [],
     });
     setFormError(null);
@@ -281,10 +297,11 @@ export default function AdminMockTestsPage() {
     // Fetch full details if needed
     try {
       const full = await getAdminMockTestById(test._id);
-      if (full && full.questions) {
+      if (full) {
         setFormData((prev) => ({
           ...prev,
-          questions: full.questions || [],
+          company: full.company?._id || full.company || prev.company || '',
+          questions: full.questions || prev.questions || [],
         }));
       }
     } catch (err) {
@@ -366,6 +383,7 @@ export default function AdminMockTestsPage() {
         .filter(Boolean),
       instructions: formData.instructions.trim(),
       isPublished: formData.isPublished,
+      company: formData.company ? formData.company : null,
       questions: formData.questions,
     };
 
@@ -657,6 +675,14 @@ export default function AdminMockTestsPage() {
                                 {test.description}
                               </p>
                             )}
+                            {test.company && (
+                              <div className="mt-1">
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-sky-50 text-sky-700 border border-sky-200">
+                                  {test.company.name || 'Company'}
+                                  {test.company.isActive === false && ' (Inactive)'}
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </TableCell>
 
@@ -841,6 +867,14 @@ export default function AdminMockTestsPage() {
                         {test.description}
                       </p>
                     )}
+                    {test.company && (
+                      <div className="mt-1">
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-sky-50 text-sky-700 border border-sky-200">
+                          {test.company.name || 'Company'}
+                          {test.company.isActive === false && ' (Inactive)'}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Metadata Row */}
@@ -1019,6 +1053,20 @@ export default function AdminMockTestsPage() {
               onChange={(e) => updateField('categories', e.target.value)}
               placeholder="Quantitative Aptitude, Logical Reasoning, Verbal Ability"
               helperText="Topics or sections included in this mock test."
+            />
+
+            <Select
+              label="Target Company (Optional)"
+              value={formData.company}
+              onChange={(e) => updateField('company', e.target.value)}
+              options={[
+                { value: '', label: 'None (Generic Platform Test)' },
+                ...companies.map((c) => ({
+                  value: c._id,
+                  label: `${c.name}${!c.isActive ? ' (Inactive)' : ''}`,
+                })),
+              ]}
+              helperText="Associate this assessment with a specific company preparation track."
             />
           </div>
 
@@ -1215,6 +1263,12 @@ export default function AdminMockTestsPage() {
                 <DocumentIcon className="w-3.5 h-3.5 text-slate-400" />
                 {viewTest.questions?.length ?? viewTest.totalQuestions ?? 0} Questions
               </span>
+              {viewTest.company && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-sky-50 text-sky-700 border border-sky-200">
+                  {viewTest.company.name || 'Company'}
+                  {viewTest.company.isActive === false && ' (Inactive)'}
+                </span>
+              )}
             </div>
 
             {/* Description */}

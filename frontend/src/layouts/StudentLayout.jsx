@@ -31,7 +31,7 @@ function StudentLayout() {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         <DashboardHeader onMenuClick={() => setMobileOpen(true)} />
-        <main id="main-content" className="animate-page flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+        <main id="main-content" className="animate-page flex-1 p-4 sm:p-5 lg:px-8 lg:py-5 max-w-7xl w-full mx-auto">
           <Outlet />
         </main>
       </div>

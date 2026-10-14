@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { getCodingProblems, getCodingSubmissions } from '../../services/codingService.js';
 import {
   PageHeader,
@@ -35,6 +35,7 @@ const DIFFICULTY_OPTIONS = [
 ];
 
 export default function CodingListPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [problems, setProblems] = useState([]);
   const [submissions, setSubmissions] = useState([]);
   const [pagination, setPagination] = useState({ total: 0, page: 1, limit: 12, pages: 1 });
@@ -44,6 +45,20 @@ export default function CodingListPage() {
   // Filters
   const [search, setSearch] = useState('');
   const [difficulty, setDifficulty] = useState('all');
+  const [topic, setTopic] = useState(() => searchParams.get('topic') || 'all');
+
+  // Sync topic state if search params change externally
+  useEffect(() => {
+    const topicParam = searchParams.get('topic');
+    setTopic(topicParam && topicParam.trim() ? topicParam.trim() : 'all');
+  }, [searchParams]);
+
+  const handleClearTopic = () => {
+    setTopic('all');
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete('topic');
+    setSearchParams(newParams, { replace: true });
+  };
 
   const fetchList = async () => {
     try {
@@ -53,6 +68,7 @@ export default function CodingListPage() {
         getCodingProblems({
           search,
           difficulty: difficulty === 'all' ? undefined : difficulty,
+          topic: topic === 'all' ? undefined : topic,
           page: pagination.page,
           limit: 12,
         }),
@@ -75,7 +91,7 @@ export default function CodingListPage() {
 
   useEffect(() => {
     fetchList();
-  }, [search, difficulty, pagination.page]);
+  }, [search, difficulty, topic, pagination.page]);
 
   // Derived real student metrics strictly from actual backend submissions
   const solvedProblemIds = useMemo(() => {
@@ -217,6 +233,24 @@ export default function CodingListPage() {
             />
           </div>
         </div>
+
+        {topic && topic !== 'all' && (
+          <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-500 font-medium">Filtering by Topic:</span>
+              <Badge variant="brand" size="sm">
+                {topic}
+              </Badge>
+            </div>
+            <button
+              type="button"
+              onClick={handleClearTopic}
+              className="text-xs font-semibold text-slate-600 hover:text-slate-900 underline hover:no-underline cursor-pointer"
+            >
+              Clear Topic Filter
+            </button>
+          </div>
+        )}
       </Card>
 
       {/* ── Problems List ── */}
@@ -264,13 +298,14 @@ export default function CodingListPage() {
                     : 'Try clearing your search query or switching to All Difficulties to see more problems.'
                 }
                 action={
-                  search || difficulty !== 'all' ? (
+                  search || difficulty !== 'all' || (topic && topic !== 'all') ? (
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => {
                         setSearch('');
                         setDifficulty('all');
+                        handleClearTopic();
                       }}
                     >
                       Reset Filters

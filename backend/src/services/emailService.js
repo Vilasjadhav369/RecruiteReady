@@ -50,8 +50,13 @@ export const sendPasswordResetEmail = async ({
   const transporter = getTransporter();
   const from = process.env.EMAIL_FROM || '"RecruitReady Support" <no-reply@recruiteready.local>';
 
-  // Development fallback when SMTP is unconfigured or in development environment
+  // Development fallback when SMTP is unconfigured
   if (!transporter) {
+    if (process.env.NODE_ENV === 'production') {
+      console.error(`[EmailService] CRITICAL: SMTP is not configured. Password reset email could not be sent to ${email}. Token URLs are NEVER logged in production.`);
+      return { success: false, mode: 'unconfigured', error: 'SMTP service is not configured' };
+    }
+
     console.log('\n================================================================================');
     console.log(' [DEVELOPMENT ONLY] PASSWORD RESET EMAIL');
     console.log(` To: ${email}`);
@@ -133,8 +138,13 @@ export const sendVerificationEmail = async ({
   const transporter = getTransporter();
   const from = process.env.EMAIL_FROM || '"RecruitReady Support" <no-reply@recruiteready.local>';
 
-  // Development fallback when SMTP is unconfigured or in development environment
+  // Development fallback when SMTP is unconfigured
   if (!transporter) {
+    if (process.env.NODE_ENV === 'production') {
+      console.error(`[EmailService] CRITICAL: SMTP is not configured. Verification email could not be sent to ${email}. Token URLs are NEVER logged in production.`);
+      return { success: false, mode: 'unconfigured', error: 'SMTP service is not configured' };
+    }
+
     console.log('\n================================================================================');
     console.log(' [DEVELOPMENT ONLY] EMAIL VERIFICATION EMAIL');
     console.log(` To: ${email}`);

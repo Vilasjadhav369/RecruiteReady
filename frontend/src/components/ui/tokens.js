@@ -28,8 +28,8 @@ export const COLORS = {
   
   // Feedback & Semantic Status
   success: '#16A34A',
-  successLight: '#EAF2FF',
-  successBorder: '#BFDBFE',
+  successLight: '#ECFDF5',
+  successBorder: '#A7F3D0',
   
   warning: '#D97706',
   warningLight: '#FFFBEB',

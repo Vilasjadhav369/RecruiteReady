@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useFeedback } from '../../components/ui/FeedbackProvider.jsx';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getMockTests, startMockTest } from '../../services/mockTestService.js';
-import { 
-  PageHeader, 
-  Card, 
-  CardContent, 
-  Badge, 
+import {
+  PageHeader,
+  Card,
+  CardContent,
+  Badge,
   StatusBadge,
-  Button, 
-  LoadingState, 
-  ErrorState, 
-  EmptyState 
+  Button,
+  LoadingState,
+  ErrorState,
+  EmptyState
 } from '../../components/ui/index.js';
 import { 
   ClockIcon, 
@@ -24,6 +24,9 @@ import {
 export default function MockTestListPage() {
   const { notify } = useFeedback();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const companyParam = searchParams.get('company');
+
   const [tests, setTests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [startingId, setStartingId] = useState(null);
@@ -38,6 +41,7 @@ export default function MockTestListPage() {
       const params = {};
       if (selectedCategory !== 'all') params.category = selectedCategory;
       if (selectedDifficulty !== 'all') params.difficulty = selectedDifficulty;
+      if (companyParam) params.company = companyParam;
 
       const data = await getMockTests(params);
       setTests(data?.mockTests || []);
@@ -51,7 +55,7 @@ export default function MockTestListPage() {
 
   useEffect(() => {
     fetchTests();
-  }, [selectedCategory, selectedDifficulty]);
+  }, [selectedCategory, selectedDifficulty, companyParam]);
 
   const handleStart = async (testId) => {
     if (startingId) return;
@@ -142,6 +146,27 @@ export default function MockTestListPage() {
         </div>
       </div>
 
+      {/* ── Active Company Filter Pill ── */}
+      {companyParam && (
+        <div className="flex items-center justify-between p-3.5 rounded-xl bg-sky-50 border border-sky-200 text-xs text-sky-900">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-sky-800">Filtered for company track:</span>
+            <span className="font-mono bg-white px-2 py-0.5 rounded border border-sky-300 text-sky-950 font-bold">{companyParam}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              const nextParams = new URLSearchParams(searchParams);
+              nextParams.delete('company');
+              setSearchParams(nextParams);
+            }}
+            className="text-sky-700 hover:text-sky-900 font-semibold underline cursor-pointer"
+          >
+            Show all mock tests
+          </button>
+        </div>
+      )}
+
       {/* ── Assessments Feed ── */}
       {loading ? (
         <LoadingState message="Loading placement mock assessments..." />
@@ -177,6 +202,12 @@ export default function MockTestListPage() {
                       <Badge variant={getDifficultyVariant(test.difficulty)}>
                         {test.difficulty || 'Medium'}
                       </Badge>
+
+                      {test.company && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-sky-50 text-sky-800 border border-sky-200">
+                          {test.company.name || 'Company Mock'}
+                        </span>
+                      )}
                       
                       <div className="flex items-center gap-3 text-xs text-slate-500 font-mono">
                         <div className="flex items-center gap-1.5">
