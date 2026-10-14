@@ -134,6 +134,7 @@ export const exchangeCodeForToken = async (code) => {
       code,
       redirect_uri: callbackUrl,
     }),
+    signal: AbortSignal.timeout(10000),
   });
 
   if (!response.ok) {
@@ -166,6 +167,7 @@ export const getGitHubUserProfile = async (accessToken) => {
       'User-Agent': 'RecruitReady-Auth',
       Accept: 'application/vnd.github.v3+json',
     },
+    signal: AbortSignal.timeout(10000),
   });
 
   if (!response.ok) {
@@ -207,6 +209,7 @@ export const getGitHubVerifiedEmail = async (accessToken, publicEmail = null) =>
         'User-Agent': 'RecruitReady-Auth',
         Accept: 'application/vnd.github.v3+json',
       },
+      signal: AbortSignal.timeout(10000),
     });
 
     if (response.ok) {

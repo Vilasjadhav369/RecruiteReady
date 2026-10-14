@@ -44,6 +44,7 @@ export class CodeExecutionService {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ language, code, testCases }),
+        signal: AbortSignal.timeout(15000),
       });
 
       if (!response.ok) {
