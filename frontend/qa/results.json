@@ -1,0 +1,107 @@
+[
+  {
+    "name": "landing renders light",
+    "pass": true,
+    "note": ""
+  },
+  {
+    "name": "toggle -> dark",
+    "pass": true,
+    "note": ""
+  },
+  {
+    "name": "dark body background is dark",
+    "pass": true,
+    "note": "rgb(11, 16, 32)"
+  },
+  {
+    "name": "dark persists after reload",
+    "pass": true,
+    "note": ""
+  },
+  {
+    "name": "localStorage rr_theme=dark",
+    "pass": true,
+    "note": ""
+  },
+  {
+    "name": "hero h1 typing region has sr-only full text",
+    "pass": true,
+    "note": ""
+  },
+  {
+    "name": "no runtime JS errors (public)",
+    "pass": true,
+    "note": ""
+  },
+  {
+    "name": "system dark respected without stored pref",
+    "pass": true,
+    "note": ""
+  },
+  {
+    "name": "dashboard renders + Recently viewed card",
+    "pass": true,
+    "note": ""
+  },
+  {
+    "name": "palette: type 'coding' + Enter navigates to /coding",
+    "pass": true,
+    "note": ""
+  },
+  {
+    "name": "palette toggles theme",
+    "pass": true,
+    "note": ""
+  },
+  {
+    "name": "highlighted tokens rendered",
+    "pass": true,
+    "note": ""
+  },
+  {
+    "name": "auto-indent after '{'",
+    "pass": true,
+    "note": "\"}\\n\\nif (x) {\\n  y();\""
+  },
+  {
+    "name": "Tab indents (trap on)",
+    "pass": true,
+    "note": ""
+  },
+  {
+    "name": "Escape releases focus trap (Tab leaves editor)",
+    "pass": true,
+    "note": ""
+  },
+  {
+    "name": "recently viewed lists the opened problem",
+    "pass": true,
+    "note": ""
+  },
+  {
+    "name": "no runtime JS errors (authed)",
+    "pass": true,
+    "note": ""
+  },
+  {
+    "name": "mobile 390: no horizontal overflow (dashboard)",
+    "pass": true,
+    "note": "overflow=0"
+  },
+  {
+    "name": "mobile 390: no horizontal overflow (coding)",
+    "pass": true,
+    "note": "overflow=0"
+  },
+  {
+    "name": "reduced motion: typing caret/animation disabled",
+    "pass": true,
+    "note": "carets=0"
+  },
+  {
+    "name": "reduced motion: reveal sections visible",
+    "pass": true,
+    "note": "hidden=0"
+  }
+]

@@ -7,6 +7,8 @@ import { Card } from "../components/ui/Card.jsx";
 import { Badge } from "../components/ui/Badge.jsx";
 import { Skeleton } from "../components/ui/Skeleton.jsx";
 import DashboardPreview from "../components/DashboardPreview.jsx";
+import { Reveal } from "../components/ui/Reveal.jsx";
+import { TypingText } from "../components/ui/TypingText.jsx";
 import {
   AptitudeIcon,
   CodingIcon,
@@ -146,8 +148,12 @@ function HomePage() {
     <div className="space-y-20 sm:space-y-24 pb-20">
 
       {/* ── 1. HERO SECTION ─────────────────────────────────── */}
-      <section className="pt-8 sm:pt-12 lg:pt-16 max-w-6xl mx-auto px-4 sm:px-6 grid lg:grid-cols-[1.05fr_1fr] gap-10 lg:gap-14 items-center">
-        <div className="text-center lg:text-left">
+      <div className="relative">
+      <div aria-hidden="true" className="rr-gradient-soft absolute inset-x-0 top-0 h-[28rem] -z-0 opacity-70 [mask-image:linear-gradient(to_bottom,black,transparent)]" />
+      <div aria-hidden="true" className="rr-float-slow absolute -top-6 left-[8%] w-24 h-24 rounded-full bg-primary/10 blur-2xl" />
+      <div aria-hidden="true" className="rr-float absolute top-24 right-[10%] w-32 h-32 rounded-full bg-sky-400/10 blur-2xl" />
+      <section className="relative pt-8 sm:pt-12 lg:pt-16 max-w-6xl mx-auto px-4 sm:px-6 grid lg:grid-cols-[1.05fr_1fr] gap-10 lg:gap-14 items-center">
+        <div className="text-center lg:text-left animate-slide-in">
           <div className="inline-flex items-center gap-2 mb-5">
             <Badge variant="brand" size="md">
               Campus Placement Portal
@@ -165,6 +171,10 @@ function HomePage() {
           <p className="text-base sm:text-lg text-slate-600 max-w-xl mx-auto lg:mx-0 leading-relaxed mb-8">
             Practice aptitude, solve coding problems, take timed mock tests and study each
             visiting recruiter's hiring pattern, all in one place, with your progress tracked.
+          </p>
+
+          <p className="text-sm sm:text-base font-semibold text-primary mb-7 h-6">
+            <TypingText phrases={["Aptitude practice that tracks your speed.", "Timed mock tests that feel like the real thing.", "Company tracks built around real hiring rounds."]} />
           </p>
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center lg:justify-start gap-3 mb-8">
@@ -191,13 +201,14 @@ function HomePage() {
           </ul>
         </div>
 
-        <div className="hidden lg:flex justify-end pt-4">
+        <div className="hidden lg:flex justify-end pt-4 rr-float-slow">
           <DashboardPreview />
         </div>
       </section>
+      </div>
 
       {/* ── 2. CORE PREPARATION MODULES ─────────────────────── */}
-      <section id="features" className="max-w-5xl mx-auto px-4 sm:px-6">
+      <Reveal as="section" id="features" className="max-w-5xl mx-auto px-4 sm:px-6">
         <div className="text-center max-w-2xl mx-auto mb-10">
           <Badge variant="brand" size="sm" className="mb-2.5">
             Core Modules
@@ -264,10 +275,10 @@ function HomePage() {
             );
           })}
         </div>
-      </section>
+      </Reveal>
 
       {/* ── 3. PLACEMENT ROADMAP (Clean Vertical Sequence) ──── */}
-      <section className="max-w-4xl mx-auto px-4 sm:px-6">
+      <Reveal as="section" className="max-w-4xl mx-auto px-4 sm:px-6">
         <div className="text-center max-w-xl mx-auto mb-10">
           <Badge variant="brand" size="sm" className="mb-2.5">
             Structured Workflow
@@ -319,10 +330,10 @@ function HomePage() {
             </div>
           ))}
         </div>
-      </section>
+      </Reveal>
 
       {/* ── 4. COMPANY PREPARATION (Visiting Recruiters) ────── */}
-      <section className="max-w-5xl mx-auto px-4 sm:px-6">
+      <Reveal as="section" className="max-w-5xl mx-auto px-4 sm:px-6">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between mb-8 pb-3 border-b border-slate-200 gap-3">
           <div>
             <Badge variant="neutral" size="sm" className="mb-2">
@@ -408,10 +419,10 @@ function HomePage() {
             </p>
           </div>
         )}
-      </section>
+      </Reveal>
 
       {/* ── 5. BUILT FOR REAL OUTCOMES ─────────────────────── */}
-      <section id="about" className="max-w-5xl mx-auto px-4 sm:px-6">
+      <Reveal as="section" id="about" className="max-w-5xl mx-auto px-4 sm:px-6">
         <div className="text-center max-w-xl mx-auto mb-10">
           <Badge variant="neutral" size="sm" className="mb-2">
             Academic Rigor
@@ -442,10 +453,10 @@ function HomePage() {
             </div>
           ))}
         </div>
-      </section>
+      </Reveal>
 
       {/* ── 6. FINAL CALL TO ACTION ────────────────────────── */}
-      <section className="max-w-5xl mx-auto px-4 sm:px-6">
+      <Reveal as="section" className="max-w-5xl mx-auto px-4 sm:px-6">
         <div className="bg-primary rounded-2xl p-8 sm:p-12 text-center text-white relative overflow-hidden shadow-sm">
           <div className="max-w-xl mx-auto space-y-3.5">
             <h2 className="text-balance text-2xl sm:text-3xl font-bold tracking-tight text-white leading-tight">
@@ -461,7 +472,7 @@ function HomePage() {
             </div>
           </div>
         </div>
-      </section>
+      </Reveal>
 
     </div>
   );

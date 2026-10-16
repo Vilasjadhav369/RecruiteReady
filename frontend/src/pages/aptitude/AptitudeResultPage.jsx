@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useCelebrateOnce } from '../../hooks/useCelebrate.js';
 import { useParams } from 'react-router-dom';
 import { getAptitudeResult } from '../../services/aptitudeService.js';
 import {
@@ -65,6 +66,9 @@ export default function AptitudeResultPage() {
       setLoading(false);
     }
   };
+
+  // Celebrate once, only when the existing 60% pass line is met
+  useCelebrateOnce(`aptitude-${id}`, (result?.summary?.percentage || 0) >= 60);
 
   useEffect(() => {
     fetchResult();
@@ -332,7 +336,7 @@ export default function AptitudeResultPage() {
                     let optionBorder = 'border-slate-200 bg-white text-slate-700';
                     if (isRightAnswer) {
                       optionBorder =
-                        'border-[#22C55E] bg-[#F0FDF4] text-primary-dark font-medium shadow-xs';
+                        'border-emerald-500 bg-emerald-50 text-primary-dark font-medium shadow-xs';
                     } else if (isUserPick && !isRightAnswer) {
                       optionBorder =
                         'border-red-300 bg-red-50/70 text-red-950 font-medium';

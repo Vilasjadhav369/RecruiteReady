@@ -32,3 +32,7 @@ export * from './ProgressBar.jsx';
 export * from './Divider.jsx';
 export * from './Toast.jsx';
 export * from './FeedbackProvider.jsx';
+export * from './ThemeToggle.jsx';
+export * from './Reveal.jsx';
+export * from './AnimatedNumber.jsx';
+export * from './TypingText.jsx';

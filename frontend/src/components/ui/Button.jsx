@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { SpinnerIcon } from './Icons.jsx';
+import { createRipple } from '../../lib/ripple.js';
 
 /**
  * Button — Universal Apple/Linear styled button primitive.
@@ -22,7 +23,7 @@ export function Button({
   ...props
 }) {
   const base =
-    'inline-flex items-center justify-center font-medium transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:cursor-not-allowed select-none active:scale-[0.99] cursor-pointer';
+    'inline-flex items-center justify-center font-medium transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:cursor-not-allowed select-none active:scale-[0.99] cursor-pointer rr-ripple-host';
 
   const variants = {
     primary:
@@ -53,7 +54,7 @@ export function Button({
 
   if (to) {
     return (
-      <Link to={to} className={classes} onClick={onClick} {...props}>
+      <Link to={to} className={classes} onClick={onClick} onPointerDown={createRipple} {...props}>
         {iconLeft && <span className="shrink-0">{iconLeft}</span>}
         <span>{children}</span>
         {iconRight && <span className="shrink-0">{iconRight}</span>}
@@ -66,6 +67,7 @@ export function Button({
       type={type}
       disabled={disabled || loading}
       onClick={onClick}
+      onPointerDown={createRipple}
       className={classes}
       {...props}
     >

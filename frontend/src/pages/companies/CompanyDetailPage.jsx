@@ -39,6 +39,7 @@ import {
   MockTestIcon,
 } from '../../components/ui/Icons.jsx';
 import BookmarkButton from '../../components/bookmarks/BookmarkButton.jsx';
+import { recordRecentlyViewed } from "../../lib/recentlyViewed.js";
 
 const getInitials = (name) => {
   if (!name || typeof name !== 'string') return 'CO';
@@ -110,6 +111,10 @@ export default function CompanyDetailPage() {
     sections = {},
     studentProgress = {},
   } = data || {};
+
+  useEffect(() => {
+    if (company?.name) recordRecentlyViewed({ type: 'company', id, title: company.name, link: `/companies/${id}` });
+  }, [company?.name, id]);
 
   const activeEligibility = customEligibilityResult || initialEligibility;
 

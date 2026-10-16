@@ -22,6 +22,7 @@ import {
   EditIcon,
 } from '../../components/ui/Icons.jsx';
 import BookmarkButton from '../../components/bookmarks/BookmarkButton.jsx';
+import { recordRecentlyViewed } from "../../lib/recentlyViewed.js";
 
 export default function ResourceDetailPage() {
   const { id } = useParams();
@@ -51,6 +52,10 @@ export default function ResourceDetailPage() {
     };
     fetchResource();
   }, [id]);
+
+  useEffect(() => {
+    if (resource?.title) recordRecentlyViewed({ type: 'resource', id, title: resource.title, link: `/resources/${id}` });
+  }, [resource, id]);
 
   if (loading) {
     return <LoadingState message="Loading study material details..." />;

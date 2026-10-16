@@ -7,6 +7,7 @@ import {
   CompanyIcon,
   ArrowRightIcon,
 } from "../ui/Icons.jsx";
+import { AnimatedNumber } from "../ui/AnimatedNumber.jsx";
 
 /**
  * PreparationLaunchpad — Unified preparation launchpad with integrated metrics.
@@ -27,7 +28,7 @@ export function PreparationLaunchpad({
     {
       title: "Aptitude",
       subtitle: "Quant, Logical, Verbal",
-      metric: `${apt.completed || 0} completed`,
+      metric: <><AnimatedNumber value={apt.completed || 0} /> completed</>,
       secondaryMetric: apt.attempted > 0 ? `${apt.attempted} attempts` : null,
       to: "/aptitude",
       icon: AptitudeIcon,
@@ -37,7 +38,7 @@ export function PreparationLaunchpad({
     {
       title: "Coding",
       subtitle: "DSA, Algorithms",
-      metric: `${code.solved || 0} solved`,
+      metric: <><AnimatedNumber value={code.solved || 0} /> solved</>,
       secondaryMetric: code.attempted > 0 ? `${code.attempted} attempted` : null,
       to: "/coding",
       icon: CodingIcon,
@@ -47,7 +48,7 @@ export function PreparationLaunchpad({
     {
       title: "Mock Tests",
       subtitle: "Timed hiring exams",
-      metric: `${mock.completed || 0} completed`,
+      metric: <><AnimatedNumber value={mock.completed || 0} /> completed</>,
       secondaryMetric: mock.attempted > 0 ? `${mock.attempted} taken` : null,
       to: "/mock-tests",
       icon: MockTestIcon,
@@ -57,7 +58,7 @@ export function PreparationLaunchpad({
     {
       title: "Companies",
       subtitle: "Target tracks & patterns",
-      metric: targetCompaniesCount > 0 ? `${targetCompaniesCount} targets` : "Explore tracks",
+      metric: targetCompaniesCount > 0 ? <><AnimatedNumber value={targetCompaniesCount} /> targets</> : "Explore tracks",
       secondaryMetric: null,
       to: "/companies",
       icon: CompanyIcon,
@@ -74,14 +75,14 @@ export function PreparationLaunchpad({
         </h2>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+      <div className="rr-stagger grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
         {modules.map((mod) => {
           const IconComponent = mod.icon;
           return (
             <Link
               key={mod.to}
               to={mod.to}
-              className={`group flex flex-col justify-between p-2.5 sm:p-3 rounded-xl bg-white border border-slate-200/90 shadow-xs hover:shadow-sm transition-all duration-150 no-underline ${mod.accent}`}
+              className={`group flex flex-col justify-between p-2.5 sm:p-3 rounded-xl bg-white border border-slate-200/90 shadow-xs hover:shadow-sm rr-lift no-underline ${mod.accent}`}
             >
               <div className="flex items-start justify-between gap-2">
                 <div

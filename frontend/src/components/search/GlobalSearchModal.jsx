@@ -11,6 +11,9 @@ import {
   AptitudeIcon,
 } from '../ui/Icons.jsx';
 import searchService from '../../services/searchService.js';
+import { useAuth } from '../../context/AuthContext.jsx';
+import { useTheme } from '../../context/ThemeContext.jsx';
+import { useRecentlyViewed } from '../../lib/recentlyViewed.js';
 
 export function GlobalSearchModal({ isOpen, onClose }) {
   const [query, setQuery] = useState('');
@@ -21,6 +24,34 @@ export function GlobalSearchModal({ isOpen, onClose }) {
 
   const inputRef = useRef(null);
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
+  const recent = useRecentlyViewed();
+
+  // Static commands. Every `link` is a real route in AppRoutes.jsx.
+  const allCommands = [
+    { id: 'cmd-dashboard', title: 'Dashboard', subtitle: 'Go to your overview', link: '/dashboard' },
+    { id: 'cmd-aptitude', title: 'Aptitude Practice', subtitle: 'Start or resume practice', link: '/aptitude' },
+    { id: 'cmd-coding', title: 'Coding Practice', subtitle: 'Browse coding problems', link: '/coding' },
+    { id: 'cmd-mock', title: 'Mock Tests', subtitle: 'Timed assessments', link: '/mock-tests' },
+    { id: 'cmd-companies', title: 'Companies', subtitle: 'Company preparation tracks', link: '/companies' },
+    { id: 'cmd-resources', title: 'Study Materials', subtitle: 'Notes, PDFs and links', link: '/resources' },
+    { id: 'cmd-progress', title: 'Progress & Analytics', subtitle: 'Your performance trends', link: '/progress' },
+    { id: 'cmd-saved', title: 'Saved Items', subtitle: 'Your bookmarks', link: '/saved' },
+    { id: 'cmd-leaderboard', title: 'Leaderboard', subtitle: 'Student rankings', link: '/leaderboard' },
+    { id: 'cmd-notifications', title: 'Notifications', subtitle: 'Updates and reminders', link: '/notifications' },
+    { id: 'cmd-profile', title: 'Profile', subtitle: 'Edit your details and goals', link: '/profile' },
+    { id: 'cmd-settings', title: 'Account & Security', subtitle: 'Password and sessions', link: '/settings' },
+    ...(isAdmin ? [{ id: 'cmd-admin', title: 'Admin Console', subtitle: 'Platform administration', link: '/admin' }] : []),
+    { id: 'cmd-theme', title: isDark ? 'Switch to light theme' : 'Switch to dark theme', subtitle: 'Toggle appearance', action: toggleTheme },
+  ];
+  const q = query.trim().toLowerCase();
+  const commands = q
+    ? allCommands.filter((c) => `${c.title} ${c.subtitle}`.toLowerCase().includes(q))
+    : allCommands;
+  const recentItems = !q
+    ? recent.slice(0, 5).map((r) => ({ id: `recent-${r.type}-${r.id}`, title: r.title, subtitle: `Recently viewed · ${r.type.replace('-', ' ')}`, link: r.link }))
+    : [];
 
   // Focus input when opened & reset state
   useEffect(() => {
@@ -67,34 +98,22 @@ export function GlobalSearchModal({ isOpen, onClose }) {
     return () => clearTimeout(timer);
   }, [query, isOpen]);
 
-  // Flattened list of results for keyboard arrow navigation
-  const flatResults = [];
+  // Flattened list for keyboard navigation. Order MUST match render order below:
+  // commands, recently viewed, then remote results (companies, coding, resources, mock tests, aptitude).
+  const flatResults = [
+    ...commands.map((i) => ({ ...i, categoryLabel: 'Page' })),
+    ...recentItems.map((i) => ({ ...i, categoryLabel: 'Recent' })),
+  ];
   if (results) {
-    if (results.companies?.length) {
-      results.companies.forEach((item) =>
-        flatResults.push({ ...item, categoryLabel: 'Company' })
-      );
-    }
-    if (results.resources?.length) {
-      results.resources.forEach((item) =>
-        flatResults.push({ ...item, categoryLabel: 'Study Material' })
-      );
-    }
-    if (results.coding?.length) {
-      results.coding.forEach((item) =>
-        flatResults.push({ ...item, categoryLabel: 'Coding Problem' })
-      );
-    }
-    if (results.mockTests?.length) {
-      results.mockTests.forEach((item) =>
-        flatResults.push({ ...item, categoryLabel: 'Mock Test' })
-      );
-    }
-    if (results.aptitude?.length) {
-      results.aptitude.forEach((item) =>
-        flatResults.push({ ...item, categoryLabel: 'Aptitude Practice' })
-      );
-    }
+    [
+      ['companies', 'Company'],
+      ['coding', 'Coding Problem'],
+      ['resources', 'Study Material'],
+      ['mockTests', 'Mock Test'],
+      ['aptitude', 'Aptitude Practice'],
+    ].forEach(([key, label]) => {
+      (results[key] || []).forEach((item) => flatResults.push({ ...item, categoryLabel: label }));
+    });
   }
 
   // Keyboard navigation
@@ -117,7 +136,10 @@ export function GlobalSearchModal({ isOpen, onClose }) {
       } else if (e.key === 'Enter') {
         e.preventDefault();
         const selected = flatResults[activeIndex];
-        if (selected?.link) {
+        if (selected?.action) {
+          onClose();
+          selected.action();
+        } else if (selected?.link) {
           onClose();
           navigate(selected.link);
         }
@@ -127,7 +149,10 @@ export function GlobalSearchModal({ isOpen, onClose }) {
   );
 
   const handleSelect = (item) => {
-    if (item.link) {
+    if (item.action) {
+      onClose();
+      item.action();
+    } else if (item.link) {
       onClose();
       navigate(item.link);
     }
@@ -139,7 +164,7 @@ export function GlobalSearchModal({ isOpen, onClose }) {
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Global search dialog"
+      aria-label="Command palette and search"
       className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/40 backdrop-blur-xs flex items-start justify-center p-3 sm:p-4 pt-12 sm:pt-20 animate-in fade-in duration-150"
       onClick={onClose}
     >
@@ -156,7 +181,7 @@ export function GlobalSearchModal({ isOpen, onClose }) {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search companies, coding problems, study materials, mock tests..."
+            placeholder="Search, or jump to a page…"
             className="w-full bg-transparent text-sm sm:text-base text-slate-900 placeholder:text-slate-400 focus:outline-none"
             aria-autocomplete="list"
             aria-controls="global-search-results"
@@ -182,6 +207,45 @@ export function GlobalSearchModal({ isOpen, onClose }) {
 
         {/* Results / Empty / Initial States */}
         <div id="global-search-results" className="overflow-y-auto p-3 sm:p-4 space-y-4 flex-1">
+          {(commands.length > 0 || recentItems.length > 0) && (
+            <div className="space-y-3">
+              {[
+                ['Pages & actions', commands],
+                ['Recently viewed', recentItems],
+              ].map(([label, items]) =>
+                items.length === 0 ? null : (
+                  <div key={label}>
+                    <div className="px-2 pb-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">{label}</div>
+                    <div className="space-y-0.5" role="listbox" aria-label={label}>
+                      {items.map((item) => {
+                        const itemIdx = flatResults.findIndex((r) => r.id === item.id);
+                        const isSelected = activeIndex === itemIdx;
+                        return (
+                          <button
+                            type="button"
+                            role="option"
+                            aria-selected={isSelected}
+                            key={item.id}
+                            onClick={() => handleSelect(item)}
+                            onMouseMove={() => setActiveIndex(itemIdx)}
+                            className={`w-full text-left px-2.5 py-2 rounded-lg flex items-center justify-between gap-3 cursor-pointer transition-colors border ${
+                              isSelected ? 'bg-primary-soft border-primary-border' : 'border-transparent hover:bg-slate-50'
+                            }`}
+                          >
+                            <span className="min-w-0">
+                              <span className="text-xs sm:text-sm font-semibold text-slate-900 block truncate">{item.title}</span>
+                              <span className="text-[11px] text-slate-500 block truncate">{item.subtitle}</span>
+                            </span>
+                            {isSelected && <span className="text-[10px] font-mono text-slate-400 shrink-0">↵</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )
+              )}
+            </div>
+          )}
           {error ? (
             <div className="py-8 text-center space-y-2">
               <p className="text-xs text-red-600 font-medium">{error}</p>
@@ -194,7 +258,7 @@ export function GlobalSearchModal({ isOpen, onClose }) {
               </button>
             </div>
           ) : !query.trim() ? (
-            <div className="py-8 text-center space-y-3">
+            <div className="py-4 text-center space-y-3">
               <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-400 mx-auto flex items-center justify-center">
                 <SearchIcon className="w-5 h-5" />
               </div>
@@ -217,7 +281,7 @@ export function GlobalSearchModal({ isOpen, onClose }) {
                 ))}
               </div>
             </div>
-          ) : results && results.totalResults === 0 && !loading ? (
+          ) : results && results.totalResults === 0 && !loading && commands.length === 0 ? (
             <div className="py-10 text-center space-y-2">
               <p className="text-sm font-semibold text-slate-800">
                 No results found for &ldquo;{query}&rdquo;

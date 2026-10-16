@@ -241,6 +241,7 @@ function AdminSidebar({ mobileOpen, setMobileOpen }) {
         }`}
         role="dialog"
         aria-modal="true"
+        inert={!mobileOpen}
         aria-label="Admin navigation menu"
       >
         {navContent}

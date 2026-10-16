@@ -13,7 +13,7 @@ function ErrorState({ message = "Unable to load this data. Please try again.", o
           <path d="M9 5V9M9 12.5V13" stroke="#DC2626" strokeWidth="1.5" strokeLinecap="round"/>
         </svg>
       </div>
-      <span className="text-[#52606D] text-sm block mb-3">{message}</span>
+      <span className="text-slate-600 text-sm block mb-3">{message}</span>
       {onRetry && (
         <button
           onClick={onRetry}

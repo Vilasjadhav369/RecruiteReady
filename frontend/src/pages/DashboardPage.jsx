@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
+import RecentlyViewed from "../components/dashboard/RecentlyViewed.jsx";
 import { getDashboardSummary } from "../services/dashboardService.js";
 
 // High-Density, Streamlined P1 Dashboard Components
@@ -96,7 +97,7 @@ function DashboardPage() {
   const targetCompaniesList = summary?.targetCompanies || activeUser?.targetCompanies || [];
 
   return (
-    <div className="max-w-[1240px] mx-auto space-y-3.5 sm:space-y-4 pb-4">
+    <div className="rr-stagger max-w-[1240px] mx-auto space-y-3.5 sm:space-y-4 pb-4">
       {/* 1. Unified Command Bar: Greeting, Credentials, Streak & Singular Next Action */}
       <DashboardCommandBar
         user={activeUser}
@@ -126,6 +127,7 @@ function DashboardPage() {
               upcomingTests={summary?.upcomingTests || []}
             />
           </div>
+          <RecentlyViewed />
         </div>
 
         {/* Right Column (4 cols on desktop, ordered above activity feed on mobile): Placement Intelligence */}

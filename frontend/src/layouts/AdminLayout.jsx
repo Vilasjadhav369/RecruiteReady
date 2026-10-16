@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import AdminSidebar from "../components/admin/AdminSidebar.jsx";
 import AdminHeader from "../components/admin/AdminHeader.jsx";
 
@@ -8,6 +8,7 @@ import AdminHeader from "../components/admin/AdminHeader.jsx";
  */
 function AdminLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const location = useLocation();
 
   return (
     <div className="min-h-screen bg-background flex flex-col md:flex-row overflow-x-hidden">
@@ -16,7 +17,7 @@ function AdminLayout() {
 
       <div className="flex-1 flex flex-col min-w-0">
         <AdminHeader onMenuClick={() => setMobileOpen(true)} />
-        <main id="main-content" className="animate-page flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+        <main key={location.pathname} id="main-content" className="animate-slide-in flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
           <Outlet />
         </main>
       </div>

@@ -9,12 +9,18 @@ import {
   getCurrentUser,
   logoutUser,
 } from "../services/authService.js";
+import { setRecentlyViewedUser, clearRecentlyViewed } from "../lib/recentlyViewed.js";
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Scope the device-local recently-viewed list to the signed-in user
+  useEffect(() => {
+    setRecentlyViewedUser(user?._id || user?.id || null);
+  }, [user]);
 
   // Initialize and restore user from token on startup
   const refreshUser = useCallback(async () => {
@@ -94,6 +100,7 @@ export function AuthProvider({ children }) {
     try {
       await logoutUser();
     } finally {
+      clearRecentlyViewed(user?._id || user?.id);
       // Always clear local state, even if the network call fails.
       removeToken();
       setUser(null);

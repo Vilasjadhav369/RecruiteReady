@@ -1,3 +1,4 @@
+import { ThemeToggle } from "./ui/ThemeToggle.jsx";
 import React, { useState, useEffect } from "react";
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
 import MobileMenu from "./MobileMenu.jsx";
@@ -140,6 +141,7 @@ function Navbar() {
 
           {/* ── Desktop Right Actions ─────────────────────── */}
           <div className="hidden md:flex items-center gap-3">
+            <ThemeToggle />
             {isAuthenticated ? (
               <div className="flex items-center gap-2.5">
                 <Link
@@ -177,7 +179,9 @@ function Navbar() {
             )}
           </div>
 
-          {/* ── Mobile Hamburger Button ──────────────────── */}
+          {/* ── Mobile Theme + Hamburger ──────────────────── */}
+          <div className="md:hidden flex items-center gap-1.5">
+          <ThemeToggle />
           <button
             type="button"
             className="md:hidden min-w-[44px] min-h-[44px] p-2.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-primary"
@@ -192,6 +196,7 @@ function Navbar() {
               <MenuIcon className="w-5 h-5" />
             )}
           </button>
+          </div>
         </div>
       </div>
 

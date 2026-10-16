@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getMockResult } from '../../services/mockTestService.js';
 import { formatDateTime } from '../../utils/formatters.js';
+import { useCelebrateOnce } from '../../hooks/useCelebrate.js';
 import { 
   PageHeader, 
   Card, 
@@ -50,6 +51,9 @@ export default function MockTestResultPage() {
     fetchResult();
   }, [id]);
 
+  // Celebrate once, only when the existing 70% pass line is met
+  useCelebrateOnce(`mock-${id}`, (result?.summary?.percentage || 0) >= 70);
+
   if (loading) {
     return <LoadingState message="Evaluating mock test scorecard..." />;
   }
@@ -96,7 +100,7 @@ export default function MockTestResultPage() {
       />
 
       {/* ── Overview Feedback Banner ── */}
-      <Card className={`p-6 border ${isPassing ? 'bg-[#F0FDF4] border-[#BBF7D0]' : 'bg-slate-50 border-slate-200'}`}>
+      <Card className={`p-6 border ${isPassing ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200'}`}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
@@ -216,7 +220,7 @@ export default function MockTestResultPage() {
                       let badgeVariant = 'default';
 
                       if (isRightAnswer) {
-                        cardClass = 'border-emerald-500 bg-[#F0FDF4] text-emerald-950 font-semibold ring-1 ring-emerald-500';
+                        cardClass = 'border-emerald-500 bg-emerald-50 text-emerald-950 font-semibold ring-1 ring-emerald-500';
                         badgeVariant = 'success';
                       } else if (isUserPick && !isRightAnswer) {
                         cardClass = 'border-rose-400 bg-rose-50 text-rose-950 font-semibold ring-1 ring-rose-400';

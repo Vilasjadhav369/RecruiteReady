@@ -11,7 +11,7 @@ function DashboardPlaceholder() {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-12 lg:py-16">
       {/* Welcome Banner */}
-      <div className="bg-white border border-[#D9E2EC] rounded-2xl p-8 shadow-sm mb-8">
+      <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm mb-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 pb-6 border-b border-slate-200">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-full bg-primary-tint border-2 border-primary-border flex items-center justify-center text-xl font-bold text-primary">
@@ -51,67 +51,67 @@ function DashboardPlaceholder() {
       </div>
 
       {/* Profile Details Card */}
-      <div className="bg-white border border-[#D9E2EC] rounded-2xl p-8 shadow-sm">
-        <h2 className="text-lg font-bold text-[#172B4D] mb-6">Profile Information</h2>
+      <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm">
+        <h2 className="text-lg font-bold text-slate-900 mb-6">Profile Information</h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
-            <span className="text-xs font-semibold uppercase tracking-wider text-[#9FB3C8] block mb-1">
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 block mb-1">
               Full Name
             </span>
-            <span className="text-sm font-medium text-[#172B4D] block">
+            <span className="text-sm font-medium text-slate-900 block">
               {user?.firstName} {user?.lastName}
             </span>
           </div>
 
           <div>
-            <span className="text-xs font-semibold uppercase tracking-wider text-[#9FB3C8] block mb-1">
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 block mb-1">
               Email Address
             </span>
-            <span className="text-sm font-medium text-[#172B4D] block">
+            <span className="text-sm font-medium text-slate-900 block">
               {user?.email}
             </span>
           </div>
 
           <div>
-            <span className="text-xs font-semibold uppercase tracking-wider text-[#9FB3C8] block mb-1">
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 block mb-1">
               College / Institution
             </span>
-            <span className="text-sm font-medium text-[#172B4D] block">
+            <span className="text-sm font-medium text-slate-900 block">
               {user?.college || "Not specified"}
             </span>
           </div>
 
           <div>
-            <span className="text-xs font-semibold uppercase tracking-wider text-[#9FB3C8] block mb-1">
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 block mb-1">
               Branch / Department
             </span>
-            <span className="text-sm font-medium text-[#172B4D] block">
+            <span className="text-sm font-medium text-slate-900 block">
               {user?.branch || "Not specified"}
             </span>
           </div>
 
           <div>
-            <span className="text-xs font-semibold uppercase tracking-wider text-[#9FB3C8] block mb-1">
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 block mb-1">
               Graduation Year
             </span>
-            <span className="text-sm font-medium text-[#172B4D] block">
+            <span className="text-sm font-medium text-slate-900 block">
               {user?.graduationYear ? user.graduationYear : "Not specified"}
             </span>
           </div>
 
           <div>
-            <span className="text-xs font-semibold uppercase tracking-wider text-[#9FB3C8] block mb-1">
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 block mb-1">
               Account Role
             </span>
-            <span className="text-sm font-medium text-[#172B4D] block capitalize">
+            <span className="text-sm font-medium text-slate-900 block capitalize">
               {user?.role || "student"}
             </span>
           </div>
         </div>
 
-        <div className="mt-8 pt-6 border-t border-[#D9E2EC] flex items-center justify-between">
-          <span className="text-xs text-[#9FB3C8]">
+        <div className="mt-8 pt-6 border-t border-slate-200 flex items-center justify-between">
+          <span className="text-xs text-slate-400">
             Member since: {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : "Active"}
           </span>
           <Link

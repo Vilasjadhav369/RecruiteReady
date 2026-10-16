@@ -21,7 +21,7 @@ function CompanyGrid({ companies = null, loading = false }) {
 
   if (!companies || companies.length === 0) {
     return (
-      <div className="bg-white border border-dashed border-[#D9E2EC] rounded-xl py-16">
+      <div className="bg-white border border-dashed border-slate-200 rounded-xl py-16">
         <EmptyState
           icon={
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">

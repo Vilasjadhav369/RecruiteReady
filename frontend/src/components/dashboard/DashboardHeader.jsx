@@ -4,6 +4,7 @@ import { useAuth } from "../../context/AuthContext.jsx";
 import { MenuIcon, ProfileIcon, LogoutIcon, ChevronDownIcon, SearchIcon } from "../ui/Icons.jsx";
 import { Avatar } from "../ui/Avatar.jsx";
 import NotificationDropdown from "../notifications/NotificationDropdown.jsx";
+import { ThemeToggle } from "../ui/ThemeToggle.jsx";
 import GlobalSearchModal from "../search/GlobalSearchModal.jsx";
 
 /**
@@ -102,6 +103,8 @@ function DashboardHeader({ onMenuClick }) {
             ⌘K
           </kbd>
         </button>
+
+        <ThemeToggle />
 
         {/* Active Notification Center */}
         <NotificationDropdown />

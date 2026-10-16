@@ -1,0 +1,116 @@
+/* ============================================================
+   RecruitReady — Motion system
+   Rules: transform/opacity only, short durations, and everything
+   collapses under prefers-reduced-motion (see global reset in index.css
+   plus the explicit guards below for JS-free effects).
+   ============================================================ */
+
+/* Smooth theme switch (class is added by ThemeProvider for ~350ms only) */
+html.rr-theme-anim,
+html.rr-theme-anim *,
+html.rr-theme-anim *::before,
+html.rr-theme-anim *::after {
+  transition: background-color .28s ease, color .28s ease, border-color .28s ease, fill .28s ease, stroke .28s ease, box-shadow .28s ease !important;
+}
+
+/* Scroll reveal (see components/ui/Reveal.jsx) */
+.rr-reveal {
+  opacity: 0;
+  transform: translate3d(0, 16px, 0);
+  transition: opacity .55s cubic-bezier(.22,.61,.36,1), transform .55s cubic-bezier(.22,.61,.36,1);
+  transition-delay: var(--rr-delay, 0ms);
+  will-change: opacity, transform;
+}
+.rr-reveal[data-dir="left"]  { transform: translate3d(-18px, 0, 0); }
+.rr-reveal[data-dir="right"] { transform: translate3d(18px, 0, 0); }
+.rr-reveal[data-dir="none"]  { transform: none; }
+.rr-reveal.is-visible { opacity: 1; transform: none; will-change: auto; }
+
+/* Route / content entrance */
+@keyframes rr-slide-in { from { opacity: 0; transform: translate3d(10px,0,0); } to { opacity: 1; transform: none; } }
+.animate-slide-in { animation: rr-slide-in .28s ease-out both; }
+
+/* Stagger helper: children get --rr-i from inline style or nth-child fallback */
+@keyframes rr-pop { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: none; } }
+.rr-stagger > * { animation: rr-pop .45s cubic-bezier(.22,.61,.36,1) both; animation-delay: calc(var(--rr-i, 0) * 60ms); }
+.rr-stagger > *:nth-child(1) { --rr-i: 0; } .rr-stagger > *:nth-child(2) { --rr-i: 1; }
+.rr-stagger > *:nth-child(3) { --rr-i: 2; } .rr-stagger > *:nth-child(4) { --rr-i: 3; }
+.rr-stagger > *:nth-child(5) { --rr-i: 4; } .rr-stagger > *:nth-child(6) { --rr-i: 5; }
+.rr-stagger > *:nth-child(n+7) { --rr-i: 6; }
+
+/* Interactive cards */
+.rr-lift { transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
+.rr-lift:hover { transform: translateY(-3px); box-shadow: 0 12px 28px -12px rgb(15 23 42 / .22); }
+[data-theme="dark"] .rr-lift:hover { box-shadow: 0 14px 30px -12px rgb(0 0 0 / .6); }
+
+/* Image zoom on hover (wrap the <img> in an element with .rr-zoom) */
+.rr-zoom { overflow: hidden; }
+.rr-zoom img { transition: transform .5s ease; }
+.rr-zoom:hover img { transform: scale(1.05); }
+
+/* Animated gradient surface (hero / promo only) */
+@keyframes rr-gradient-shift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+.rr-gradient-animate {
+  background-image: linear-gradient(120deg, #0F1F3D, #1E40AF, #2563EB, #0F1F3D);
+  background-size: 300% 300%;
+  animation: rr-gradient-shift 16s ease infinite;
+}
+.rr-gradient-soft {
+  background-image: linear-gradient(120deg, var(--color-primary-soft), var(--color-surface), var(--color-primary-tint));
+  background-size: 250% 250%;
+  animation: rr-gradient-shift 20s ease infinite;
+}
+
+/* Floating decorative elements */
+@keyframes rr-float { 0%,100% { transform: translate3d(0,0,0); } 50% { transform: translate3d(0,-10px,0); } }
+.rr-float { animation: rr-float 6s ease-in-out infinite; }
+.rr-float-slow { animation: rr-float 9s ease-in-out infinite; }
+
+/* Animated gradient border (use on ONE featured card at most) */
+@property --rr-angle { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
+@keyframes rr-spin-angle { to { --rr-angle: 360deg; } }
+.rr-border-glow {
+  position: relative;
+  border: 1.5px solid transparent;
+  background:
+    linear-gradient(var(--color-surface), var(--color-surface)) padding-box,
+    conic-gradient(from var(--rr-angle), #2563EB, #38BDF8, #7C5CFC, #2563EB) border-box;
+  animation: rr-spin-angle 6s linear infinite;
+}
+
+/* Typing caret */
+@keyframes rr-blink { 50% { opacity: 0; } }
+.rr-caret { display: inline-block; width: 2px; height: 1em; margin-left: 2px; vertical-align: -0.12em; background: currentColor; animation: rr-blink 1s steps(1) infinite; }
+
+/* Ripple (see Button.jsx) */
+.rr-ripple-host { position: relative; overflow: hidden; }
+@keyframes rr-ripple { from { transform: scale(0); opacity: .35; } to { transform: scale(1); opacity: 0; } }
+.rr-ripple { position: absolute; border-radius: 9999px; pointer-events: none; background: currentColor; animation: rr-ripple .6s ease-out forwards; }
+
+/* Accordion (grid-rows trick: animates height without layout thrash on children) */
+.rr-accordion { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .25s ease; }
+.rr-accordion[data-open="true"] { grid-template-rows: 1fr; }
+.rr-accordion > div { overflow: hidden; }
+
+/* Bookmark / success micro-interaction */
+@keyframes rr-pulse-pop { 0% { transform: scale(1); } 40% { transform: scale(1.28); } 100% { transform: scale(1); } }
+.rr-pop { animation: rr-pulse-pop .35s ease-out; }
+
+/* Sliding nav indicator */
+.rr-nav-indicator { position: absolute; left: 0; width: 3px; border-radius: 3px; background: var(--color-primary); transition: transform .25s cubic-bezier(.22,.61,.36,1), height .25s ease, opacity .2s ease; }
+
+/* Confetti canvas */
+.rr-confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 80; }
+
+/* Offline banner */
+@keyframes rr-banner-in { from { transform: translateY(-100%); } to { transform: none; } }
+.rr-banner-in { animation: rr-banner-in .25s ease-out both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .rr-reveal { opacity: 1; transform: none; transition: none; }
+  .rr-stagger > * { animation: none; }
+  .rr-lift:hover { transform: none; }
+  .rr-zoom:hover img { transform: none; }
+  .rr-gradient-animate, .rr-gradient-soft, .rr-float, .rr-float-slow, .rr-border-glow, .rr-caret, .animate-slide-in { animation: none; }
+  .rr-pop { animation: none; }
+}

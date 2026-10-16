@@ -5,6 +5,8 @@ import { queryClient } from "./lib/queryClient.js";
 import { FeedbackProvider } from "./components/ui/FeedbackProvider.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import RouteScrollAndTitle from "./components/common/RouteScrollAndTitle.jsx";
+import { ThemeProvider } from "./context/ThemeContext.jsx";
+import OfflineBanner from "./components/common/OfflineBanner.jsx";
 import ErrorBoundary from "./components/common/ErrorBoundary.jsx";
 
 function GuardedRoutes() {
@@ -22,7 +24,9 @@ function GuardedRoutes() {
  */
 function App() {
   return (
+    <ThemeProvider>
     <BrowserRouter>
+      <OfflineBanner />
       <RouteScrollAndTitle />
       <QueryClientProvider client={queryClient}>
         <FeedbackProvider>
@@ -32,6 +36,7 @@ function App() {
         </FeedbackProvider>
       </QueryClientProvider>
     </BrowserRouter>
+    </ThemeProvider>
   );
 }
 

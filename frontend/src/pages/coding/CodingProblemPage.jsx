@@ -24,6 +24,8 @@ import {
   InfoIcon,
 } from '../../components/ui/index.js';
 import BookmarkButton from '../../components/bookmarks/BookmarkButton.jsx';
+import CodeEditor from '../../components/coding/CodeEditor.jsx';
+import { recordRecentlyViewed } from "../../lib/recentlyViewed.js";
 
 const LANGUAGE_OPTIONS = [
   { value: 'javascript', label: 'JavaScript (Node.js)', extension: 'js' },
@@ -49,7 +51,10 @@ export default function CodingProblemPage() {
 
   // Guards against concurrent duplicate executions
   const isExecutingRef = useRef(false);
-  const textareaRef = useRef(null);
+
+  useEffect(() => {
+    if (problem?.title) recordRecentlyViewed({ type: 'coding', id, title: problem.title, link: `/coding/problem/${id}` });
+  }, [problem?.title, id]);
 
   const fetchProblemData = async () => {
     try {
@@ -99,25 +104,6 @@ export default function CodingProblemPage() {
       if (confirmReset) {
         setCode(problem.starterCode[language]);
       }
-    }
-  };
-
-  // Keyboard accessibility: tab indentation with Escape to escape focus
-  const handleKeyDown = (e) => {
-    if (e.key === 'Tab') {
-      e.preventDefault();
-      const textarea = textareaRef.current;
-      if (!textarea) return;
-
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-
-      const newCode = code.substring(0, start) + '  ' + code.substring(end);
-      setCode(newCode);
-
-      setTimeout(() => {
-        textarea.selectionStart = textarea.selectionEnd = start + 2;
-      }, 0);
     }
   };
 
@@ -476,28 +462,24 @@ export default function CodingProblemPage() {
             </div>
 
             {/* Code Textarea Area with accessible labels and keyboard indentation */}
-            <div className="p-4 bg-slate-950">
+            <div className="bg-slate-950">
               <label htmlFor="code-editor-textarea" className="sr-only">
                 Source code editor for {problem.title}
               </label>
-              <textarea
-                ref={textareaRef}
+              <CodeEditor
                 id="code-editor-textarea"
                 value={code}
-                onChange={(e) => setCode(e.target.value)}
-                onKeyDown={handleKeyDown}
-                rows={18}
-                spellCheck="false"
-                className="w-full bg-transparent text-slate-100 font-mono text-xs leading-relaxed focus:outline-none resize-none"
+                onChange={setCode}
+                language={language}
+                ariaLabel="Code editor"
                 placeholder="// Write your algorithm solution here..."
-                aria-label="Code editor"
               />
             </div>
 
             {/* Action Footer */}
             <div className="px-4 py-3 bg-slate-900 border-t border-slate-800 flex items-center justify-between gap-3">
               <span className="text-[11px] text-slate-400 font-mono hidden sm:inline">
-                Tab inserts 2 spaces • Esc exits focus
+                Tab indents • Esc then Tab exits
               </span>
 
               <div className="flex items-center gap-2.5">
@@ -509,7 +491,7 @@ export default function CodingProblemPage() {
                   disabled={!code.trim() || submitting}
                   onClick={handleRunCode}
                   iconLeft={!running ? <PlayIcon className="w-3.5 h-3.5" /> : null}
-                  className="border-slate-700 text-slate-200 hover:bg-slate-800 hover:border-slate-600"
+                  className="whitespace-nowrap border-slate-700 text-slate-200 hover:bg-slate-800 hover:border-slate-600"
                 >
                   {running ? 'Running...' : 'Run Code'}
                 </Button>
@@ -521,6 +503,7 @@ export default function CodingProblemPage() {
                   loading={submitting}
                   disabled={!code.trim() || running}
                   onClick={handleSubmit}
+                  className="whitespace-nowrap"
                 >
                   {submitting ? 'Submitting...' : 'Submit Solution'}
                 </Button>

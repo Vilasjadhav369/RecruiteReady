@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { MenuIcon, LogoutIcon, SettingsIcon, SearchIcon } from "../ui/Icons.jsx";
 import { Avatar } from "../ui/Avatar.jsx";
+import { ThemeToggle } from "../ui/ThemeToggle.jsx";
 import NotificationDropdown from "../notifications/NotificationDropdown.jsx";
 import GlobalSearchModal from "../search/GlobalSearchModal.jsx";
 
@@ -80,6 +81,8 @@ function AdminHeader({ onMenuClick }) {
           <SearchIcon className="w-3.5 h-3.5 text-slate-400" />
           <span className="hidden md:inline">Search...</span>
         </button>
+
+        <ThemeToggle />
 
         {/* Notifications */}
         <NotificationDropdown />

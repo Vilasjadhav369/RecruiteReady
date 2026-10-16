@@ -62,7 +62,7 @@ function LiveStatistics({ data = null, loading = false, hasError = false }) {
     return (
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
         {METRIC_DEFS.map((m) => (
-          <div key={m.key} className="bg-white border border-[#D9E2EC] rounded-xl p-6 space-y-3">
+          <div key={m.key} className="bg-white border border-slate-200 rounded-xl p-6 space-y-3">
             <LoadingSkeleton className="h-10 w-10 rounded-lg" />
             <LoadingSkeleton className="h-7 w-20" />
             <LoadingSkeleton className="h-4 w-24" />
@@ -74,10 +74,10 @@ function LiveStatistics({ data = null, loading = false, hasError = false }) {
 
   if (hasError) {
     return (
-      <div className="bg-white border border-[#D9E2EC] rounded-xl py-12 flex items-center justify-center">
+      <div className="bg-white border border-slate-200 rounded-xl py-12 flex items-center justify-center">
         <div className="text-center">
-          <span className="text-[#52606D] text-sm block mb-2">Unable to load platform statistics.</span>
-          <span className="text-xs text-[#9FB3C8] block">Please check back shortly.</span>
+          <span className="text-slate-600 text-sm block mb-2">Unable to load platform statistics.</span>
+          <span className="text-xs text-slate-400 block">Please check back shortly.</span>
         </div>
       </div>
     );
@@ -86,7 +86,7 @@ function LiveStatistics({ data = null, loading = false, hasError = false }) {
   // No data yet (backend not connected)
   if (!data) {
     return (
-      <div className="bg-white border border-dashed border-[#D9E2EC] rounded-xl py-12">
+      <div className="bg-white border border-dashed border-slate-200 rounded-xl py-12">
         <EmptyState
           icon={
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
@@ -108,10 +108,10 @@ function LiveStatistics({ data = null, loading = false, hasError = false }) {
           <div className="w-10 h-10 bg-primary-tint rounded-lg flex items-center justify-center mb-4">
             {metric.icon}
           </div>
-          <p className="text-2xl font-bold text-[#172B4D] mb-1">
+          <p className="text-2xl font-bold text-slate-900 mb-1">
             {data[metric.key] != null ? data[metric.key].toLocaleString() : "—"}
           </p>
-          <p className="text-sm text-[#52606D]">{metric.label}</p>
+          <p className="text-sm text-slate-600">{metric.label}</p>
         </div>
       ))}
     </div>

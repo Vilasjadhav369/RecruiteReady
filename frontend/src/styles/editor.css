@@ -1,0 +1,17 @@
+/* Code editor — always a dark panel (matches the existing editor chrome in both themes) */
+.rr-code { display: flex; width: 100%; min-width: 0; max-width: 100%; background: #070B16; color: #E2E8F0; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size: 12.5px; }
+.rr-code-gutter { flex: none; width: 3rem; padding: 12px 8px 12px 0; text-align: right; color: #475569; user-select: none; overflow: hidden; line-height: 20px; border-right: 1px solid #1B2640; }
+.rr-code-body { position: relative; flex: 1; min-width: 0; }
+.rr-code-layer { margin: 0; padding: 12px 14px; border: 0; width: 100%; height: 100%; line-height: 20px; font: inherit; font-size: 12.5px; letter-spacing: 0; tab-size: 2; white-space: pre; word-wrap: normal; overflow: auto; box-sizing: border-box; }
+.rr-code-pre { position: absolute; inset: 0; pointer-events: none; overflow: hidden; color: #E2E8F0; }
+.rr-code-pre code { font: inherit; }
+.rr-code-input { position: relative; display: block; resize: none; background: transparent; color: transparent; caret-color: #F8FAFF; outline: none; -webkit-text-fill-color: transparent; }
+.rr-code-input::placeholder { color: #475569; -webkit-text-fill-color: #475569; }
+.rr-code-input::selection { background: rgb(59 130 246 / .4); -webkit-text-fill-color: transparent; }
+.rr-code:focus-within { box-shadow: inset 0 0 0 1px #2563EB; }
+.tok-keyword { color: #C4A7FF; }
+.tok-string { color: #86EFAC; }
+.tok-number { color: #FBBF24; }
+.tok-comment { color: #64748B; font-style: italic; }
+.tok-fn { color: #7DD3FC; }
+.tok-builtin { color: #5EEAD4; }

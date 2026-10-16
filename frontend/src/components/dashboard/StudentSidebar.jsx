@@ -259,6 +259,7 @@ function StudentSidebar({ mobileOpen, setMobileOpen }) {
         }`}
         role="dialog"
         aria-modal="true"
+        inert={!mobileOpen}
         aria-label="Student navigation menu"
       >
         {navContent}

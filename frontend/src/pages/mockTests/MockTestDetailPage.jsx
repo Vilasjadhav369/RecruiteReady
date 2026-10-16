@@ -27,6 +27,7 @@ import {
   TrophyIcon,
 } from '../../components/ui/Icons.jsx';
 import BookmarkButton from '../../components/bookmarks/BookmarkButton.jsx';
+import { recordRecentlyViewed } from "../../lib/recentlyViewed.js";
 
 export default function MockTestDetailPage() {
   const { notify } = useFeedback();
@@ -59,6 +60,10 @@ export default function MockTestDetailPage() {
     };
     fetchTest();
   }, [id]);
+
+  useEffect(() => {
+    if (test?.title) recordRecentlyViewed({ type: 'mock-test', id, title: test.title, link: `/mock-tests/${id}` });
+  }, [test?.title, id]);
 
   const handleStart = async () => {
     if (starting) return;

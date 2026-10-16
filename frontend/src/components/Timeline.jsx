@@ -31,7 +31,7 @@ function Timeline() {
     <div className="relative">
       {/* Desktop: horizontal connector line — centered through the 56px circles (top-7 = 28px = half of h-14) */}
       <div
-        className="hidden md:block absolute top-7 left-7 right-7 h-px bg-[#D9E2EC] z-0"
+        className="hidden md:block absolute top-7 left-7 right-7 h-px bg-slate-200 z-0"
         aria-hidden="true"
       />
 

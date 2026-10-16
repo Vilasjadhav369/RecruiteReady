@@ -579,7 +579,7 @@ export default function MockTestSessionPage() {
                   <span>Current</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="w-3 h-3 rounded bg-primary-tint border border-[#86EFAC]" />
+                  <span className="w-3 h-3 rounded bg-primary-tint border border-emerald-200" />
                   <span>Answered</span>
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -605,7 +605,7 @@ export default function MockTestSessionPage() {
                   } else if (isQMarked) {
                     bgClass = 'bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200';
                   } else if (isAnswered) {
-                    bgClass = 'bg-primary-tint text-brand-dark border-[#86EFAC] hover:bg-primary-border';
+                    bgClass = 'bg-primary-tint text-brand-dark border-emerald-200 hover:bg-primary-border';
                   }
 
                   return (

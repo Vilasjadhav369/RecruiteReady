@@ -5,6 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="RecruitReady is an integrated placement preparation portal for aptitude practice, coding, company preparation, mock tests, study materials, and progress tracking." />
     <meta name="theme-color" content="#0F1F3D" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="RecruitReady | Placement Preparation Portal" />
+    <meta property="og:description" content="Aptitude practice, coding, company preparation, mock tests and progress tracking in one place." />
+    <meta name="twitter:card" content="summary" />
+    <!-- Apply saved/system theme before first paint to avoid a flash -->
+    <script>
+      (function () {
+        try {
+          var pref = localStorage.getItem("rr_theme") || "system";
+          var dark = pref === "dark" || (pref === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+          document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+          var m = document.querySelector('meta[name="theme-color"]');
+          if (m) m.setAttribute("content", dark ? "#0B1020" : "#0F1F3D");
+        } catch (e) {}
+      })();
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>RecruitReady | Placement Preparation Portal</title>
     <!-- Google Identity Services (GIS) Client SDK -->

@@ -23,12 +23,12 @@ function StatItem({ label, value, icon, trend, loading = false }) {
       {loading ? (
         <LoadingSkeleton className="h-8 w-24" />
       ) : value != null ? (
-        <span className="text-3xl font-bold text-[#172B4D] tracking-tight">{value}</span>
+        <span className="text-3xl font-bold text-slate-900 tracking-tight">{value}</span>
       ) : (
-        <span className="text-3xl font-bold text-[#D9E2EC]" title="Data will be available once connected to the database">—</span>
+        <span className="text-3xl font-bold text-slate-200" title="Data will be available once connected to the database">—</span>
       )}
 
-      <span className="text-sm font-medium text-[#172B4D] block">{label}</span>
+      <span className="text-sm font-medium text-slate-900 block">{label}</span>
 
       {trend && !loading && value != null && (
         <span className="text-xs text-green-600 font-medium block">{trend}</span>
