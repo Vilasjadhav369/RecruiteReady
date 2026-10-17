@@ -69,8 +69,8 @@ ${D} .text-slate-200, ${D} .hover\\:text-slate-200:hover { color: #E2E8F0; }
 ${D} .text-slate-300 { color: #CBD5E1; }
 /* Brand text on soft backgrounds */
 ${D} .text-primary-dark, ${D} .hover\\:text-primary-dark:hover, ${D} .group:hover .group-hover\\:text-primary-dark { color: #8DB2FF; }
-${D} .text-brand-dark, ${D} .hover\\:text-brand-dark:hover { color: #8DB2FF; }
-${D} .text-primary { color: #6AA2FF; }
+${D} .text-brand-dark, ${D} .hover\\:text-brand-dark:hover, ${D} .hover\\:text-primary-hover:hover { color: #8DB2FF; }
+${D} .text-primary, ${D} .text-brand { color: #6AA2FF; }
 ${D} .hover\\:text-primary:hover { color: #8DB2FF; }
 /* Solid status fills keep their original strength (white text on top) */
 `;

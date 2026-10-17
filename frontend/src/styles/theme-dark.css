@@ -175,8 +175,8 @@
 [data-theme="dark"] .text-slate-300 { color: #CBD5E1; }
 /* Brand text on soft backgrounds */
 [data-theme="dark"] .text-primary-dark, [data-theme="dark"] .hover\:text-primary-dark:hover, [data-theme="dark"] .group:hover .group-hover\:text-primary-dark { color: #8DB2FF; }
-[data-theme="dark"] .text-brand-dark, [data-theme="dark"] .hover\:text-brand-dark:hover { color: #8DB2FF; }
-[data-theme="dark"] .text-primary { color: #6AA2FF; }
+[data-theme="dark"] .text-brand-dark, [data-theme="dark"] .hover\:text-brand-dark:hover, [data-theme="dark"] .hover\:text-primary-hover:hover { color: #8DB2FF; }
+[data-theme="dark"] .text-primary, [data-theme="dark"] .text-brand { color: #6AA2FF; }
 [data-theme="dark"] .hover\:text-primary:hover { color: #8DB2FF; }
 /* Solid status fills keep their original strength (white text on top) */
 [data-theme="dark"] .bg-emerald-500 { background-color: var(--rr-o-emerald-500); }

@@ -6,7 +6,7 @@ import React from 'react';
 export function Skeleton({ className = '', ...props }) {
   return (
     <div
-      className={`animate-pulse bg-slate-200/80 rounded ${className}`}
+      className={`rr-shimmer bg-slate-200/80 rounded ${className}`}
       aria-hidden="true"
       {...props}
     />

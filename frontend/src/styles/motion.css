@@ -114,3 +114,86 @@ html.rr-theme-anim *::after {
   .rr-gradient-animate, .rr-gradient-soft, .rr-float, .rr-float-slow, .rr-border-glow, .rr-caret, .animate-slide-in { animation: none; }
   .rr-pop { animation: none; }
 }
+
+/* Circular theme reveal (View Transitions API; origin set by ThemeProvider) */
+::view-transition-old(root), ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+::view-transition-new(root) { animation: rr-reveal .55s cubic-bezier(.4,0,.2,1) both; }
+@keyframes rr-reveal {
+  from { clip-path: circle(0 at var(--rr-reveal-x, 100%) var(--rr-reveal-y, 0)); }
+  to   { clip-path: circle(var(--rr-reveal-r, 150%) at var(--rr-reveal-x, 100%) var(--rr-reveal-y, 0)); }
+}
+@media (prefers-reduced-motion: reduce) { ::view-transition-new(root) { animation: none; } }
+
+/* ---------- Additional motion (round 3) ---------- */
+
+/* Skeleton shimmer (replaces plain pulse) */
+@keyframes rr-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+.rr-shimmer {
+  background-image: linear-gradient(90deg, transparent 0%, color-mix(in oklab, var(--color-surface) 70%, transparent) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: rr-shimmer 1.6s linear infinite;
+}
+
+/* Question-to-question transition in tests (direction-aware) */
+@keyframes rr-q-next { from { opacity: 0; transform: translate3d(14px,0,0); } to { opacity: 1; transform: none; } }
+@keyframes rr-q-prev { from { opacity: 0; transform: translate3d(-14px,0,0); } to { opacity: 1; transform: none; } }
+.rr-q-next { animation: rr-q-next .22s ease-out both; }
+.rr-q-prev { animation: rr-q-prev .22s ease-out both; }
+
+/* Timer: gentle pulse in the final minute (never a shake) */
+@keyframes rr-timer-pulse { 0%,100% { box-shadow: 0 0 0 0 rgb(244 63 94 / .0); } 50% { box-shadow: 0 0 0 5px rgb(244 63 94 / .22); } }
+.rr-timer-pulse { animation: rr-timer-pulse 1.4s ease-in-out infinite; }
+
+/* Streak flame */
+@keyframes rr-flame { 0%,100% { transform: scale(1) rotate(-2deg); } 50% { transform: scale(1.08) rotate(2deg); } }
+.rr-flame { transform-origin: 50% 90%; animation: rr-flame 1.8s ease-in-out infinite; }
+
+/* Answer feedback pulse (practice mode) */
+@keyframes rr-ok { 0% { box-shadow: 0 0 0 0 rgb(16 185 129 / .45); } 100% { box-shadow: 0 0 0 10px rgb(16 185 129 / 0); } }
+@keyframes rr-bad { 0% { box-shadow: 0 0 0 0 rgb(244 63 94 / .4); } 100% { box-shadow: 0 0 0 10px rgb(244 63 94 / 0); } }
+.rr-ok { animation: rr-ok .6s ease-out; }
+.rr-bad { animation: rr-bad .6s ease-out; }
+
+/* Hero headline: words rise in one by one */
+@keyframes rr-word { from { opacity: 0; transform: translate3d(0,.6em,0); } to { opacity: 1; transform: none; } }
+.rr-word { display: inline-block; animation: rr-word .6s cubic-bezier(.22,.61,.36,1) both; animation-delay: calc(var(--w, 0) * 90ms); }
+
+/* Line/bar chart draw-in (set pathLength="1" on the element) */
+@keyframes rr-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+.rr-draw { stroke-dasharray: 1; stroke-dashoffset: 0; animation: rr-draw 1.1s ease-out both; }
+@keyframes rr-grow-y { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+.rr-grow-y { transform-origin: bottom; animation: rr-grow-y .7s cubic-bezier(.22,.61,.36,1) both; }
+
+/* Progress ring sweep */
+.rr-ring-arc { transition: stroke-dashoffset 1s cubic-bezier(.22,.61,.36,1); }
+
+/* Top page-loader bar (shown while a lazy route chunk loads) */
+@keyframes rr-loader { 0% { transform: translateX(-100%); } 60% { transform: translateX(-20%); } 100% { transform: translateX(0); } }
+.rr-loader-bar { position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 95; overflow: hidden; background: transparent; }
+.rr-loader-bar::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, var(--color-primary), var(--color-primary-light)); animation: rr-loader 1.4s ease-out infinite; }
+
+/* Badge unlock burst */
+@keyframes rr-unlock { 0% { transform: scale(.6) rotate(-12deg); opacity: 0; } 60% { transform: scale(1.12) rotate(4deg); opacity: 1; } 100% { transform: none; } }
+.rr-unlock { animation: rr-unlock .6s cubic-bezier(.22,.61,.36,1) both; }
+
+
+/* Reading preferences (Appearance menu): scales all rem-based type and spacing */
+html[data-text="sm"] { font-size: 93.75%; }
+html[data-text="lg"] { font-size: 112.5%; }
+
+@media (prefers-reduced-motion: reduce) {
+  .rr-shimmer, .rr-q-next, .rr-q-prev, .rr-timer-pulse, .rr-flame, .rr-ok, .rr-bad, .rr-word, .rr-draw, .rr-grow-y, .rr-unlock { animation: none; }
+  .rr-ring-arc { transition: none; }
+  .rr-loader-bar::after { animation: none; transform: none; }
+}
+
+/* ---------- Print: clean result/history pages ---------- */
+@media print {
+  header, aside, nav, [role="dialog"], .rr-no-print, .rr-confetti, button, a[href^="#"] { display: none !important; }
+  html, body { background: #fff !important; color: #000 !important; }
+  main { padding: 0 !important; margin: 0 !important; max-width: none !important; }
+  * { box-shadow: none !important; animation: none !important; transition: none !important; }
+  .rr-reveal { opacity: 1 !important; transform: none !important; }
+  a { color: inherit !important; text-decoration: none !important; }
+  .rr-print-keep { break-inside: avoid; }
+}

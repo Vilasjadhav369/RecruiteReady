@@ -32,6 +32,7 @@ import {
   ArrowLeftIcon,
   ExternalLinkIcon,
 } from '../../components/ui/index.js';
+import ExportActions from '../../components/common/ExportActions.jsx';
 
 export default function CodingHistoryPage() {
   const [searchParams] = useSearchParams();
@@ -86,9 +87,23 @@ export default function CodingHistoryPage() {
           </Badge>
         }
         actions={
-          <Button to="/coding" variant="outline" size="sm" iconLeft={<ArrowLeftIcon className="w-3.5 h-3.5" />}>
+          <div className="flex flex-wrap items-center gap-2">
+            <ExportActions
+              filename="coding-submissions.csv"
+              rows={submissions}
+              columns={[
+                { label: 'Problem', value: (s) => s.problem?.title },
+                { label: 'Submitted', value: (s) => s.submittedAt },
+                { label: 'Language', value: (s) => s.language },
+                { label: 'Status', value: (s) => s.status },
+                { label: 'Passed tests', value: (s) => s.passedTests },
+                { label: 'Total tests', value: (s) => s.totalTests },
+              ]}
+            />
+            <Button to="/coding" variant="outline" size="sm" iconLeft={<ArrowLeftIcon className="w-3.5 h-3.5" />}>
               Back to Problems
             </Button>
+          </div>
         }
       />
 

@@ -272,7 +272,7 @@ export default function CompanyListPage() {
                               <img
                                 src={c.logoUrl}
                                 alt={c.name}
-                                className="w-full h-full object-contain"
+                                className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-110"
                                 onError={(e) => {
                                   e.target.style.display = 'none';
                                   if (e.target.nextSibling) {

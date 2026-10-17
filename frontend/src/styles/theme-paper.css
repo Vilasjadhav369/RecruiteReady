@@ -1,0 +1,41 @@
+/* Warm Paper — a reading-friendly third theme (cream surfaces, warm ink text, ink-blue accent). */
+[data-theme="paper"] {
+  color-scheme: light;
+  --color-background:#F6F0E4; --color-bg:#F6F0E4; --color-brand-bg:#F6F0E4;
+  --color-surface:#FBF7EE; --color-brand-surface:#FBF7EE;
+  --color-ink:#2B2418; --color-ink-2:#5F543F; --color-ink-3:#7A6E58;
+  --color-text-primary:#2B2418; --color-text-secondary:#5F543F; --color-text-muted:#7A6E58; --color-text:#2B2418;
+  --color-brand-text:#2B2418; --color-brand-text-secondary:#5F543F; --color-brand-text-muted:#7A6E58;
+  --color-border:#DDD2BC; --color-border-soft:#E8DFCB; --color-brand-border:#DDD2BC;
+  --color-slate-50:#F1EADA; --color-slate-100:#EBE2CF; --color-slate-200:#DDD2BC; --color-slate-300:#C9BCA2;
+  --color-slate-400:#8F836C; --color-slate-500:#756A54; --color-slate-600:#5F543F; --color-slate-700:#4A402F;
+  --color-slate-800:#352D20; --color-slate-900:#2B2418; --color-slate-950:#1C170F;
+  --color-primary:#2F4B8A; --color-primary-dark:#243B70; --color-primary-darker:#1B2D57; --color-primary-light:#4F6BB0;
+  --color-primary-soft: color-mix(in oklab, #2F4B8A 9%, #FBF7EE);
+  --color-primary-tint: color-mix(in oklab, #2F4B8A 17%, #FBF7EE);
+  --color-primary-border: color-mix(in oklab, #2F4B8A 32%, #FBF7EE);
+  --color-brand-green:#2F4B8A; --color-brand-green-dark:#243B70; --color-brand-green-fresh:#4F6BB0;
+  --color-brand-blue:#2F4B8A; --color-brand-blue-dark:#243B70; --color-royal:#2F4B8A;
+  --color-brand-blue-light: color-mix(in oklab, #2F4B8A 9%, #FBF7EE);
+  --color-brand-mint-soft: color-mix(in oklab, #2F4B8A 9%, #FBF7EE);
+  --color-brand-mint: color-mix(in oklab, #2F4B8A 17%, #FBF7EE);
+  --color-light-blue: color-mix(in oklab, #2F4B8A 9%, #FBF7EE);
+  --color-navy:#2B2418; --color-brand-navy:#2B2418;
+}
+[data-theme="paper"] .bg-white, [data-theme="paper"] .hover\:bg-white:hover, [data-theme="paper"] .focus\:bg-white:focus { background-color: #FBF7EE; }
+[data-theme="paper"] .bg-white\/95 { background-color: color-mix(in oklab, #FBF7EE 95%, transparent); }
+[data-theme="paper"] .bg-white\/80 { background-color: color-mix(in oklab, #FBF7EE 80%, transparent); }
+[data-theme="paper"] .from-white { --tw-gradient-from: #FBF7EE; }
+[data-theme="paper"] .via-white { --tw-gradient-via: #FBF7EE; }
+[data-theme="paper"] .ring-white { --tw-ring-color: #FBF7EE; }
+[data-theme="paper"] .text-primary-dark, [data-theme="paper"] .hover\:text-primary-dark:hover { color: #243B70; }
+/* Warm, soft shadows instead of cold gray */
+[data-theme="paper"] .shadow-xs, [data-theme="paper"] .shadow-sm, [data-theme="paper"] .shadow-md { --tw-shadow-color: rgb(91 70 30 / .14); }
+[data-theme="paper"] ::selection { background: rgb(47 75 138 / .22); }
+[data-theme="paper"] ::-webkit-scrollbar-thumb { background: #CFC2A8; }
+[data-theme="paper"] ::-webkit-scrollbar-track { background: #F6F0E4; }
+/* Serif headings give the "paper" feel; body stays Inter for legibility */
+[data-theme="paper"] h1, [data-theme="paper"] h2, [data-theme="paper"] h3 {
+  font-family: "Source Serif 4 Variable", "Source Serif 4", Georgia, "Times New Roman", serif;
+  letter-spacing: -0.01em;
+}

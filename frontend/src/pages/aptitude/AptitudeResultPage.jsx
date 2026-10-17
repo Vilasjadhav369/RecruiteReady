@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useCelebrateOnce } from '../../hooks/useCelebrate.js';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
+import { AnimatedNumber } from '../../components/ui/AnimatedNumber.jsx';
 import { getAptitudeResult } from '../../services/aptitudeService.js';
 import {
   PageHeader,
@@ -164,6 +165,9 @@ export default function AptitudeResultPage() {
         }
         actions={
           <div className="flex items-center gap-2">
+            <Button type="button" variant="outline" size="sm" className="rr-no-print" onClick={() => window.print()}>
+              Print / PDF
+            </Button>
             <Button to="/aptitude" variant="primary" size="sm" iconLeft={<PlusIcon className="w-3.5 h-3.5" />}>
                 New Practice
               </Button>
@@ -184,7 +188,7 @@ export default function AptitudeResultPage() {
         />
         <StatCard
           label="Accuracy"
-          value={`${summary.percentage || 0}%`}
+          value={<><AnimatedNumber value={summary.percentage || 0} />%</>}
           subtext="Overall accuracy"
           icon={<CheckCircleIcon className="w-4 h-4 text-emerald-600" />}
         />
@@ -261,6 +265,14 @@ export default function AptitudeResultPage() {
                       {t.wrong} wrong · {t.unanswered} skipped
                     </span>
                   </div>
+                  {t.percentage < 70 && t.name !== 'General' && (
+                    <Link
+                      to={`/aptitude?topic=${encodeURIComponent(t.name)}`}
+                      className="rr-no-print inline-flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary-dark no-underline pt-1"
+                    >
+                      Practice this topic →
+                    </Link>
+                  )}
                 </div>
               ))}
             </div>

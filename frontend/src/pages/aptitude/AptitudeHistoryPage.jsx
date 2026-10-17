@@ -31,6 +31,7 @@ import {
   TrophyIcon,
   CheckCircleIcon,
 } from '../../components/ui/index.js';
+import ExportActions from '../../components/common/ExportActions.jsx';
 
 export default function AptitudeHistoryPage() {
   const [attempts, setAttempts] = useState([]);
@@ -96,9 +97,25 @@ export default function AptitudeHistoryPage() {
           </Badge>
         }
         actions={
-          <Button to="/aptitude" variant="primary" size="sm" iconLeft={<PlusIcon className="w-3.5 h-3.5" />}>
+          <div className="flex flex-wrap items-center gap-2">
+            <ExportActions
+              filename="aptitude-history.csv"
+              rows={attempts}
+              columns={[
+                { label: 'Category', value: (a) => a.category },
+                { label: 'Topic', value: (a) => a.topic },
+                { label: 'Difficulty', value: (a) => a.difficulty },
+                { label: 'Date', value: (a) => a.submittedAt || a.startedAt || a.createdAt },
+                { label: 'Status', value: (a) => a.status },
+                { label: 'Score', value: (a) => a.score },
+                { label: 'Total questions', value: (a) => a.totalQuestions },
+                { label: 'Percentage', value: (a) => a.percentage },
+              ]}
+            />
+            <Button to="/aptitude" variant="primary" size="sm" iconLeft={<PlusIcon className="w-3.5 h-3.5" />}>
               New Practice Session
             </Button>
+          </div>
         }
       />
 

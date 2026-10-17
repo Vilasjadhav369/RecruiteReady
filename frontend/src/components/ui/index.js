@@ -36,3 +36,5 @@ export * from './ThemeToggle.jsx';
 export * from './Reveal.jsx';
 export * from './AnimatedNumber.jsx';
 export * from './TypingText.jsx';
+export * from './ProgressRing.jsx';
+export * from './Accordion.jsx';

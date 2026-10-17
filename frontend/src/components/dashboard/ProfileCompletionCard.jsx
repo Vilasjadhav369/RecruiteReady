@@ -2,6 +2,7 @@ import React from "react";
 import { Card, CardHeader, CardContent } from "../ui/Card.jsx";
 import { ProgressBar } from "../ui/ProgressBar.jsx";
 import { Badge } from "../ui/Badge.jsx";
+import { ProgressRing } from "../ui/ProgressRing.jsx";
 import { ArrowRightIcon, ProfileIcon } from "../ui/Icons.jsx";
 import { Button } from "../ui/Button.jsx";
 import { calculateProfileCompletion } from "../../utils/profileCompletion.js";
@@ -39,21 +40,18 @@ function ProfileCompletionCard({ user }) {
         </CardHeader>
 
         <CardContent className="pt-0 pb-4 space-y-3">
-          <div>
-            <div className="flex items-baseline justify-between mb-1.5">
+          <div className="flex items-center gap-4">
+            <ProgressRing value={percentage} size={68} stroke={7} tone={isComplete ? "success" : "primary"} label={`Profile ${percentage} percent complete`} />
+            <div className="min-w-0 flex-1">
               <h3 className="text-sm font-semibold text-slate-900">
                 {isComplete ? "Profile Configured" : "Complete Your Profile"}
               </h3>
-              <span className="text-sm font-bold text-slate-900 font-mono">
-                {percentage}%
-              </span>
+              <ProgressBar
+                value={percentage}
+                variant={isComplete ? "success" : "primary"}
+                size="sm"
+              />
             </div>
-
-            <ProgressBar
-              value={percentage}
-              variant={isComplete ? "success" : "primary"}
-              size="sm"
-            />
           </div>
 
           <p className="text-xs text-slate-500 leading-relaxed">

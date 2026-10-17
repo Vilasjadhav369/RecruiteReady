@@ -11,6 +11,21 @@ Every claim below is marked with how it was verified.
 - Animation limited to a page fade and toast fade.
 - Search modal arrow-key order did not match the displayed order (companies/resources/coding).
 
+## Pre-existing bug found and fixed during visual review
+`bg-brand`, `text-brand`, `border-brand`, `ring-brand-light`, `text-brand-dark` and `hover:text-primary-hover` (about 28 usages, mostly mock-test pages, company card and history pages) referenced colour tokens that were never defined after the blue rebrand, so they rendered with no style. Visible effects: the current question cell and the selected option in the mock test had no background (white text on white), some progress bars were invisible. The tokens are now defined as aliases of the primary colour (`src/index.css`), so they follow theme and accent.
+
+## Round 3 additions (Warm Paper + UX + motion)
+- **Warm Paper theme** (cream surfaces, warm ink text, ink-blue accent, serif headings via Source Serif 4) as a third theme next to Light/Dark/System. Appearance menu in all headers also has an **accent colour picker** (Blue/Violet/Emerald/Orange) and **text size** (A-/A/A+). All persisted, applied before first paint.
+- **Circular theme-reveal** transition (View Transitions API; falls back to a colour cross-fade; off for reduced motion).
+- **Mock-test keyboard shortcuts** (A-D/1-4, arrows, M), **direction-aware question slide**, **timer pulse in the final minute** (mock + aptitude).
+- **Continue where you left off** card (from real `in_progress` attempts; hidden when none or when the backend already supplies a continue activity), **first-run welcome tour** (once per user per device), **`?` shortcut help dialog** (accordion), **Practice this topic** link on weak topics in aptitude results (uses the existing `?topic=` param).
+- **CSV export** (rows loaded on the page; formula-injection safe) and **Print / PDF** on aptitude, mock and coding history; Print on result pages; print stylesheet.
+- **Progress ring** on Profile Readiness, **streak flame**, **animated score counters** on results, **skeleton shimmer**, **page-loader bar** while a lazy route loads, **bookmark pop** after a user toggle, **company logo zoom**, **line-chart draw-in** on Progress, **hero headline word reveal**, **animated gradient border** on the landing dashboard preview, **accordion** component.
+- Found: autosave status indicator and mobile palette toggle already existed in both sessions (kept as is).
+
+### Round 3: not done (honest list)
+Sliding sidebar indicator (existing active-border style kept), answer-feedback pulse and badge-unlock animation (CSS exists, no matching feature to attach to), shared-element page transitions, a shared chart component (only the Progress line chart got the draw-in), PDF reading-position memory, a dedicated focus mode (test sessions are already full-screen), drag-and-drop avatar upload (backend endpoint unknown), per-page SEO, TanStack Query migration, splitting the giant admin pages.
+
 ## B. Design changes
 - **Theme system**: light/dark/system, persisted under `rr_theme`, applied by an inline script before first paint (no flash), animated switch, `theme-color` meta updated. Dark palette is generated from the existing palette by `scripts/gen-dark-theme.mjs` into `src/styles/theme-dark.css` (re-run `npm run gen:dark-theme` after changing it), so all existing pages are themed without per-file edits. The royal-blue brand colour is unchanged.
 - Theme toggle in public navbar, student header and admin header.
@@ -67,8 +82,8 @@ See `docs/BACKEND_NEEDS.md`.
 
 ## G. Testing actually performed
 - `npm run build`: passes. Production bundle loads (it did not before).
-- `npm run lint`: 0 errors, 114 warnings (baseline 106; the extra ones are structural warnings in new files and in the added `qa/` scripts; none are errors).
-- `npm run qa:smoke` (Playwright + Chromium, production build, **mocked API** because no backend was available): 21/21 checks pass: theme toggle/persistence/system preference, palette navigation and actions, editor highlight/indent/focus-escape, recently viewed, no runtime JS errors, no horizontal overflow at 390px (2 pages), reduced-motion behaviour. A separate check confirmed the mobile drawer opens and navigates.
+- `npm run lint`: 0 errors, 121 warnings (baseline 106; extra ones are structural warnings in new files and the qa scripts) (baseline 106; the extra ones are structural warnings in new files and in the added `qa/` scripts; none are errors).
+- `npm run qa:smoke` (Playwright + Chromium, production build, **mocked API** because no backend was available): 40/40 checks pass: theme toggle/persistence/system preference, palette navigation and actions, editor highlight/indent/focus-escape, recently viewed, no runtime JS errors, no horizontal overflow at 390px (2 pages), reduced-motion behaviour. A separate check confirmed the mobile drawer opens and navigates.
 - **Not tested**: real login/registration, real backend data, aptitude and mock-test sessions, admin pages, PDF preview, Safari/Firefox, a real installed PWA, screen-reader behaviour, 320/768/1024px widths.
 
 ## H. Run

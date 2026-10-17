@@ -7,6 +7,7 @@ import { AuthProvider } from "./context/AuthContext.jsx";
 import RouteScrollAndTitle from "./components/common/RouteScrollAndTitle.jsx";
 import { ThemeProvider } from "./context/ThemeContext.jsx";
 import OfflineBanner from "./components/common/OfflineBanner.jsx";
+import ShortcutHelp from "./components/common/ShortcutHelp.jsx";
 import ErrorBoundary from "./components/common/ErrorBoundary.jsx";
 
 function GuardedRoutes() {
@@ -27,6 +28,7 @@ function App() {
     <ThemeProvider>
     <BrowserRouter>
       <OfflineBanner />
+      <ShortcutHelp />
       <RouteScrollAndTitle />
       <QueryClientProvider client={queryClient}>
         <FeedbackProvider>

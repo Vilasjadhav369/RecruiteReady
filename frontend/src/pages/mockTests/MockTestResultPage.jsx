@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getMockResult } from '../../services/mockTestService.js';
 import { formatDateTime } from '../../utils/formatters.js';
 import { useCelebrateOnce } from '../../hooks/useCelebrate.js';
+import { AnimatedNumber } from '../../components/ui/AnimatedNumber.jsx';
 import { 
   PageHeader, 
   Card, 
@@ -89,6 +90,9 @@ export default function MockTestResultPage() {
         }
         actions={
           <div className="flex items-center gap-2.5">
+            <Button type="button" variant="outline" size="sm" className="rr-no-print" onClick={() => window.print()}>
+              Print / PDF
+            </Button>
             <Button to="/mock-tests/history" variant="outline" size="sm" iconLeft={<ClockIcon className="w-4 h-4" />}>
                 Attempt History
               </Button>
@@ -120,7 +124,7 @@ export default function MockTestResultPage() {
 
           <div className="flex items-baseline gap-2 shrink-0 bg-white px-4 py-2 rounded-xl border border-slate-200">
             <span className="text-2xl font-black text-slate-900 font-mono">
-              {summary.percentage}%
+              <AnimatedNumber value={summary.percentage || 0} />%
             </span>
             <span className="text-xs text-slate-500 font-medium">
               Overall Accuracy

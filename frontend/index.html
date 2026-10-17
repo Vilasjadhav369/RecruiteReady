@@ -17,10 +17,16 @@
       (function () {
         try {
           var pref = localStorage.getItem("rr_theme") || "system";
-          var dark = pref === "dark" || (pref === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
-          document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+          var theme = pref === "light" || pref === "dark" || pref === "paper" ? pref : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+          var root = document.documentElement;
+          root.setAttribute("data-theme", theme);
+          var accent = localStorage.getItem("rr_accent");
+          if (accent && accent !== "blue") root.setAttribute("data-accent", accent);
+          var ts = localStorage.getItem("rr_text");
+          if (ts === "sm" || ts === "lg") root.setAttribute("data-text", ts);
+          var colors = { light: "#0F1F3D", dark: "#0B1020", paper: "#F6F0E4" };
           var m = document.querySelector('meta[name="theme-color"]');
-          if (m) m.setAttribute("content", dark ? "#0B1020" : "#0F1F3D");
+          if (m) m.setAttribute("content", colors[theme]);
         } catch (e) {}
       })();
     </script>

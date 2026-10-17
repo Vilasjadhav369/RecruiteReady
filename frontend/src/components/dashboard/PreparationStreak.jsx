@@ -22,7 +22,7 @@ function PreparationStreak({ streakDays = 0 }) {
                   : "bg-slate-100 text-slate-400"
               }`}
             >
-              <FireIcon className="w-5 h-5" />
+              <FireIcon className={`w-5 h-5 ${hasStreak ? "rr-flame" : ""}`} />
             </div>
             <div>
               <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 block">

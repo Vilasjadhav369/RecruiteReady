@@ -1,5 +1,7 @@
 @import "tailwindcss";
 @import "./styles/theme-dark.css";
+@import "./styles/theme-paper.css";
+@import "./styles/accents.css";
 @import "./styles/motion.css";
 @import "./styles/editor.css";
 
@@ -30,6 +32,13 @@
   /* Core Brand Tokens */
   /* Primary brand scale (royal blue) — use as bg-primary, text-primary-dark, etc. */
   --color-primary:              #2563EB;
+  /* Aliases used by existing pages (bg-brand, text-brand-dark, hover:text-primary-hover …).
+     They were previously UNDEFINED, which silently rendered no style (e.g. the current
+     question in the mock-test palette and the selected option were invisible). */
+  --color-brand:                var(--color-primary);
+  --color-brand-dark:           var(--color-primary-dark);
+  --color-brand-light:          var(--color-primary-light);
+  --color-primary-hover:        var(--color-primary-dark);
   --color-primary-dark:         #1D4ED8;
   --color-primary-darker:       #1E40AF;
   --color-primary-light:        #3B82F6;

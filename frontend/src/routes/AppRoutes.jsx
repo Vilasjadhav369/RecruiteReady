@@ -79,6 +79,7 @@ function PageFallback() {
       role="status"
       aria-live="polite"
     >
+      <div className="rr-loader-bar" aria-hidden="true" />
       <div className="w-9 h-9 border-[3px] border-primary/20 border-t-primary rounded-full animate-spin" />
       <span className="text-sm text-slate-500">Loading…</span>
     </div>

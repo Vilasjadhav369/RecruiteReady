@@ -20,6 +20,7 @@ export function BookmarkButton({
     initialBookmarked !== null ? initialBookmarked : false
   );
   const [loading, setLoading] = useState(false);
+  const [popped, setPopped] = useState(false); // micro-interaction only after a user toggle
 
   useEffect(() => {
     if (initialBookmarked !== null) {
@@ -77,7 +78,7 @@ export function BookmarkButton({
     return (
       <button
         type="button"
-        onClick={handleToggle}
+        onClick={(e) => { setPopped(true); handleToggle(e); }}
         disabled={loading}
         title={isBookmarked ? 'Remove from Saved' : 'Save for later'}
         aria-label={isBookmarked ? 'Remove bookmark' : 'Save bookmark'}
@@ -89,7 +90,7 @@ export function BookmarkButton({
         } ${className}`}
       >
         {isBookmarked ? (
-          <BookmarkFilledIcon className={`${iconSizeClass} text-primary shrink-0`} />
+          <BookmarkFilledIcon className={`${iconSizeClass} text-primary shrink-0 ${popped ? 'rr-pop' : ''}`} />
         ) : (
           <BookmarkIcon className={`${iconSizeClass} text-slate-500 shrink-0`} />
         )}
@@ -102,7 +103,7 @@ export function BookmarkButton({
   return (
     <button
       type="button"
-      onClick={handleToggle}
+      onClick={(e) => { setPopped(true); handleToggle(e); }}
       disabled={loading}
       title={isBookmarked ? 'Remove from Saved' : 'Save for later'}
       aria-label={isBookmarked ? 'Remove bookmark' : 'Save bookmark'}
@@ -114,7 +115,7 @@ export function BookmarkButton({
       } ${className}`}
     >
       {isBookmarked ? (
-        <BookmarkFilledIcon className={`${iconSizeClass} text-primary`} />
+        <BookmarkFilledIcon className={`${iconSizeClass} text-primary ${popped ? 'rr-pop' : ''}`} />
       ) : (
         <BookmarkIcon className={`${iconSizeClass}`} />
       )}

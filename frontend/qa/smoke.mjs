@@ -24,6 +24,11 @@ async function mock(page, authed) {
     if (p === "/coding/problems/p1") return route.fulfill(ok({ problem }));
     if (p === "/companies") return route.fulfill(ok({ companies: [], pagination: { total: 0, page: 1, pages: 1 } }));
     if (p === "/bookmarks/status/coding/p1") return route.fulfill(ok({ bookmarked: false }));
+    if (p === "/mock-tests/history") return route.fulfill(ok({ attempts: [{ _id: "m1", status: "in_progress", mockTest: { title: "Full Mock 1" }, startedAt: new Date().toISOString(), totalQuestions: 3 }, { _id: "m2", status: "submitted", mockTest: { title: "=cmd|calc" }, score: 5, totalQuestions: 10, percentage: 50, submittedAt: new Date().toISOString() }], pagination: { total: 2, page: 1, limit: 10, pages: 1 } }));
+    if (p === "/aptitude/history") return route.fulfill(ok({ attempts: [], pagination: { total: 0, page: 1, limit: 10, pages: 1 } }));
+    if (p === "/mock-tests/attempts/m1") return route.fulfill(ok({ attempt: { _id: "m1", status: "in_progress", remainingSeconds: 50, answers: [] }, test: { title: "Full Mock 1" }, questions: [
+      { _id: "q1", question: "Q one?", category: "Quant", options: [{ key: "A", text: "a1" }, { key: "B", text: "b1" }, { key: "C", text: "c1" }, { key: "D", text: "d1" }] },
+      { _id: "q2", question: "Q two?", category: "Quant", options: [{ key: "A", text: "a2" }, { key: "B", text: "b2" }] }] }));
     if (p === "/search") return route.fulfill(ok({ query: "x", totalResults: 0, companies: [], resources: [], coding: [], mockTests: [], aptitude: [] }));
     return route.fulfill(ok({}));
   });
@@ -42,8 +47,8 @@ try {
   await page.goto(BASE + "/"); await page.waitForSelector("h1");
   log("landing renders light", (await page.getAttribute("html", "data-theme")) === "light");
   await page.screenshot({ path: "qa/shots/landing-light.png" });
-  await page.click('button[aria-label="Switch to dark theme"]');
-  await page.waitForTimeout(500);
+  await page.click('button[aria-label^="Appearance settings"]'); await page.click('[role="radio"]:has-text("Dark")');
+  await page.waitForTimeout(1100);
   log("toggle -> dark", (await page.getAttribute("html", "data-theme")) === "dark");
   const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
   log("dark body background is dark", bg === "rgb(11, 16, 32)", bg);
@@ -120,6 +125,62 @@ try {
   const hidden = await p4.evaluate(() => [...document.querySelectorAll(".rr-reveal")].filter((e) => getComputedStyle(e).opacity === "0").length);
   log("reduced motion: reveal sections visible", hidden === 0, `hidden=${hidden}`);
   await ctx4.close();
+
+  // 5. Round-3 features
+  const ctx5 = await browser.newContext({ viewport: { width: 1440, height: 900 }, acceptDownloads: true });
+  await ctx5.addInitScript(() => localStorage.setItem("recruiteready_token", "test-token"));
+  const p5 = await ctx5.newPage(); const errs5 = [];
+  p5.on("pageerror", (e) => errs5.push(e.message));
+  await mock(p5, true);
+  await p5.goto(BASE + "/dashboard"); await p5.waitForSelector("text=Preparation Modules", { timeout: 8000 });
+  // first-run tour
+  await p5.waitForSelector('[aria-labelledby="tour-title"]', { timeout: 4000 }).then(() => log("welcome tour appears on first visit", true)).catch(() => log("welcome tour appears on first visit", false));
+  await p5.click('text=Next'); await p5.click('text=Next'); await p5.click('text=Got it');
+  log("tour dismissed + remembered", (await p5.locator('[aria-labelledby="tour-title"]').count()) === 0 && (await p5.evaluate(() => !!localStorage.getItem("rr_tour_done_u1"))));
+  // continue card from real in_progress history
+  log("continue card lists in-progress mock", (await p5.locator("text=Continue where you left off").count()) > 0 && (await p5.locator("text=Full Mock 1").count()) > 0);
+  // shortcut help
+  await p5.keyboard.press("Shift+Slash"); await p5.waitForSelector('[aria-label="Keyboard shortcuts"]', { timeout: 3000 }).then(() => log("'?' opens shortcut help", true)).catch(() => log("'?' opens shortcut help", false));
+  await p5.keyboard.press("Escape");
+  // Warm Paper
+  await p5.click('button[aria-label^="Appearance settings"]'); await p5.click('[role="radio"]:has-text("Warm Paper")'); await p5.waitForTimeout(800);
+  log("Warm Paper applied", (await p5.getAttribute("html", "data-theme")) === "paper");
+  const pbg = await p5.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  log("paper background is cream", pbg === "rgb(246, 240, 228)", pbg);
+  const ff = await p5.evaluate(() => getComputedStyle(document.querySelector("h1,h2,h3")).fontFamily);
+  log("paper headings use serif", /Serif|Georgia/i.test(ff), ff.slice(0, 40));
+  await p5.screenshot({ path: "qa/shots/dashboard-paper.png" });
+  // accent + text size
+  await p5.keyboard.press("Escape");
+  await p5.click('button[aria-label^="Appearance settings"]').catch(() => {});
+  if (!(await p5.locator('[aria-label="Accent colour"]').isVisible())) await p5.click('button[aria-label^="Appearance settings"]');
+  await p5.click('[role="radio"][aria-label="Violet"]'); await p5.waitForTimeout(300);
+  log("accent violet applied", (await p5.getAttribute("html", "data-accent")) === "violet");
+  await p5.click('[role="radio"][aria-label="Larger"]');
+  log("text size large applied", (await p5.getAttribute("html", "data-text")) === "lg");
+  await p5.screenshot({ path: "qa/shots/dashboard-paper-violet.png" });
+  await p5.reload({ waitUntil: "domcontentloaded" });
+  log("theme + accent + text size persist across reload", (await p5.getAttribute("html", "data-theme")) === "paper" && (await p5.getAttribute("html", "data-accent")) === "violet" && (await p5.getAttribute("html", "data-text")) === "lg");
+  // CSV export on history (formula injection neutralised)
+  await p5.goto(BASE + "/mock-tests/history"); await p5.waitForSelector("text=Export CSV", { timeout: 8000 });
+  const [dl] = await Promise.all([p5.waitForEvent("download"), p5.click("text=Export CSV")]);
+  const csv = fs.readFileSync(await dl.path(), "utf8");
+  log("CSV export downloads with header + rows", csv.includes("Test,Date,Status") && csv.includes("Full Mock 1"));
+  log("CSV neutralises formula injection", csv.includes("'=cmd|calc") && !/(^|,)=cmd/m.test(csv));
+  // Mock session: shortcuts, slide transition class, timer pulse
+  await p5.goto(BASE + "/mock-tests/session/m1"); await p5.waitForSelector("text=Q one?", { timeout: 8000 });
+  await p5.keyboard.press("b"); await p5.waitForTimeout(200);
+  log("mock shortcut 'B' selects option B", (await p5.locator('[role="radio"][aria-checked="true"]').innerText()).includes("b1"));
+  await p5.keyboard.press("ArrowRight"); await p5.waitForSelector("text=Q two?");
+  log("mock shortcut → moves to next question", true);
+  log("question slide animation class present", (await p5.locator(".rr-q-next").count()) > 0);
+  log("timer pulses in final minute (50s left)", (await p5.locator(".rr-timer-pulse").count()) > 0);
+  await p5.keyboard.press("m"); await p5.waitForTimeout(150);
+  log("mock shortcut 'M' marks question for review", (await p5.locator("text=Marked for Review").count()) > 0);
+  await p5.keyboard.press("m"); await p5.waitForTimeout(150);
+  log("mock shortcut 'M' again unmarks", (await p5.locator("text=Marked for Review").count()) === 0);
+  log("no runtime JS errors (round-3 flows)", errs5.length === 0, errs5.slice(0, 3).join(" | "));
+  await ctx5.close();
 } catch (e) { log("UNEXPECTED ERROR", false, e.message); }
 await browser.close(); srv.kill();
 fs.writeFileSync("qa/results.json", JSON.stringify(results, null, 2));

@@ -103,5 +103,100 @@
     "name": "reduced motion: reveal sections visible",
     "pass": true,
     "note": "hidden=0"
+  },
+  {
+    "name": "welcome tour appears on first visit",
+    "pass": true,
+    "note": ""
+  },
+  {
+    "name": "tour dismissed + remembered",
+    "pass": true,
+    "note": ""
+  },
+  {
+    "name": "continue card lists in-progress mock",
+    "pass": true,
+    "note": ""
+  },
+  {
+    "name": "'?' opens shortcut help",
+    "pass": true,
+    "note": ""
+  },
+  {
+    "name": "Warm Paper applied",
+    "pass": true,
+    "note": ""
+  },
+  {
+    "name": "paper background is cream",
+    "pass": true,
+    "note": "rgb(246, 240, 228)"
+  },
+  {
+    "name": "paper headings use serif",
+    "pass": true,
+    "note": "\"Source Serif 4 Variable\", \"Source Serif"
+  },
+  {
+    "name": "accent violet applied",
+    "pass": true,
+    "note": ""
+  },
+  {
+    "name": "text size large applied",
+    "pass": true,
+    "note": ""
+  },
+  {
+    "name": "theme + accent + text size persist across reload",
+    "pass": true,
+    "note": ""
+  },
+  {
+    "name": "CSV export downloads with header + rows",
+    "pass": true,
+    "note": ""
+  },
+  {
+    "name": "CSV neutralises formula injection",
+    "pass": true,
+    "note": ""
+  },
+  {
+    "name": "mock shortcut 'B' selects option B",
+    "pass": true,
+    "note": ""
+  },
+  {
+    "name": "mock shortcut → moves to next question",
+    "pass": true,
+    "note": ""
+  },
+  {
+    "name": "question slide animation class present",
+    "pass": true,
+    "note": ""
+  },
+  {
+    "name": "timer pulses in final minute (50s left)",
+    "pass": true,
+    "note": ""
+  },
+  {
+    "name": "mock shortcut 'M' marks question for review",
+    "pass": true,
+    "note": ""
+  },
+  {
+    "name": "mock shortcut 'M' again unmarks",
+    "pass": true,
+    "note": ""
+  },
+  {
+    "name": "no runtime JS errors (round-3 flows)",
+    "pass": true,
+    "note": ""
   }
 ]

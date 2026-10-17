@@ -164,8 +164,15 @@ function HomePage() {
           </div>
 
           <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight leading-[1.1] mb-5 text-balance">
-            Prepare smarter. <br className="hidden sm:block" />
-            <span className="text-primary">Get placement ready.</span>
+            {["Prepare", "smarter."].map((w, i) => (
+              <span key={w} className="rr-word mr-[0.25em]" style={{ "--w": i }}>{w}</span>
+            ))}
+            <br className="hidden sm:block" />
+            <span className="text-primary">
+              {["Get", "placement", "ready."].map((w, i) => (
+                <span key={w} className="rr-word mr-[0.25em]" style={{ "--w": i + 2 }}>{w}</span>
+              ))}
+            </span>
           </h1>
 
           <p className="text-base sm:text-lg text-slate-600 max-w-xl mx-auto lg:mx-0 leading-relaxed mb-8">
@@ -202,7 +209,9 @@ function HomePage() {
         </div>
 
         <div className="hidden lg:flex justify-end pt-4 rr-float-slow">
-          <DashboardPreview />
+          <div className="rr-border-glow rounded-2xl p-[1px]">
+            <DashboardPreview />
+          </div>
         </div>
       </section>
       </div>

@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
 import RecentlyViewed from "../components/dashboard/RecentlyViewed.jsx";
+import ContinueCard from "../components/dashboard/ContinueCard.jsx";
+import WelcomeTour from "../components/dashboard/WelcomeTour.jsx";
 import { getDashboardSummary } from "../services/dashboardService.js";
 
 // High-Density, Streamlined P1 Dashboard Components
@@ -109,6 +111,11 @@ function DashboardPage() {
 
       {/* 1b. Missing Field Setup Banner (compact checklist shown only when profile is incomplete) */}
       <MissingFieldBanner profileCompletion={summary?.profileCompletion} />
+
+      {/* 1c. Unfinished sessions (only when the backend summary has no continue-activity of its own) */}
+      {summary && !summary.continueActivity && <ContinueCard />}
+
+      <WelcomeTour />
 
       {/* 2. Unified Preparation Launchpad: 4 Core Modules with Live Metrics */}
       <PreparationLaunchpad

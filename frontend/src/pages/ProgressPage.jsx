@@ -118,7 +118,7 @@ function ScoreTrendChart({ trend = [] }) {
                   y1={y}
                   x2={width - paddingX}
                   y2={y}
-                  stroke="#E2E8F0"
+                  stroke="var(--color-slate-200, #E2E8F0)"
                   strokeDasharray={pct === 0 || pct === 100 ? 'none' : '3 3'}
                   strokeWidth="1"
                 />
@@ -143,8 +143,10 @@ function ScoreTrendChart({ trend = [] }) {
 
           {points.length > 1 && (
             <polyline
+              pathLength="1"
+              className="rr-draw"
               fill="none"
-              stroke="#166534"
+              stroke="var(--color-emerald-600, #059669)"
               strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"

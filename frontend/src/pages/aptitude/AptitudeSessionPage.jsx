@@ -353,6 +353,13 @@ export default function AptitudeSessionPage() {
   const isTimeCritical = remainingSeconds < 120 && remainingSeconds > 0;
   const isCurrentMarked = currentQ ? markedForReview.has(currentQ._id) : false;
 
+  // Direction-aware question transition (slides forward/back, never delays input)
+  const prevIdxRef = useRef(0);
+  const slideClass = currentIndex >= prevIdxRef.current ? 'rr-q-next' : 'rr-q-prev';
+  useEffect(() => {
+    prevIdxRef.current = currentIndex;
+  }, [currentIndex]);
+
   // Keyboard shortcuts: A–D / 1–4 select an option, ←/→ move, M marks for review.
   useEffect(() => {
     const onKey = (e) => {
@@ -494,7 +501,7 @@ export default function AptitudeSessionPage() {
               role="timer"
               aria-live="polite"
               aria-label={`Time remaining: ${formatTimer(remainingSeconds)}`}
-              className={`flex items-center gap-2 px-3 sm:px-3.5 py-1.5 rounded-lg border text-xs font-mono font-bold tracking-tight transition-colors ${
+              className={`flex items-center gap-2 px-3 sm:px-3.5 py-1.5 rounded-lg border text-xs font-mono font-bold tracking-tight transition-colors ${remainingSeconds > 0 && remainingSeconds <= 60 ? 'rr-timer-pulse' : ''} ${
                 isTimeCritical
                   ? 'bg-amber-50 border-amber-300 text-amber-900'
                   : 'bg-slate-50 border-slate-200 text-slate-800'
@@ -553,7 +560,7 @@ export default function AptitudeSessionPage() {
                 </Button>
               </CardHeader>
 
-              <CardContent className="p-5 sm:p-7 space-y-6">
+              <CardContent key={currentQ._id} className={`p-5 sm:p-7 space-y-6 ${slideClass}`}>
                 {/* Question Text */}
                 <div className="text-base sm:text-lg font-medium text-slate-900 leading-relaxed whitespace-pre-line">
                   {currentQ.question}

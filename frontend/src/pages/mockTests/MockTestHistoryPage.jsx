@@ -30,6 +30,7 @@ import {
   ArrowRightIcon,
   ExternalLinkIcon
 } from '../../components/ui/Icons.jsx';
+import ExportActions from '../../components/common/ExportActions.jsx';
 
 export default function MockTestHistoryPage() {
   const navigate = useNavigate();
@@ -92,9 +93,23 @@ export default function MockTestHistoryPage() {
           </Badge>
         }
         actions={
-          <Button to="/mock-tests" variant="outline" size="sm" iconLeft={<DocumentIcon className="w-4 h-4" />}>
+          <div className="flex flex-wrap items-center gap-2">
+            <ExportActions
+              filename="mock-test-history.csv"
+              rows={attempts}
+              columns={[
+                { label: 'Test', value: (a) => a.mockTest?.title || 'Mock Test' },
+                { label: 'Date', value: (a) => a.submittedAt || a.startedAt || a.createdAt },
+                { label: 'Status', value: (a) => a.status },
+                { label: 'Score', value: (a) => a.score },
+                { label: 'Total questions', value: (a) => a.totalQuestions },
+                { label: 'Percentage', value: (a) => a.percentage },
+              ]}
+            />
+            <Button to="/mock-tests" variant="outline" size="sm" iconLeft={<DocumentIcon className="w-4 h-4" />}>
               All Assessments
             </Button>
+          </div>
         }
       />
 
