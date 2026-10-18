@@ -25,8 +25,8 @@ function CompanyGrid({ companies = null, loading = false }) {
         <EmptyState
           icon={
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-              <rect x="2" y="5" width="16" height="12" rx="2" stroke="#2563EB" strokeWidth="1.5"/>
-              <path d="M5 5V3a2 2 0 012-2h6a2 2 0 012 2v2M2 10h16" stroke="#2563EB" strokeWidth="1.5"/>
+              <rect x="2" y="5" width="16" height="12" rx="2" stroke="var(--color-primary)" strokeWidth="1.5"/>
+              <path d="M5 5V3a2 2 0 012-2h6a2 2 0 012 2v2M2 10h16" stroke="var(--color-primary)" strokeWidth="1.5"/>
             </svg>
           }
           title="No companies available"

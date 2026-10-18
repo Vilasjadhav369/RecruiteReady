@@ -32,8 +32,8 @@ export function PreparationLaunchpad({
       secondaryMetric: apt.attempted > 0 ? `${apt.attempted} attempts` : null,
       to: "/aptitude",
       icon: AptitudeIcon,
-      accent: "hover:border-blue-300 hover:bg-blue-50/30",
-      iconColor: "text-blue-600 bg-blue-50 border-blue-200",
+      accent: "hover:border-slate-300 hover:bg-slate-50/30",
+      iconColor: "text-slate-600 bg-slate-50 border-slate-200",
     },
     {
       title: "Coding",
@@ -42,8 +42,8 @@ export function PreparationLaunchpad({
       secondaryMetric: code.attempted > 0 ? `${code.attempted} attempted` : null,
       to: "/coding",
       icon: CodingIcon,
-      accent: "hover:border-emerald-300 hover:bg-emerald-50/30",
-      iconColor: "text-emerald-600 bg-emerald-50 border-emerald-200",
+      accent: "hover:border-slate-300 hover:bg-slate-50/30",
+      iconColor: "text-slate-600 bg-slate-50 border-slate-200",
     },
     {
       title: "Mock Tests",
@@ -52,8 +52,8 @@ export function PreparationLaunchpad({
       secondaryMetric: mock.attempted > 0 ? `${mock.attempted} taken` : null,
       to: "/mock-tests",
       icon: MockTestIcon,
-      accent: "hover:border-amber-300 hover:bg-amber-50/30",
-      iconColor: "text-amber-600 bg-amber-50 border-amber-200",
+      accent: "hover:border-slate-300 hover:bg-slate-50/30",
+      iconColor: "text-slate-600 bg-slate-50 border-slate-200",
     },
     {
       title: "Companies",
@@ -62,8 +62,8 @@ export function PreparationLaunchpad({
       secondaryMetric: null,
       to: "/companies",
       icon: CompanyIcon,
-      accent: "hover:border-purple-300 hover:bg-purple-50/30",
-      iconColor: "text-purple-600 bg-purple-50 border-purple-200",
+      accent: "hover:border-slate-300 hover:bg-slate-50/30",
+      iconColor: "text-slate-600 bg-slate-50 border-slate-200",
     },
   ];
 

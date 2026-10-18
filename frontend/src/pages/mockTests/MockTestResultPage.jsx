@@ -32,6 +32,7 @@ export default function MockTestResultPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [result, setResult] = useState(null);
+  const [showReview, setShowReview] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -183,7 +184,16 @@ export default function MockTestResultPage() {
             </p>
           </div>
         </CardHeader>
-        <CardContent className="p-6">
+                <button
+          type="button"
+          onClick={() => setShowReview((v) => !v)}
+          aria-expanded={showReview}
+          className="rr-no-print w-full flex items-center justify-between px-5 sm:px-6 py-3 text-sm font-semibold text-slate-900 hover:bg-slate-50 cursor-pointer transition-colors"
+        >
+          <span>{showReview ? 'Hide' : 'Show'} full question-by-question review</span>
+          <svg className={`w-4 h-4 text-slate-500 transition-transform ${showReview ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M5 8l5 5 5-5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        </button>
+        <CardContent className="rr-review p-6" hidden={!showReview}>
           <div className="space-y-8 divide-y divide-slate-100">
             {(review || []).map((item, idx) => {
               const isUserCorrect = Boolean(item.isCorrect);

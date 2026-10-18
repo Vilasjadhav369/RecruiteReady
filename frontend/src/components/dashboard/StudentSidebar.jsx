@@ -1,3 +1,4 @@
+import { useSidebarCollapsed } from "../../hooks/useSidebarCollapsed.js";
 import React, { useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.jsx";
@@ -75,6 +76,7 @@ function isNavActive(pathname, itemPath) {
 function StudentSidebar({ mobileOpen, setMobileOpen }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [collapsed, toggleCollapsed] = useSidebarCollapsed("student");
   const location = useLocation();
   const drawerRef = useRef(null);
 
@@ -120,27 +122,27 @@ function StudentSidebar({ mobileOpen, setMobileOpen }) {
             <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
               <path
                 d="M10 3L3 7L10 11L17 7L10 3Z"
-                stroke="#DBEAFE"
+                stroke="var(--rr-on-primary)"
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
               <path
                 d="M5.5 8.5V13.5C5.5 13.5 7 15.5 10 15.5C13 15.5 14.5 13.5 14.5 13.5V8.5"
-                stroke="#3B82F6"
+                stroke="var(--rr-on-primary)" strokeOpacity=".55"
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
               <path
                 d="M17 7V12"
-                stroke="#DBEAFE"
+                stroke="var(--rr-on-primary)"
                 strokeWidth="2"
                 strokeLinecap="round"
               />
             </svg>
           </div>
-          <div>
+          <div className="rr-nav-hide">
             <span className="text-slate-900 font-bold text-sm tracking-tight leading-none block">
               RecruitReady
             </span>
@@ -170,7 +172,7 @@ function StudentSidebar({ mobileOpen, setMobileOpen }) {
       >
         {NAV_GROUPS.map((group) => (
           <div key={group.title} className="space-y-0.5">
-            <span className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+            <span className="rr-nav-group px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
               {group.title}
             </span>
             {group.items.map((item) => {
@@ -193,7 +195,7 @@ function StudentSidebar({ mobileOpen, setMobileOpen }) {
                       active ? "text-primary" : "text-slate-500"
                     }`}
                   />
-                  <span className="truncate">{item.label}</span>
+                  <span className="rr-nav-label truncate">{item.label}</span>
                 </Link>
               );
             })}
@@ -206,14 +208,14 @@ function StudentSidebar({ mobileOpen, setMobileOpen }) {
         <Link
           to="/profile"
           onClick={() => setMobileOpen && setMobileOpen(false)}
-          className="flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-slate-100 transition-colors no-underline mb-1"
+          className="rr-nav-center flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-slate-100 transition-colors no-underline mb-1"
         >
           <Avatar
             name={user?.firstName ? `${user.firstName} ${user?.lastName || ""}`.trim() : "Student User"}
             src={user?.profilePhoto}
             size="sm"
           />
-          <div className="min-w-0 flex-1">
+          <div className="rr-nav-hide min-w-0 flex-1">
             <span className="text-xs font-semibold text-slate-900 truncate block">
               {user?.firstName ? `${user.firstName} ${user?.lastName || ""}`.trim() : "Student User"}
             </span>
@@ -226,10 +228,10 @@ function StudentSidebar({ mobileOpen, setMobileOpen }) {
         <button
           type="button"
           onClick={handleSignOut}
-          className="min-h-[38px] w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer text-left"
+          className="rr-nav-center min-h-[38px] w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer text-left"
         >
           <LogoutIcon className="w-3.5 h-3.5 text-red-500" />
-          <span>Sign Out</span>
+          <span className="rr-nav-hide">Sign Out</span>
         </button>
       </div>
     </div>
@@ -238,8 +240,18 @@ function StudentSidebar({ mobileOpen, setMobileOpen }) {
   return (
     <>
       {/* Desktop fixed sidebar */}
-      <aside className="hidden md:block w-64 h-screen sticky top-0 bg-white border-r border-slate-200 shrink-0 z-30">
+      <aside data-collapsed={collapsed} className="rr-sidebar hidden md:block w-64 h-screen sticky top-0 bg-white border-r border-slate-200 shrink-0 z-30">
         {navContent}
+        <button
+          type="button"
+          onClick={toggleCollapsed}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-expanded={!collapsed}
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          className="rr-sidebar-toggle w-6 h-6 rounded-full border border-slate-300 bg-white text-slate-600 hover:text-slate-900 hover:border-slate-900 grid place-items-center cursor-pointer transition-colors"
+        >
+          <svg className={`w-3 h-3 transition-transform ${collapsed ? "rotate-180" : ""}`} viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12.5 4.5L7 10l5.5 5.5" /></svg>
+        </button>
       </aside>
 
       {/* Mobile drawer backdrop */}

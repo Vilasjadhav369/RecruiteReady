@@ -25,7 +25,7 @@ export function GlobalSearchModal({ isOpen, onClose }) {
   const inputRef = useRef(null);
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
-  const { isDark, resolvedTheme, setTheme } = useTheme();
+  const { isDark, setTheme } = useTheme();
   const recent = useRecentlyViewed();
 
   // Static commands. Every `link` is a real route in AppRoutes.jsx.
@@ -44,7 +44,6 @@ export function GlobalSearchModal({ isOpen, onClose }) {
     { id: 'cmd-settings', title: 'Account & Security', subtitle: 'Password and sessions', link: '/settings' },
     ...(isAdmin ? [{ id: 'cmd-admin', title: 'Admin Console', subtitle: 'Platform administration', link: '/admin' }] : []),
     { id: 'cmd-theme', title: isDark ? 'Switch to light theme' : 'Switch to dark theme', subtitle: 'Toggle appearance', action: () => setTheme(isDark ? 'light' : 'dark') },
-    ...(resolvedTheme !== 'paper' ? [{ id: 'cmd-paper', title: 'Switch to Warm Paper theme', subtitle: 'Cream, easy-on-the-eyes reading theme', action: () => setTheme('paper') }] : []),
   ];
   const q = query.trim().toLowerCase();
   const commands = q

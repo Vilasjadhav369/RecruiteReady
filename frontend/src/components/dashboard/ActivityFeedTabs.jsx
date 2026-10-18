@@ -8,6 +8,7 @@ import {
   CalendarIcon,
 } from "../ui/Icons.jsx";
 import { Badge } from "../ui/Badge.jsx";
+import RecentlyViewed from "./RecentlyViewed.jsx";
 
 function formatRelativeTime(ts) {
   if (!ts) return "";
@@ -49,14 +50,14 @@ export function ActivityFeedTabs({
 }) {
   const [activeTab, setActiveTab] = useState("activity"); // 'activity' | 'upcoming'
 
+  const TABS = ["activity", "upcoming", "recent"];
   const handleKeyDown = (e) => {
-    if (e.key === "ArrowRight") {
-      e.preventDefault();
-      setActiveTab((prev) => (prev === "activity" ? "upcoming" : "activity"));
-    } else if (e.key === "ArrowLeft") {
-      e.preventDefault();
-      setActiveTab((prev) => (prev === "activity" ? "upcoming" : "activity"));
-    }
+    if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+    e.preventDefault();
+    setActiveTab((prev) => {
+      const i = TABS.indexOf(prev);
+      return TABS[(i + (e.key === "ArrowRight" ? 1 : TABS.length - 1)) % TABS.length];
+    });
   };
 
   const getActivityIcon = (type) => {
@@ -135,6 +136,23 @@ export function ActivityFeedTabs({
               </span>
             )}
           </button>
+
+          <button
+            type="button"
+            role="tab"
+            id="tab-recent"
+            aria-selected={activeTab === "recent"}
+            aria-controls="panel-recent"
+            tabIndex={activeTab === "recent" ? 0 : -1}
+            onClick={() => setActiveTab("recent")}
+            className={`px-3 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer ${
+              activeTab === "recent"
+                ? "bg-white text-slate-900 shadow-2xs font-bold"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            Recently viewed
+          </button>
         </div>
 
         {activeTab === "activity" ? (
@@ -144,13 +162,15 @@ export function ActivityFeedTabs({
           >
             Full History
           </Link>
-        ) : (
+        ) : activeTab === "upcoming" ? (
           <Link
             to="/mock-tests"
             className="text-xs font-semibold text-primary hover:text-primary-dark no-underline hover:underline hidden sm:inline"
           >
             Browse Tests
           </Link>
+        ) : (
+          <span className="text-[11px] text-slate-400 hidden sm:inline">On this device</span>
         )}
       </div>
 
@@ -164,7 +184,7 @@ export function ActivityFeedTabs({
       >
         {hasActivities ? (
           <div className="divide-y divide-slate-100">
-            {activities.map((item, idx) => (
+            {activities.slice(0, 6).map((item, idx) => (
               <div
                 key={item.id || idx}
                 className="py-2.5 first:pt-0 last:pb-0 flex items-center justify-between gap-3"
@@ -253,6 +273,11 @@ export function ActivityFeedTabs({
             </p>
           </div>
         )}
+      </div>
+
+      {/* Tab Panel: Recently viewed (device-local shortcuts) */}
+      <div role="tabpanel" id="panel-recent" aria-labelledby="tab-recent" hidden={activeTab !== "recent"} className="p-4">
+        <RecentlyViewed bare limit={6} />
       </div>
     </div>
   );

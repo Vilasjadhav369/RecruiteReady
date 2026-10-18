@@ -77,6 +77,7 @@ export function PlacementReadinessSidebar({
   const companies = Array.isArray(targetCompanies) ? targetCompanies : [];
 
   // Goal API state
+  const [tab, setTab] = useState('focus');
   const [goalsData, setGoalsData] = useState([]);
   const [goalsSummary, setGoalsSummary] = useState(null);
   const [loadingGoals, setLoadingGoals] = useState(true);
@@ -210,7 +211,24 @@ export function PlacementReadinessSidebar({
         )}
       </div>
 
+      {/* Tabs keep the column short: one of Focus / Targets / Goals at a time */}
+      <div role="tablist" aria-label="Placement intelligence sections" className="flex gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1">
+        {[['focus', 'Focus areas'], ['targets', 'Targets'], ['goals', 'Goals']].map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            role="tab"
+            aria-selected={tab === key}
+            onClick={() => setTab(key)}
+            className={`flex-1 px-2 py-1.5 rounded-md text-xs font-semibold cursor-pointer transition-colors ${tab === key ? 'bg-white text-slate-900 border border-slate-200' : 'text-slate-500 hover:text-slate-900 border border-transparent'}`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
       {/* 2. Targeted Weak Areas Card */}
+      {tab === 'focus' && (
       <div className="bg-white border border-slate-200/90 rounded-xl p-3.5 sm:p-4 shadow-xs space-y-2.5">
         <div className="flex items-center justify-between">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -277,8 +295,10 @@ export function PlacementReadinessSidebar({
           </div>
         )}
       </div>
+      )}
 
       {/* 3. Target Companies Pill List */}
+      {tab === 'targets' && (
       <div className="bg-white border border-slate-200/90 rounded-xl p-3.5 sm:p-4 shadow-xs space-y-2.5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
@@ -335,8 +355,10 @@ export function PlacementReadinessSidebar({
           </div>
         )}
       </div>
+      )}
 
       {/* 4. Preparation Goals Card (Integrated P1.6 Engine) */}
+      {tab === 'goals' && (
       <div className="bg-white border border-slate-200/90 rounded-xl p-3.5 sm:p-4 shadow-xs space-y-2.5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
@@ -537,6 +559,7 @@ export function PlacementReadinessSidebar({
           </div>
         )}
       </div>
+      )}
 
       {/* 5. Profile Completion Progress (Only if < 100%) */}
       {profileCompletion && profileCompletion.percentage < 100 && (

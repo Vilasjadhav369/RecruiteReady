@@ -17,7 +17,7 @@ export function Table({
 }) {
   return (
     <div className={`w-full overflow-hidden bg-white border border-slate-200 rounded-xl shadow-xs ${containerClassName}`}>
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto lg:max-h-[calc(100vh-15rem)] lg:overflow-y-auto">
         <table className={`w-full text-left text-sm border-collapse ${className}`} {...props}>
           {children}
         </table>
@@ -41,7 +41,7 @@ export function Table({
 
 export function TableHeader({ className = '', children, ...props }) {
   return (
-    <thead className={`bg-slate-50/80 border-b border-slate-200 ${className}`} {...props}>
+    <thead className={`sticky top-0 z-10 bg-slate-50 border-b border-slate-200 ${className}`} {...props}>
       {children}
     </thead>
   );
@@ -75,7 +75,7 @@ export function TableHead({
 
   return (
     <th
-      className={`py-3 px-4 text-[11px] font-semibold text-slate-500 uppercase tracking-wider ${alignClass} ${className}`}
+      className={`py-2.5 px-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider ${alignClass} ${className}`}
       {...props}
     >
       {children}
@@ -94,7 +94,7 @@ export function TableCell({
 
   return (
     <td
-      className={`py-3.5 px-4 text-xs sm:text-sm text-slate-700 align-middle ${alignClass} ${className}`}
+      className={`py-2 px-3 text-xs sm:text-[13px] text-slate-700 align-middle ${alignClass} ${className}`}
       {...props}
     >
       {children}

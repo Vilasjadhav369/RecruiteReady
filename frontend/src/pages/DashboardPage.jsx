@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
-import RecentlyViewed from "../components/dashboard/RecentlyViewed.jsx";
 import ContinueCard from "../components/dashboard/ContinueCard.jsx";
 import WelcomeTour from "../components/dashboard/WelcomeTour.jsx";
 import { getDashboardSummary } from "../services/dashboardService.js";
@@ -134,7 +133,6 @@ function DashboardPage() {
               upcomingTests={summary?.upcomingTests || []}
             />
           </div>
-          <RecentlyViewed />
         </div>
 
         {/* Right Column (4 cols on desktop, ordered above activity feed on mobile): Placement Intelligence */}

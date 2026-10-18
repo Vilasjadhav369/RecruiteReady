@@ -86,21 +86,21 @@ function Navbar() {
               <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
                 <path
                   d="M10 3L3 7L10 11L17 7L10 3Z"
-                  stroke="#DBEAFE"
+                  stroke="var(--rr-on-primary)"
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
                 <path
                   d="M5.5 8.5V13.5C5.5 13.5 7 15.5 10 15.5C13 15.5 14.5 13.5 14.5 13.5V8.5"
-                  stroke="#3B82F6"
+                  stroke="var(--rr-on-primary)" strokeOpacity=".55"
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
                 <path
                   d="M17 7V12"
-                  stroke="#DBEAFE"
+                  stroke="var(--rr-on-primary)"
                   strokeWidth="2"
                   strokeLinecap="round"
                 />

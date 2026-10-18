@@ -243,7 +243,7 @@ function AdminDashboardPage() {
   }
 
   return (
-    <div className="space-y-6 pb-16">
+    <div className="space-y-4 pb-8">
       {/* ── 1. Page Header ──────────────────────────────────────────── */}
       <PageHeader
         title="Admin Dashboard"
@@ -271,7 +271,7 @@ function AdminDashboardPage() {
         <h2 id="platform-metrics-heading" className="sr-only">
           Platform Overview Metrics
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <AdminStatCard
             title="Total Students"
             value={studentsTotal}
@@ -300,9 +300,9 @@ function AdminDashboardPage() {
       </section>
 
       {/* ── 3. Main Dashboard Body (Left: Content & Students, Right: Actions & Activity) ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
         {/* Left Column (8 cols): Modules Summary & Recent Students */}
-        <div className="lg:col-span-8 space-y-6">
+        <div className="lg:col-span-8 space-y-4">
           {/* Section: Platform Preparation Modules */}
           <Card>
             <CardHeader>
@@ -459,7 +459,7 @@ function AdminDashboardPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {recentStudents.map((st) => (
+                    {recentStudents.slice(0, 5).map((st) => (
                       <TableRow key={st._id}>
                         <TableCell className="font-semibold text-slate-900">
                           {st.firstName} {st.lastName}
@@ -500,7 +500,7 @@ function AdminDashboardPage() {
         </div>
 
         {/* Right Column (4 cols): Pending Actions, Quick Nav, Platform Health & Activity */}
-        <div className="lg:col-span-4 space-y-6">
+        <div className="lg:col-span-4 space-y-4">
           {/* Pending Actions Alert / Overview */}
           {totalPending > 0 && (
             <Card className="border-amber-200/80 bg-amber-50/30">

@@ -6,11 +6,11 @@
 
 export const COLORS = {
   // Brand & Accents
-  brandGreen: '#2563EB', primary: '#2563EB',
-  brandGreenDark: '#1D4ED8',
-  brandGreenFresh: '#3B82F6',
-  brandMint: '#DBEAFE',
-  brandMintSoft: '#EAF2FF',
+  brandGreen: '#0A0A0A', primary: '#0A0A0A',
+  brandGreenDark: '#000000',
+  brandGreenFresh: '#404040',
+  brandMint: '#E8E8E8',
+  brandMintSoft: '#F2F2F2',
   
   // Surfaces & Backgrounds
   background: '#F8FAFC',
@@ -45,9 +45,9 @@ export const COLORS = {
 
   // Backward Compatibility Aliases
   navy: '#0F172A',
-  blue: '#2563EB',
-  blueDark: '#1D4ED8',
-  blueLight: '#EAF2FF',
+  blue: '#0A0A0A',
+  blueDark: '#000000',
+  blueLight: '#F2F2F2',
 };
 
 export const TYPOGRAPHY = {

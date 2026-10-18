@@ -6,7 +6,7 @@ import { Button } from "../components/ui/Button.jsx";
 import { Card } from "../components/ui/Card.jsx";
 import { Badge } from "../components/ui/Badge.jsx";
 import { Skeleton } from "../components/ui/Skeleton.jsx";
-import DashboardPreview from "../components/DashboardPreview.jsx";
+import HeroAbstract from "../components/home/HeroAbstract.jsx";
 import { Reveal } from "../components/ui/Reveal.jsx";
 import { TypingText } from "../components/ui/TypingText.jsx";
 import {
@@ -145,76 +145,10 @@ function HomePage() {
   const primaryActionLabel = isAuthenticated ? "Go to Dashboard" : "Start Preparing Free";
 
   return (
-    <div className="space-y-20 sm:space-y-24 pb-20">
+    <div className="space-y-14 sm:space-y-16 pb-16">
 
       {/* ── 1. HERO SECTION ─────────────────────────────────── */}
-      <div className="relative">
-      <div aria-hidden="true" className="rr-gradient-soft absolute inset-x-0 top-0 h-[28rem] -z-0 opacity-70 [mask-image:linear-gradient(to_bottom,black,transparent)]" />
-      <div aria-hidden="true" className="rr-float-slow absolute -top-6 left-[8%] w-24 h-24 rounded-full bg-primary/10 blur-2xl" />
-      <div aria-hidden="true" className="rr-float absolute top-24 right-[10%] w-32 h-32 rounded-full bg-sky-400/10 blur-2xl" />
-      <section className="relative pt-8 sm:pt-12 lg:pt-16 max-w-6xl mx-auto px-4 sm:px-6 grid lg:grid-cols-[1.05fr_1fr] gap-10 lg:gap-14 items-center">
-        <div className="text-center lg:text-left animate-slide-in">
-          <div className="inline-flex items-center gap-2 mb-5">
-            <Badge variant="brand" size="md">
-              Campus Placement Portal
-            </Badge>
-            <span className="text-xs text-slate-500 font-medium hidden sm:inline">
-              Academic Year 2025–2026
-            </span>
-          </div>
-
-          <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight leading-[1.1] mb-5 text-balance">
-            {["Prepare", "smarter."].map((w, i) => (
-              <span key={w} className="rr-word mr-[0.25em]" style={{ "--w": i }}>{w}</span>
-            ))}
-            <br className="hidden sm:block" />
-            <span className="text-primary">
-              {["Get", "placement", "ready."].map((w, i) => (
-                <span key={w} className="rr-word mr-[0.25em]" style={{ "--w": i + 2 }}>{w}</span>
-              ))}
-            </span>
-          </h1>
-
-          <p className="text-base sm:text-lg text-slate-600 max-w-xl mx-auto lg:mx-0 leading-relaxed mb-8">
-            Practice aptitude, solve coding problems, take timed mock tests and study each
-            visiting recruiter's hiring pattern, all in one place, with your progress tracked.
-          </p>
-
-          <p className="text-sm sm:text-base font-semibold text-primary mb-7 h-6">
-            <TypingText phrases={["Aptitude practice that tracks your speed.", "Timed mock tests that feel like the real thing.", "Company tracks built around real hiring rounds."]} />
-          </p>
-
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center lg:justify-start gap-3 mb-8">
-            <Button
-              to={primaryActionTo}
-              variant="primary"
-              size="lg"
-              iconRight={<ArrowRightIcon className="w-4 h-4" />}
-            >
-              {primaryActionLabel}
-            </Button>
-            <Button to="/companies" variant="outline" size="lg">
-              Explore recruiter tracks
-            </Button>
-          </div>
-
-          <ul className="flex flex-wrap items-center justify-center lg:justify-start gap-y-2 gap-x-6 text-xs text-slate-500 font-medium">
-            {["Real question bank", "Timed assessments", "Recruiter dossiers"].map((t) => (
-              <li key={t} className="flex items-center gap-1.5">
-                <CheckIcon className="w-3.5 h-3.5 text-primary" />
-                {t}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="hidden lg:flex justify-end pt-4 rr-float-slow">
-          <div className="rr-border-glow rounded-2xl p-[1px]">
-            <DashboardPreview />
-          </div>
-        </div>
-      </section>
-      </div>
+      <HeroAbstract primaryTo={primaryActionTo} primaryLabel={primaryActionLabel} />
 
       {/* ── 2. CORE PREPARATION MODULES ─────────────────────── */}
       <Reveal as="section" id="features" className="max-w-5xl mx-auto px-4 sm:px-6">

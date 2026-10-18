@@ -37,25 +37,15 @@ export default function ContinueCard() {
   }, []);
 
   if (items.length === 0) return null;
+  const first = items[0];
   return (
-    <Card className="p-4 sm:p-5 border-primary-border bg-primary-soft/60">
-      <div className="flex items-center justify-between mb-2.5">
-        <h2 className="text-sm font-bold text-slate-900">Continue where you left off</h2>
-        <span className="text-[11px] font-semibold text-primary">Unfinished</span>
-      </div>
-      <ul className="space-y-1.5">
-        {items.map((it) => (
-          <li key={it.key}>
-            <Link to={it.link} className="flex items-center justify-between gap-3 rounded-lg bg-white border border-slate-200 px-3 py-2.5 no-underline group hover:border-primary-border transition-colors">
-              <span className="min-w-0">
-                <span className="block text-[11px] text-slate-500">{it.kind}</span>
-                <span className="block text-sm font-semibold text-slate-900 truncate">{it.title}</span>
-              </span>
-              <span className="text-xs font-bold text-primary shrink-0 group-hover:translate-x-0.5 transition-transform">Resume →</span>
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </Card>
+    <Link to={first.link} className="rr-no-print flex items-center justify-between gap-3 rounded-xl border border-slate-300 bg-white px-4 py-2.5 no-underline group hover:border-slate-900 transition-colors">
+      <span className="min-w-0 flex items-center gap-3">
+        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 shrink-0">Continue</span>
+        <span className="text-sm font-semibold text-slate-900 truncate">{first.title}</span>
+        <span className="hidden sm:inline text-xs text-slate-500 shrink-0">{first.kind}{items.length > 1 ? ` · +${items.length - 1} more unfinished` : ""}</span>
+      </span>
+      <span className="text-xs font-bold text-slate-900 shrink-0 group-hover:translate-x-0.5 transition-transform">Resume →</span>
+    </Link>
   );
 }

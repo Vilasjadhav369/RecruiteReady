@@ -13,21 +13,21 @@ export function PageHeader({
   className = '',
 }) {
   return (
-    <div className={`space-y-3 pb-2 border-b border-slate-200/80 ${className}`}>
+    <div className={`space-y-1 pb-2 border-b border-slate-200/80 ${className}`}>
       {breadcrumbs && breadcrumbs.length > 0 && (
-        <Breadcrumbs items={breadcrumbs} className="mb-1" />
+        <Breadcrumbs items={breadcrumbs} className="mb-0" />
       )}
 
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="space-y-1">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
+        <div className="space-y-0.5 min-w-0">
           <div className="flex items-center gap-2.5 flex-wrap">
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+            <h1 className="text-lg sm:text-xl font-semibold text-slate-900 tracking-tight">
               {title}
             </h1>
             {badge && <div className="shrink-0">{badge}</div>}
           </div>
           {description && (
-            <p className="text-xs sm:text-sm text-slate-500 max-w-2xl leading-normal">
+            <p title={typeof description === "string" ? description : undefined} className="text-xs sm:text-[13px] text-slate-500 max-w-3xl leading-normal sm:line-clamp-1">
               {description}
             </p>
           )}

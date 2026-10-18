@@ -168,7 +168,7 @@ function ActivityVolumeChart({ data = [] }) {
         {areaPath && (
           <polygon
             points={areaPath}
-            fill="#EAF2FF"
+            fill="var(--color-primary-soft)"
             opacity="0.9"
           />
         )}
@@ -177,7 +177,7 @@ function ActivityVolumeChart({ data = [] }) {
         {points.length > 1 && (
           <polyline
             fill="none"
-            stroke="#2563EB"
+            stroke="var(--color-primary)"
             strokeWidth="2.5"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -193,7 +193,7 @@ function ActivityVolumeChart({ data = [] }) {
               cy={p.y}
               r="4.5"
               fill="#FFFFFF"
-              stroke="#2563EB"
+              stroke="var(--color-primary)"
               strokeWidth="2.5"
               className="transition-transform group-hover:scale-150"
             />

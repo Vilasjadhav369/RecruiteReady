@@ -18,7 +18,7 @@ export function fireConfetti({ count = 110, duration = 2200 } = {}) {
   const ctx = canvas.getContext("2d");
   ctx.scale(dpr, dpr);
 
-  const colors = ["#2563EB", "#38BDF8", "#7C5CFC", "#34D399", "#FBBF24", "#FB7185"];
+  const colors = ["#0A0A0A", "#525252", "#9A9A9A", "#16A34A", "#F59E0B", "#E5E5E5"];
   const w = window.innerWidth;
   const parts = Array.from({ length: count }, () => ({
     x: w / 2 + (Math.random() - 0.5) * 120,

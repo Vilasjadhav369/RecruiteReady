@@ -13,15 +13,11 @@ const TYPE_LABEL = {
  * RecentlyViewed — shortcut list of items this student opened on this device.
  * Honest about its scope: it is device-local and not synced to the server.
  */
-export default function RecentlyViewed({ limit = 5 }) {
+export default function RecentlyViewed({ limit = 5, bare = false }) {
   const items = useRecentlyViewed().slice(0, limit);
 
-  return (
-    <Card className="p-4 sm:p-5">
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-sm font-bold text-slate-900">Recently viewed</h2>
-        <span className="text-[11px] text-slate-400">On this device</span>
-      </div>
+  const content = (
+    <>
       {items.length === 0 ? (
         <p className="text-xs text-slate-500 leading-relaxed">
           Study materials, companies, coding problems and mock tests you open will show up here so you can jump back in.
@@ -46,6 +42,16 @@ export default function RecentlyViewed({ limit = 5 }) {
           ))}
         </ul>
       )}
+    </>
+  );
+  if (bare) return content;
+  return (
+    <Card className="p-4 sm:p-5">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-sm font-bold text-slate-900">Recently viewed</h2>
+        <span className="text-[11px] text-slate-400">On this device</span>
+      </div>
+      {content}
     </Card>
   );
 }

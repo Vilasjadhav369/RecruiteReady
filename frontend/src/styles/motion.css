@@ -51,7 +51,7 @@ html.rr-theme-anim *::after {
 /* Animated gradient surface (hero / promo only) */
 @keyframes rr-gradient-shift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
 .rr-gradient-animate {
-  background-image: linear-gradient(120deg, #0F1F3D, #1E40AF, #2563EB, #0F1F3D);
+  background-image: linear-gradient(120deg, #0A0A0A, #262626, #404040, #0A0A0A);
   background-size: 300% 300%;
   animation: rr-gradient-shift 16s ease infinite;
 }
@@ -74,7 +74,7 @@ html.rr-theme-anim *::after {
   border: 1.5px solid transparent;
   background:
     linear-gradient(var(--color-surface), var(--color-surface)) padding-box,
-    conic-gradient(from var(--rr-angle), #2563EB, #38BDF8, #7C5CFC, #2563EB) border-box;
+    conic-gradient(from var(--rr-angle), #0A0A0A, #9A9A9A, #E3E3E3, #0A0A0A) border-box;
   animation: rr-spin-angle 6s linear infinite;
 }
 
@@ -177,9 +177,6 @@ html.rr-theme-anim *::after {
 .rr-unlock { animation: rr-unlock .6s cubic-bezier(.22,.61,.36,1) both; }
 
 
-/* Reading preferences (Appearance menu): scales all rem-based type and spacing */
-html[data-text="sm"] { font-size: 93.75%; }
-html[data-text="lg"] { font-size: 112.5%; }
 
 @media (prefers-reduced-motion: reduce) {
   .rr-shimmer, .rr-q-next, .rr-q-prev, .rr-timer-pulse, .rr-flame, .rr-ok, .rr-bad, .rr-word, .rr-draw, .rr-grow-y, .rr-unlock { animation: none; }
@@ -197,3 +194,38 @@ html[data-text="lg"] { font-size: 112.5%; }
   a { color: inherit !important; text-decoration: none !important; }
   .rr-print-keep { break-inside: avoid; }
 }
+
+/* ---------- Landing hero (abstract) ---------- */
+:root { --rr-glow-1: #BDBDBD; --rr-glow-2: #E5E5E5; --rr-glow-3: #D4D4D4; }
+[data-theme="dark"] { --rr-glow-1: #FFFFFF; --rr-glow-2: #7A7A7A; --rr-glow-3: #4A4A4A; }
+[data-theme="dark"] .rr-grid-bg { opacity: .5; }
+@keyframes rr-drift-a { 0%,100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(40px,-30px,0) scale(1.12); } }
+@keyframes rr-drift-b { 0%,100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(-50px,30px,0) scale(1.08); } }
+.rr-drift-a { animation: rr-drift-a 14s ease-in-out infinite; }
+.rr-drift-b { animation: rr-drift-b 18s ease-in-out infinite; }
+.rr-grid-bg {
+  background-image: linear-gradient(to right, color-mix(in oklab, var(--color-slate-400) 22%, transparent) 1px, transparent 1px),
+                    linear-gradient(to bottom, color-mix(in oklab, var(--color-slate-400) 22%, transparent) 1px, transparent 1px);
+  background-size: 48px 48px;
+  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 30%, transparent 78%);
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 30%, transparent 78%);
+}
+@media (prefers-reduced-motion: reduce) { .rr-drift-a, .rr-drift-b { animation: none; } }
+
+/* Logo glyph colour tracks the filled brand surface (white on black, black on white) */
+:root { --rr-on-primary: #FFFFFF; }
+[data-theme="dark"] { --rr-on-primary: #0A0A0A; }
+
+/* ---------- Collapsible desktop sidebar (icon rail) ---------- */
+.rr-sidebar { transition: width .22s cubic-bezier(.22,.61,.36,1); }
+.rr-sidebar[data-collapsed="true"] { width: 4.25rem; }
+.rr-sidebar[data-collapsed="true"] .rr-nav-label,
+.rr-sidebar[data-collapsed="true"] .rr-nav-group,
+.rr-sidebar[data-collapsed="true"] .rr-nav-hide { display: none; }
+.rr-sidebar[data-collapsed="true"] nav a { justify-content: center; padding-left: 0; padding-right: 0; border-left-width: 0; }
+.rr-sidebar[data-collapsed="true"] .rr-nav-center { justify-content: center; padding-left: 0; padding-right: 0; }
+.rr-sidebar-toggle { position: absolute; top: 4.1rem; right: -0.75rem; z-index: 40; }
+@media (prefers-reduced-motion: reduce) { .rr-sidebar { transition: none; } }
+
+/* Printing a result page always includes the full review */
+@media print { .rr-review[hidden] { display: block !important; } }

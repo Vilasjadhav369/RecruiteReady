@@ -19,10 +19,10 @@ function LiveStatistics({ data = null, loading = false, hasError = false }) {
       label: "Active Students",
       icon: (
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-          <circle cx="8" cy="7" r="3" stroke="#2563EB" strokeWidth="1.5"/>
-          <path d="M2 17c0-3.314 2.686-6 6-6s6 2.686 6 6" stroke="#2563EB" strokeWidth="1.5" strokeLinecap="round"/>
-          <circle cx="15" cy="7" r="2" stroke="#2563EB" strokeWidth="1.25"/>
-          <path d="M18 17c0-2.209-1.343-4-3-4" stroke="#2563EB" strokeWidth="1.25" strokeLinecap="round"/>
+          <circle cx="8" cy="7" r="3" stroke="var(--color-primary)" strokeWidth="1.5"/>
+          <path d="M2 17c0-3.314 2.686-6 6-6s6 2.686 6 6" stroke="var(--color-primary)" strokeWidth="1.5" strokeLinecap="round"/>
+          <circle cx="15" cy="7" r="2" stroke="var(--color-primary)" strokeWidth="1.25"/>
+          <path d="M18 17c0-2.209-1.343-4-3-4" stroke="var(--color-primary)" strokeWidth="1.25" strokeLinecap="round"/>
         </svg>
       ),
     },
@@ -31,9 +31,9 @@ function LiveStatistics({ data = null, loading = false, hasError = false }) {
       label: "Questions Attempted",
       icon: (
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-          <rect x="3" y="3" width="14" height="14" rx="2" stroke="#2563EB" strokeWidth="1.5"/>
-          <path d="M7 10H13M7 13H11" stroke="#2563EB" strokeWidth="1.5" strokeLinecap="round"/>
-          <path d="M7 7H13" stroke="#2563EB" strokeWidth="1.5" strokeLinecap="round"/>
+          <rect x="3" y="3" width="14" height="14" rx="2" stroke="var(--color-primary)" strokeWidth="1.5"/>
+          <path d="M7 10H13M7 13H11" stroke="var(--color-primary)" strokeWidth="1.5" strokeLinecap="round"/>
+          <path d="M7 7H13" stroke="var(--color-primary)" strokeWidth="1.5" strokeLinecap="round"/>
         </svg>
       ),
     },
@@ -42,7 +42,7 @@ function LiveStatistics({ data = null, loading = false, hasError = false }) {
       label: "Code Submissions",
       icon: (
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-          <path d="M6.5 7.5L3 10l3.5 2.5M13.5 7.5L17 10l-3.5 2.5M11 6L9 14" stroke="#2563EB" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M6.5 7.5L3 10l3.5 2.5M13.5 7.5L17 10l-3.5 2.5M11 6L9 14" stroke="var(--color-primary)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
       ),
     },
@@ -51,8 +51,8 @@ function LiveStatistics({ data = null, loading = false, hasError = false }) {
       label: "Mock Tests Taken",
       icon: (
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-          <rect x="3" y="5" width="14" height="10" rx="2" stroke="#2563EB" strokeWidth="1.5"/>
-          <path d="M7 9h6M7 12h4" stroke="#2563EB" strokeWidth="1.5" strokeLinecap="round"/>
+          <rect x="3" y="5" width="14" height="10" rx="2" stroke="var(--color-primary)" strokeWidth="1.5"/>
+          <path d="M7 9h6M7 12h4" stroke="var(--color-primary)" strokeWidth="1.5" strokeLinecap="round"/>
         </svg>
       ),
     },
@@ -90,8 +90,8 @@ function LiveStatistics({ data = null, loading = false, hasError = false }) {
         <EmptyState
           icon={
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-              <path d="M3 14l4-4 3 3 4-5 3 3" stroke="#2563EB" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              <rect x="2" y="2" width="16" height="16" rx="2" stroke="#2563EB" strokeWidth="1.5"/>
+              <path d="M3 14l4-4 3 3 4-5 3 3" stroke="var(--color-primary)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <rect x="2" y="2" width="16" height="16" rx="2" stroke="var(--color-primary)" strokeWidth="1.5"/>
             </svg>
           }
           title="Live platform statistics"

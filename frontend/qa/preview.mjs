@@ -28,20 +28,20 @@ async function shot(name,{theme="light",accent,path,w=1440,h=900,authed=true,act
  if(action) await action(p);
  await p.screenshot({path:`qa/preview/${name}.png`,fullPage:full}); await ctx.close(); console.log("ok",name);
 }
-for(const t of ["light","dark","paper"]){
+for(const t of ["light","dark"]){
  await shot(`01-landing-${t}`,{theme:t,path:"/",authed:false,wait:2600});
  await shot(`02-dashboard-${t}`,{theme:t,path:"/dashboard"});
 }
 await shot("03-coding-light",{theme:"light",path:"/coding/problem/p1"});
-await shot("04-coding-paper",{theme:"paper",path:"/coding/problem/p1"});
+await shot("04-coding-dark",{theme:"dark",path:"/coding/problem/p1"});
 await shot("05-mock-session-light",{theme:"light",path:"/mock-tests/session/m1"});
 await shot("06-mock-session-dark",{theme:"dark",path:"/mock-tests/session/m1"});
-await shot("07-mock-history-paper",{theme:"paper",path:"/mock-tests/history"});
+await shot("07-mock-history-light",{theme:"light",path:"/mock-tests/history"});
 await shot("08-command-palette-dark",{theme:"dark",path:"/dashboard",action:async p=>{await p.keyboard.press("Control+k");await p.waitForTimeout(700);}});
 await shot("09-appearance-menu-light",{theme:"light",path:"/dashboard",action:async p=>{await p.click('button[aria-label^="Appearance settings"]');await p.waitForTimeout(400);}});
-await shot("10-dashboard-violet-dark",{theme:"dark",accent:"violet",path:"/dashboard"});
 await shot("11-login-light",{theme:"light",path:"/login",authed:false});
-await shot("12-mobile-dashboard-paper",{theme:"paper",path:"/dashboard",w:390,h:844});
+await shot("12-mobile-dashboard-dark",{theme:"dark",path:"/dashboard",w:390,h:844});
 await shot("13-mobile-landing-light",{theme:"light",path:"/",w:390,h:844,authed:false,wait:2400});
+await shot("15-collapsed-sidebar-light",{theme:"light",path:"/dashboard",action:async p=>{await p.click('button[aria-label="Collapse sidebar"]');await p.waitForTimeout(500);}});
 await shot("14-shortcuts-dialog-light",{theme:"light",path:"/dashboard",action:async p=>{await p.keyboard.press("Shift+Slash");await p.waitForTimeout(500);}});
 await b.close(); srv.kill();

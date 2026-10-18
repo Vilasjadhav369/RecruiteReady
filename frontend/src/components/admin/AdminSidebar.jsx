@@ -1,3 +1,4 @@
+import { useSidebarCollapsed } from "../../hooks/useSidebarCollapsed.js";
 import React, { useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
@@ -76,6 +77,7 @@ function isAdminNavActive(pathname, itemPath) {
  */
 function AdminSidebar({ mobileOpen, setMobileOpen }) {
   const location = useLocation();
+  const [collapsed, toggleCollapsed] = useSidebarCollapsed("admin");
   const drawerRef = useRef(null);
 
   // Close mobile drawer on route change
@@ -114,27 +116,27 @@ function AdminSidebar({ mobileOpen, setMobileOpen }) {
             <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
               <path
                 d="M10 3L3 7L10 11L17 7L10 3Z"
-                stroke="#DBEAFE"
+                stroke="var(--rr-on-primary)"
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
               <path
                 d="M5.5 8.5V13.5C5.5 13.5 7 15.5 10 15.5C13 15.5 14.5 13.5 14.5 13.5V8.5"
-                stroke="#3B82F6"
+                stroke="var(--rr-on-primary)" strokeOpacity=".55"
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
               <path
                 d="M17 7V12"
-                stroke="#DBEAFE"
+                stroke="var(--rr-on-primary)"
                 strokeWidth="2"
                 strokeLinecap="round"
               />
             </svg>
           </div>
-          <div>
+          <div className="rr-nav-hide">
             <div className="flex items-center gap-1.5">
               <span className="text-slate-900 font-bold text-sm tracking-tight leading-none">
                 RecruitReady
@@ -168,7 +170,7 @@ function AdminSidebar({ mobileOpen, setMobileOpen }) {
       >
         {NAV_SECTIONS.map((section) => (
           <div key={section.title} className="space-y-0.5">
-            <span className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+            <span className="rr-nav-group px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
               {section.title}
             </span>
             {section.items.map((item) => {
@@ -191,7 +193,7 @@ function AdminSidebar({ mobileOpen, setMobileOpen }) {
                       active ? "text-primary" : "text-slate-500"
                     }`}
                   />
-                  <span className="truncate">{item.label}</span>
+                  <span className="rr-nav-label truncate">{item.label}</span>
                 </Link>
               );
             })}
@@ -203,7 +205,7 @@ function AdminSidebar({ mobileOpen, setMobileOpen }) {
       <div className="p-3 border-t border-slate-200 bg-slate-50/80 shrink-0">
         <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-white border border-slate-200/80 shadow-2xs">
           <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" aria-hidden="true" />
-          <div className="min-w-0 flex-1">
+          <div className="rr-nav-hide min-w-0 flex-1">
             <span className="text-[11px] font-semibold text-slate-800 block leading-tight truncate">
               Platform Online
             </span>
@@ -211,7 +213,7 @@ function AdminSidebar({ mobileOpen, setMobileOpen }) {
               Academic Portal v1.0
             </span>
           </div>
-          <ShieldCheckIcon className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+          <ShieldCheckIcon className="rr-nav-hide w-3.5 h-3.5 text-slate-400 shrink-0" />
         </div>
       </div>
     </div>
@@ -220,8 +222,18 @@ function AdminSidebar({ mobileOpen, setMobileOpen }) {
   return (
     <>
       {/* Desktop fixed sidebar */}
-      <aside className="hidden md:block w-64 h-screen sticky top-0 bg-white border-r border-slate-200 shrink-0 z-30">
+      <aside data-collapsed={collapsed} className="rr-sidebar hidden md:block w-64 h-screen sticky top-0 bg-white border-r border-slate-200 shrink-0 z-30">
         {navContent}
+        <button
+          type="button"
+          onClick={toggleCollapsed}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-expanded={!collapsed}
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          className="rr-sidebar-toggle w-6 h-6 rounded-full border border-slate-300 bg-white text-slate-600 hover:text-slate-900 hover:border-slate-900 grid place-items-center cursor-pointer transition-colors"
+        >
+          <svg className={`w-3 h-3 transition-transform ${collapsed ? "rotate-180" : ""}`} viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12.5 4.5L7 10l5.5 5.5" /></svg>
+        </button>
       </aside>
 
       {/* Mobile drawer backdrop */}

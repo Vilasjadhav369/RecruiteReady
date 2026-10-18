@@ -51,7 +51,7 @@ try {
   await page.waitForTimeout(1100);
   log("toggle -> dark", (await page.getAttribute("html", "data-theme")) === "dark");
   const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
-  log("dark body background is dark", bg === "rgb(11, 16, 32)", bg);
+  log("dark body background is dark", bg === "rgb(10, 10, 10)", bg);
   await page.screenshot({ path: "qa/shots/landing-dark.png" });
   // scroll to trigger reveals and capture
   await page.evaluate(() => window.scrollTo(0, 1100)); await page.waitForTimeout(900);
@@ -75,14 +75,14 @@ try {
 
   // 3. Authenticated flows
   const ctx3 = await browser.newContext({ viewport: { width: 1440, height: 900 } });
-  await ctx3.addInitScript(() => localStorage.setItem("recruiteready_token", "test-token"));
+  await ctx3.addInitScript(() => { localStorage.setItem("recruiteready_token", "test-token"); localStorage.setItem("rr_tour_done_u1", "1"); });
   const p3 = await ctx3.newPage(); const errs3 = [];
   p3.on("pageerror", (e) => errs3.push(e.message));
   await mock(p3, true);
   await p3.goto(BASE + "/dashboard"); await p3.waitForSelector("text=Preparation Modules", { timeout: 8000 });
   await p3.waitForTimeout(1200);
   await p3.screenshot({ path: "qa/shots/dashboard-light.png" });
-  log("dashboard renders + Recently viewed card", (await p3.locator("text=Recently viewed").count()) > 0);
+  log("dashboard renders + Recently viewed tab", (await p3.locator('[role="tab"]:has-text("Recently viewed")').count()) > 0);
   // command palette
   await p3.keyboard.press("Control+k"); await p3.waitForSelector('[aria-label="Command palette and search"]');
   await p3.screenshot({ path: "qa/shots/palette-light.png" });
@@ -102,14 +102,14 @@ try {
   await p3.keyboard.press("Tab"); log("Tab indents (trap on)", (await ta.inputValue()).endsWith("  "));
   await p3.keyboard.press("Escape"); await p3.keyboard.press("Tab");
   log("Escape releases focus trap (Tab leaves editor)", await p3.evaluate(() => document.activeElement?.id !== "code-editor-textarea"));
-  await p3.goto(BASE + "/dashboard"); await p3.waitForSelector("text=Two Sum", { timeout: 8000 }).then(() => log("recently viewed lists the opened problem", true)).catch(() => log("recently viewed lists the opened problem", false));
+  await p3.goto(BASE + "/dashboard"); await p3.waitForSelector('[role="tab"]:has-text("Recently viewed")'); await p3.click('[role="tab"]:has-text("Recently viewed")'); await p3.waitForSelector("text=Two Sum", { timeout: 8000 }).then(() => log("recently viewed lists the opened problem", true)).catch(() => log("recently viewed lists the opened problem", false));
   await p3.screenshot({ path: "qa/shots/dashboard-dark.png" });
   log("no runtime JS errors (authed)", errs3.length === 0, errs3.slice(0, 3).join(" | "));
   await ctx3.close();
 
   // 4. Mobile 390 + reduced motion
   const ctx4 = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: "reduce", colorScheme: "dark" });
-  await ctx4.addInitScript(() => localStorage.setItem("recruiteready_token", "test-token"));
+  await ctx4.addInitScript(() => { localStorage.setItem("recruiteready_token", "test-token"); localStorage.setItem("rr_tour_done_u1", "1"); });
   const p4 = await ctx4.newPage(); await mock(p4, true);
   await p4.goto(BASE + "/dashboard"); await p4.waitForSelector("text=Preparation Modules", { timeout: 8000 }); await p4.waitForTimeout(500);
   const overflow = await p4.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -138,29 +138,28 @@ try {
   await p5.click('text=Next'); await p5.click('text=Next'); await p5.click('text=Got it');
   log("tour dismissed + remembered", (await p5.locator('[aria-labelledby="tour-title"]').count()) === 0 && (await p5.evaluate(() => !!localStorage.getItem("rr_tour_done_u1"))));
   // continue card from real in_progress history
-  log("continue card lists in-progress mock", (await p5.locator("text=Continue where you left off").count()) > 0 && (await p5.locator("text=Full Mock 1").count()) > 0);
+  log("continue banner lists in-progress mock", (await p5.locator("text=Resume").count()) > 0 && (await p5.locator("text=Full Mock 1").count()) > 0);
   // shortcut help
   await p5.keyboard.press("Shift+Slash"); await p5.waitForSelector('[aria-label="Keyboard shortcuts"]', { timeout: 3000 }).then(() => log("'?' opens shortcut help", true)).catch(() => log("'?' opens shortcut help", false));
   await p5.keyboard.press("Escape");
-  // Warm Paper
-  await p5.click('button[aria-label^="Appearance settings"]'); await p5.click('[role="radio"]:has-text("Warm Paper")'); await p5.waitForTimeout(800);
-  log("Warm Paper applied", (await p5.getAttribute("html", "data-theme")) === "paper");
-  const pbg = await p5.evaluate(() => getComputedStyle(document.body).backgroundColor);
-  log("paper background is cream", pbg === "rgb(246, 240, 228)", pbg);
-  const ff = await p5.evaluate(() => getComputedStyle(document.querySelector("h1,h2,h3")).fontFamily);
-  log("paper headings use serif", /Serif|Georgia/i.test(ff), ff.slice(0, 40));
-  await p5.screenshot({ path: "qa/shots/dashboard-paper.png" });
-  // accent + text size
+  // Swiss design tokens + removed options
+  const btn = await p5.evaluate(() => { const el = document.querySelector("a.bg-primary, button.bg-primary"); return el ? getComputedStyle(el).backgroundColor : null; });
+  log("Swiss: primary button is black", btn === "rgb(10, 10, 10)", String(btn));
+  await p5.click('button[aria-label^="Appearance settings"]'); await p5.waitForTimeout(300);
+  log("appearance menu has Light/Dark/System only", (await p5.locator('[role="radio"]').count()) === 3 && (await p5.locator("text=Warm Paper").count()) === 0 && (await p5.locator("text=Accent").count()) === 0 && (await p5.locator("text=Text size").count()) === 0);
+  await p5.click('[role="radio"]:has-text("Dark")'); await p5.waitForTimeout(1100);
+  const dbtn = await p5.evaluate(() => { const el = document.querySelector("a.bg-primary, button.bg-primary"); return el ? getComputedStyle(el).backgroundColor + "|" + getComputedStyle(el).color : null; });
+  log("Swiss dark: primary button inverts to white with black text", dbtn === "rgb(255, 255, 255)|rgb(10, 10, 10)", String(dbtn));
   await p5.keyboard.press("Escape");
-  await p5.click('button[aria-label^="Appearance settings"]').catch(() => {});
-  if (!(await p5.locator('[aria-label="Accent colour"]').isVisible())) await p5.click('button[aria-label^="Appearance settings"]');
-  await p5.click('[role="radio"][aria-label="Violet"]'); await p5.waitForTimeout(300);
-  log("accent violet applied", (await p5.getAttribute("html", "data-accent")) === "violet");
-  await p5.click('[role="radio"][aria-label="Larger"]');
-  log("text size large applied", (await p5.getAttribute("html", "data-text")) === "lg");
-  await p5.screenshot({ path: "qa/shots/dashboard-paper-violet.png" });
-  await p5.reload({ waitUntil: "domcontentloaded" });
-  log("theme + accent + text size persist across reload", (await p5.getAttribute("html", "data-theme")) === "paper" && (await p5.getAttribute("html", "data-accent")) === "violet" && (await p5.getAttribute("html", "data-text")) === "lg");
+  log("theme persists across reload", await (async () => { await p5.reload({ waitUntil: "domcontentloaded" }); return (await p5.getAttribute("html", "data-theme")) === "dark"; })());
+  // Collapsible sidebar
+  await p5.waitForSelector('button[aria-label="Collapse sidebar"]'); await p5.click('button[aria-label="Collapse sidebar"]'); await p5.waitForTimeout(500);
+  const sw = await p5.evaluate(() => document.querySelector("aside.rr-sidebar").getBoundingClientRect().width);
+  log("sidebar collapses to icon rail (~68px) and persists", sw < 80 && (await p5.evaluate(() => localStorage.getItem("rr_sidebar_student"))) === "1", `width=${Math.round(sw)}`);
+  await p5.click('button[aria-label="Expand sidebar"]'); await p5.waitForTimeout(500);
+  log("sidebar expands again", (await p5.evaluate(() => document.querySelector("aside.rr-sidebar").getBoundingClientRect().width)) > 200);
+  // Dashboard right column tabs
+  await p5.click('[role="tab"]:has-text("Targets")'); log("sidebar tabs switch (Targets)", (await p5.locator('[role="tab"][aria-selected="true"]:has-text("Targets")').count()) === 1);
   // CSV export on history (formula injection neutralised)
   await p5.goto(BASE + "/mock-tests/history"); await p5.waitForSelector("text=Export CSV", { timeout: 8000 });
   const [dl] = await Promise.all([p5.waitForEvent("download"), p5.click("text=Export CSV")]);

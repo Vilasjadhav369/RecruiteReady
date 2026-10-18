@@ -15,5 +15,5 @@ The React Compiler is not enabled on this template because of its impact on dev 
 
 If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
 
-## Upgrade notes (premium UI pass)
-See `docs/UPGRADE_REPORT.md` for what changed, what was verified, and what remains, and `docs/BACKEND_NEEDS.md` for backend-dependent features. Theme: `src/context/ThemeContext.jsx` + generated `src/styles/theme-dark.css` (`npm run gen:dark-theme`). Motion: `src/styles/motion.css`.
+## Upgrade notes (Swiss redesign pass)
+See `docs/UPGRADE_REPORT.md` for what changed, what was verified, and what remains, and `docs/BACKEND_NEEDS.md` for backend-dependent features. Design spec: `docs/DESIGN_SYSTEM.md`. Theme (Light/Dark/System): `src/context/ThemeContext.jsx` + generated `src/styles/theme-dark.css` (`npm run gen:dark-theme`). Motion: `src/styles/motion.css`.
