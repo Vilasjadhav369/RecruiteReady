@@ -111,7 +111,7 @@ const PLATFORM_PILLARS = [
   {
     title: "Curated by Placement Cells",
     description:
-      "Practice questions and company dossiers are continuously updated by administrators to match the current 2025–2026 hiring season.",
+      "Practice questions and company dossiers are continuously updated by administrators to match the current 2026–2027 hiring season.",
   },
 ];
 

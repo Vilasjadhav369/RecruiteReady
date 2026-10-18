@@ -21,7 +21,7 @@ export default function HeroAbstract({ primaryTo, primaryLabel }) {
 
       <div className="relative max-w-5xl mx-auto px-4 sm:px-6 pt-14 sm:pt-16 pb-14 sm:pb-16 text-center animate-slide-in">
         <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/70 backdrop-blur px-3.5 py-1.5 text-xs font-semibold text-slate-700">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Campus Placement Portal · Academic Year 2025–2026
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Campus Placement Portal · Academic Year 2026–2027
         </span>
         <h1 className="mt-6 text-[2.4rem] sm:text-5xl lg:text-[4.4rem] font-semibold tracking-tight text-slate-900 leading-[1] text-balance">
           {["Prepare", "smarter."].map((w, i) => (
