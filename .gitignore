@@ -39,5 +39,11 @@ coverage/
 test-results/
 playwright-report/
 
+# Archives & Export Bundles
+*.zip
+database_export/
+RecruitReady-Frontend-Bundle-For-Claude.md
+CLAUDE_HANDOFF_GUIDE.md
+audit-export/
 RecruitReady-Claude-Review.zip
 RecruitReady-Claude-Review/
