@@ -28,7 +28,8 @@ export function StatusBadge({ status = '', className = '', ...props }) {
     'time limit exceeded': { variant: 'warning', label: 'Time Limit Exceeded', dot: false },
     'compilation error': { variant: 'danger', label: 'Compilation Error', dot: false },
     'runtime error': { variant: 'danger', label: 'Runtime Error', dot: false },
-    'execution unavailable': { variant: 'default', label: 'Execution Unavailable', dot: false },
+    'execution unavailable': { variant: 'default', label: 'Not evaluated', dot: false },
+    'execution_unavailable': { variant: 'default', label: 'Not evaluated', dot: false },
   };
 
   const config = statusConfig[normalized] || {

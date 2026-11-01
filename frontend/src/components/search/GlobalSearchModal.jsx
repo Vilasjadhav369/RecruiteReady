@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import {
   SearchIcon,
@@ -23,6 +24,7 @@ export function GlobalSearchModal({ isOpen, onClose }) {
   const [activeIndex, setActiveIndex] = useState(0);
 
   const inputRef = useRef(null);
+  const previousFocusRef = useRef(null);
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
   const { isDark, setTheme } = useTheme();
@@ -53,100 +55,89 @@ export function GlobalSearchModal({ isOpen, onClose }) {
     ? recent.slice(0, 5).map((r) => ({ id: `recent-${r.type}-${r.id}`, title: r.title, subtitle: `Recently viewed · ${r.type.replace('-', ' ')}`, link: r.link }))
     : [];
 
-  // Focus input when opened & reset state
+  // Focus input when opened, reset state & restore focus on close
   useEffect(() => {
     if (isOpen) {
+      previousFocusRef.current = document.activeElement;
       setQuery('');
       setResults(null);
       setError(null);
       setActiveIndex(0);
-      setTimeout(() => {
-        inputRef.current?.focus();
-      }, 50);
+      const timer = setTimeout(() => inputRef.current?.focus(), 50);
+      return () => clearTimeout(timer);
+    } else if (previousFocusRef.current && typeof previousFocusRef.current.focus === 'function') {
+      previousFocusRef.current.focus();
     }
   }, [isOpen]);
 
-  // Debounced search query
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const trimmed = query.trim();
-    if (!trimmed) {
+  // Debounced server search
+  const performSearch = useCallback(async (searchQuery) => {
+    if (!searchQuery.trim()) {
       setResults(null);
       setLoading(false);
-      setError(null);
-      setActiveIndex(0);
       return;
     }
-
     setLoading(true);
     setError(null);
+    try {
+      const data = await searchService.search(searchQuery.trim());
+      setResults(data);
+      setActiveIndex(0);
+    } catch (err) {
+      console.error('Search error:', err);
+      setError('Search is temporarily unavailable. You can still navigate via commands below.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-    const timer = setTimeout(async () => {
-      try {
-        const data = await searchService.globalSearch(trimmed, 4);
-        setResults(data);
-        setActiveIndex(0);
-      } catch (err) {
-        console.error('[GlobalSearch] Search failed:', err);
-        setError('Unable to complete search. Please try again.');
-      } finally {
-        setLoading(false);
-      }
-    }, 280);
-
+  useEffect(() => {
+    const timer = setTimeout(() => performSearch(query), 200);
     return () => clearTimeout(timer);
-  }, [query, isOpen]);
+  }, [query, performSearch]);
 
-  // Flattened list for keyboard navigation. Order MUST match render order below:
-  // commands, recently viewed, then remote results (companies, coding, resources, mock tests, aptitude).
-  const flatResults = [
-    ...commands.map((i) => ({ ...i, categoryLabel: 'Page' })),
-    ...recentItems.map((i) => ({ ...i, categoryLabel: 'Recent' })),
-  ];
-  if (results) {
-    [
-      ['companies', 'Company'],
-      ['coding', 'Coding Problem'],
-      ['resources', 'Study Material'],
-      ['mockTests', 'Mock Test'],
-      ['aptitude', 'Aptitude Practice'],
-    ].forEach(([key, label]) => {
-      (results[key] || []).forEach((item) => flatResults.push({ ...item, categoryLabel: label }));
-    });
-  }
-
-  // Keyboard navigation
-  const handleKeyDown = useCallback(
-    (e) => {
-      if (e.key === 'Escape') {
+  // Escape key handler
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isOpen) {
         e.preventDefault();
         onClose();
-        return;
       }
+    };
+    if (isOpen) window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
-      if (flatResults.length === 0) return;
+  // Calculate flat list of items for keyboard navigation
+  const flatResults = React.useMemo(() => {
+    if (!results) {
+      return [...commands, ...recentItems];
+    }
+    const list = [];
+    if (results.companies?.length) list.push(...results.companies.map((c) => ({ ...c, kind: 'company', link: `/companies/${c.id}` })));
+    if (results.coding?.length) list.push(...results.coding.map((c) => ({ ...c, kind: 'coding', link: `/coding/${c.id}` })));
+    if (results.resources?.length) list.push(...results.resources.map((r) => ({ ...r, kind: 'resource', link: `/resources/${r.id}` })));
+    if (results.mockTests?.length) list.push(...results.mockTests.map((m) => ({ ...m, kind: 'mockTest', link: `/mock-tests/${m.id}` })));
+    if (results.aptitude?.length) list.push(...results.aptitude.map((a) => ({ ...a, kind: 'aptitude', link: `/aptitude?topic=${encodeURIComponent(a.title)}` })));
+    if (commands.length) list.push(...commands);
+    return list;
+  }, [results, commands, recentItems]);
 
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        setActiveIndex((prev) => (prev + 1) % flatResults.length);
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        setActiveIndex((prev) => (prev - 1 + flatResults.length) % flatResults.length);
-      } else if (e.key === 'Enter') {
-        e.preventDefault();
-        const selected = flatResults[activeIndex];
-        if (selected?.action) {
-          onClose();
-          selected.action();
-        } else if (selected?.link) {
-          onClose();
-          navigate(selected.link);
-        }
+  const handleKeyDown = (e) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActiveIndex((prev) => (prev + 1) % Math.max(1, flatResults.length));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActiveIndex((prev) => (prev - 1 + flatResults.length) % Math.max(1, flatResults.length));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const selected = flatResults[activeIndex];
+      if (selected) {
+        handleSelect(selected);
       }
-    },
-    [flatResults, activeIndex, onClose, navigate]
-  );
+    }
+  };
 
   const handleSelect = (item) => {
     if (item.action) {
@@ -158,48 +149,48 @@ export function GlobalSearchModal({ isOpen, onClose }) {
     }
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || typeof document === 'undefined') return null;
 
-  return (
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
       aria-label="Command palette and search"
-      className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/40 backdrop-blur-xs flex items-start justify-center p-3 sm:p-4 pt-12 sm:pt-20 animate-in fade-in duration-150"
+      className="fixed inset-0 z-[100] overflow-y-auto bg-black/60 backdrop-blur-xs flex items-start justify-center p-3 sm:p-4 pt-16 sm:pt-24 animate-in fade-in duration-150"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-2xl bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-150"
+        className="w-full max-w-2xl bg-card border border-border rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={handleKeyDown}
       >
         {/* Search Input Bar */}
-        <div className="relative flex items-center px-4 py-3.5 border-b border-slate-100 bg-slate-50/50">
-          <SearchIcon className="w-5 h-5 text-slate-400 shrink-0 mr-3" />
+        <div className="relative flex items-center px-4 py-3.5 border-b border-border bg-card">
+          <SearchIcon className="w-5 h-5 text-ink-2 shrink-0 mr-3" />
           <input
             ref={inputRef}
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search, or jump to a page…"
-            className="w-full bg-transparent text-sm sm:text-base text-slate-900 placeholder:text-slate-400 focus:outline-none"
+            className="w-full bg-transparent text-sm sm:text-base text-ink placeholder:text-ink-2 focus:outline-none"
             aria-autocomplete="list"
             aria-controls="global-search-results"
           />
 
           <div className="flex items-center gap-2 shrink-0 ml-2">
-            {loading && <SpinnerIcon className="w-4 h-4 text-primary animate-spin" />}
+            {loading && <SpinnerIcon className="w-4 h-4 text-ink animate-spin" />}
             {query && !loading && (
               <button
                 type="button"
                 onClick={() => setQuery('')}
-                className="p-1 text-slate-400 hover:text-slate-600 rounded-md cursor-pointer"
+                className="p-1 text-ink-2 hover:text-ink rounded-md cursor-pointer"
                 aria-label="Clear query"
               >
                 <CloseIcon className="w-4 h-4" />
               </button>
             )}
-            <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[11px] font-mono font-medium text-slate-500 bg-white border border-slate-200 rounded shadow-2xs">
+            <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[11px] font-mono font-medium text-ink-2 bg-primary-soft border border-border rounded">
               ESC
             </kbd>
           </div>
@@ -207,6 +198,33 @@ export function GlobalSearchModal({ isOpen, onClose }) {
 
         {/* Results / Empty / Initial States */}
         <div id="global-search-results" className="overflow-y-auto p-3 sm:p-4 space-y-4 flex-1">
+          {/* Quick tips shown only when query is empty and no recent items exist */}
+          {!query.trim() && recentItems.length === 0 && (
+            <div className="py-4 text-center space-y-3">
+              <div className="w-10 h-10 rounded-full bg-primary-soft text-ink-2 mx-auto flex items-center justify-center">
+                <SearchIcon className="w-5 h-5" />
+              </div>
+              <h4 className="text-xs sm:text-sm font-bold text-ink">
+                Quick Search RecruitReady
+              </h4>
+              <p className="text-xs text-ink-2 max-w-sm mx-auto leading-relaxed">
+                Search companies (e.g., TCS, Google), coding problems (e.g., Two Sum), mock assessments, or study materials.
+              </p>
+              <div className="flex flex-wrap justify-center gap-1.5 pt-2">
+                {['TCS', 'Infosys', 'Two Sum', 'Aptitude', 'DBMS', 'Mock Test'].map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => setQuery(tag)}
+                    className="px-2.5 py-1 text-xs bg-primary-soft hover:bg-primary-tint hover:text-ink text-ink-2 border border-border rounded-lg transition-colors cursor-pointer"
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {(commands.length > 0 || recentItems.length > 0) && (
             <div className="space-y-3">
               {[
@@ -215,7 +233,7 @@ export function GlobalSearchModal({ isOpen, onClose }) {
               ].map(([label, items]) =>
                 items.length === 0 ? null : (
                   <div key={label}>
-                    <div className="px-2 pb-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">{label}</div>
+                    <div className="px-2 pb-1.5 text-[11px] font-bold uppercase tracking-wider text-ink-2">{label}</div>
                     <div className="space-y-0.5" role="listbox" aria-label={label}>
                       {items.map((item) => {
                         const itemIdx = flatResults.findIndex((r) => r.id === item.id);
@@ -229,14 +247,16 @@ export function GlobalSearchModal({ isOpen, onClose }) {
                             onClick={() => handleSelect(item)}
                             onMouseMove={() => setActiveIndex(itemIdx)}
                             className={`w-full text-left px-2.5 py-2 rounded-lg flex items-center justify-between gap-3 cursor-pointer transition-colors border ${
-                              isSelected ? 'bg-primary-soft border-primary-border' : 'border-transparent hover:bg-slate-50'
+                              isSelected
+                                ? 'bg-primary-tint text-ink border-border font-medium'
+                                : 'border-transparent text-ink-2'
                             }`}
                           >
                             <span className="min-w-0">
-                              <span className="text-xs sm:text-sm font-semibold text-slate-900 block truncate">{item.title}</span>
-                              <span className="text-[11px] text-slate-500 block truncate">{item.subtitle}</span>
+                              <span className="text-xs sm:text-sm font-semibold text-ink block truncate">{item.title}</span>
+                              <span className="text-[11px] text-ink-2 block truncate">{item.subtitle}</span>
                             </span>
-                            {isSelected && <span className="text-[10px] font-mono text-slate-400 shrink-0">↵</span>}
+                            {isSelected && <span className="text-[10px] font-mono text-ink-2 shrink-0">↵</span>}
                           </button>
                         );
                       })}
@@ -248,45 +268,21 @@ export function GlobalSearchModal({ isOpen, onClose }) {
           )}
           {error ? (
             <div className="py-8 text-center space-y-2">
-              <p className="text-xs text-red-600 font-medium">{error}</p>
+              <p className="text-xs text-danger font-medium">{error}</p>
               <button
                 type="button"
                 onClick={() => setQuery((q) => q + ' ')}
-                className="text-xs text-primary hover:underline font-semibold"
+                className="text-xs text-ink hover:underline font-semibold"
               >
                 Retry
               </button>
             </div>
-          ) : !query.trim() ? (
-            <div className="py-4 text-center space-y-3">
-              <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-400 mx-auto flex items-center justify-center">
-                <SearchIcon className="w-5 h-5" />
-              </div>
-              <h4 className="text-xs sm:text-sm font-bold text-slate-800">
-                Quick Search RecruitReady
-              </h4>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
-                Search companies (e.g., TCS, Google), coding problems (e.g., Two Sum), mock assessments, or study materials.
-              </p>
-              <div className="flex flex-wrap justify-center gap-1.5 pt-2">
-                {['TCS', 'Infosys', 'Two Sum', 'Aptitude', 'DBMS', 'Mock Test'].map((tag) => (
-                  <button
-                    key={tag}
-                    type="button"
-                    onClick={() => setQuery(tag)}
-                    className="px-2.5 py-1 text-xs bg-slate-100 hover:bg-primary-tint hover:text-primary text-slate-600 rounded-lg transition-colors cursor-pointer"
-                  >
-                    {tag}
-                  </button>
-                ))}
-              </div>
-            </div>
           ) : results && results.totalResults === 0 && !loading && commands.length === 0 ? (
             <div className="py-10 text-center space-y-2">
-              <p className="text-sm font-semibold text-slate-800">
+              <p className="text-sm font-semibold text-ink">
                 No results found for &ldquo;{query}&rdquo;
               </p>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto">
+              <p className="text-xs text-ink-2 max-w-sm mx-auto">
                 Check your spelling or search by general keyword like company name, programming language, or topic.
               </p>
             </div>
@@ -295,8 +291,8 @@ export function GlobalSearchModal({ isOpen, onClose }) {
               {/* Companies */}
               {results.companies?.length > 0 && (
                 <div>
-                  <div className="flex items-center gap-2 px-2 pb-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                    <CompanyIcon className="w-3.5 h-3.5 text-primary" />
+                  <div className="flex items-center gap-2 px-2 pb-1.5 text-[11px] font-bold uppercase tracking-wider text-ink-2">
+                    <CompanyIcon className="w-3.5 h-3.5 text-ink" />
                     <span>Companies ({results.companies.length})</span>
                   </div>
                   <div className="space-y-1">
@@ -307,21 +303,22 @@ export function GlobalSearchModal({ isOpen, onClose }) {
                         <div
                           key={item.id}
                           onClick={() => handleSelect(item)}
-                          className={`p-2.5 rounded-xl flex items-center justify-between gap-3 cursor-pointer transition-all ${
+                          onMouseMove={() => setActiveIndex(itemIdx)}
+                          className={`p-2.5 rounded-xl flex items-center justify-between gap-3 cursor-pointer transition-all border ${
                             isSelected
-                              ? 'bg-primary-soft border border-primary-border'
-                              : 'hover:bg-slate-50 border border-transparent'
+                              ? 'bg-primary-tint border-border text-ink'
+                              : 'border-transparent text-ink-2'
                           }`}
                         >
                           <div className="min-w-0 flex-1">
-                            <span className="text-xs sm:text-sm font-semibold text-slate-900 block truncate">
+                            <span className="text-xs sm:text-sm font-semibold text-ink block truncate">
                               {item.title}
                             </span>
-                            <span className="text-[11px] text-slate-500 block truncate">
+                            <span className="text-[11px] text-ink-2 block truncate">
                               {item.subtitle}
                             </span>
                           </div>
-                          <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-primary-tint text-primary-dark shrink-0">
+                          <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-primary-soft text-ink border border-border shrink-0">
                             Company
                           </span>
                         </div>
@@ -334,8 +331,8 @@ export function GlobalSearchModal({ isOpen, onClose }) {
               {/* Coding Problems */}
               {results.coding?.length > 0 && (
                 <div>
-                  <div className="flex items-center gap-2 px-2 pb-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                    <CodingIcon className="w-3.5 h-3.5 text-emerald-600" />
+                  <div className="flex items-center gap-2 px-2 pb-1.5 text-[11px] font-bold uppercase tracking-wider text-ink-2">
+                    <CodingIcon className="w-3.5 h-3.5 text-ink" />
                     <span>Coding Practice ({results.coding.length})</span>
                   </div>
                   <div className="space-y-1">
@@ -346,21 +343,22 @@ export function GlobalSearchModal({ isOpen, onClose }) {
                         <div
                           key={item.id}
                           onClick={() => handleSelect(item)}
-                          className={`p-2.5 rounded-xl flex items-center justify-between gap-3 cursor-pointer transition-all ${
+                          onMouseMove={() => setActiveIndex(itemIdx)}
+                          className={`p-2.5 rounded-xl flex items-center justify-between gap-3 cursor-pointer transition-all border ${
                             isSelected
-                              ? 'bg-primary-soft border border-primary-border'
-                              : 'hover:bg-slate-50 border border-transparent'
+                              ? 'bg-primary-tint border-border text-ink'
+                              : 'border-transparent text-ink-2'
                           }`}
                         >
                           <div className="min-w-0 flex-1">
-                            <span className="text-xs sm:text-sm font-semibold text-slate-900 block truncate">
+                            <span className="text-xs sm:text-sm font-semibold text-ink block truncate">
                               {item.title}
                             </span>
-                            <span className="text-[11px] text-slate-500 block truncate">
+                            <span className="text-[11px] text-ink-2 block truncate">
                               {item.subtitle}
                             </span>
                           </div>
-                          <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 shrink-0">
+                          <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-primary-soft text-ink border border-border shrink-0">
                             Problem
                           </span>
                         </div>
@@ -373,8 +371,8 @@ export function GlobalSearchModal({ isOpen, onClose }) {
               {/* Study Materials */}
               {results.resources?.length > 0 && (
                 <div>
-                  <div className="flex items-center gap-2 px-2 pb-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                    <ResourcesIcon className="w-3.5 h-3.5 text-teal-600" />
+                  <div className="flex items-center gap-2 px-2 pb-1.5 text-[11px] font-bold uppercase tracking-wider text-ink-2">
+                    <ResourcesIcon className="w-3.5 h-3.5 text-ink" />
                     <span>Study Materials ({results.resources.length})</span>
                   </div>
                   <div className="space-y-1">
@@ -385,21 +383,22 @@ export function GlobalSearchModal({ isOpen, onClose }) {
                         <div
                           key={item.id}
                           onClick={() => handleSelect(item)}
-                          className={`p-2.5 rounded-xl flex items-center justify-between gap-3 cursor-pointer transition-all ${
+                          onMouseMove={() => setActiveIndex(itemIdx)}
+                          className={`p-2.5 rounded-xl flex items-center justify-between gap-3 cursor-pointer transition-all border ${
                             isSelected
-                              ? 'bg-primary-soft border border-primary-border'
-                              : 'hover:bg-slate-50 border border-transparent'
+                              ? 'bg-primary-tint border-border text-ink'
+                              : 'border-transparent text-ink-2'
                           }`}
                         >
                           <div className="min-w-0 flex-1">
-                            <span className="text-xs sm:text-sm font-semibold text-slate-900 block truncate">
+                            <span className="text-xs sm:text-sm font-semibold text-ink block truncate">
                               {item.title}
                             </span>
-                            <span className="text-[11px] text-slate-500 block truncate">
+                            <span className="text-[11px] text-ink-2 block truncate">
                               {item.subtitle}
                             </span>
                           </div>
-                          <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-teal-100 text-teal-800 shrink-0">
+                          <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-primary-soft text-ink border border-border shrink-0">
                             Resource
                           </span>
                         </div>
@@ -412,8 +411,8 @@ export function GlobalSearchModal({ isOpen, onClose }) {
               {/* Mock Tests */}
               {results.mockTests?.length > 0 && (
                 <div>
-                  <div className="flex items-center gap-2 px-2 pb-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                    <MockTestIcon className="w-3.5 h-3.5 text-amber-600" />
+                  <div className="flex items-center gap-2 px-2 pb-1.5 text-[11px] font-bold uppercase tracking-wider text-ink-2">
+                    <MockTestIcon className="w-3.5 h-3.5 text-ink" />
                     <span>Mock Assessments ({results.mockTests.length})</span>
                   </div>
                   <div className="space-y-1">
@@ -424,21 +423,22 @@ export function GlobalSearchModal({ isOpen, onClose }) {
                         <div
                           key={item.id}
                           onClick={() => handleSelect(item)}
-                          className={`p-2.5 rounded-xl flex items-center justify-between gap-3 cursor-pointer transition-all ${
+                          onMouseMove={() => setActiveIndex(itemIdx)}
+                          className={`p-2.5 rounded-xl flex items-center justify-between gap-3 cursor-pointer transition-all border ${
                             isSelected
-                              ? 'bg-primary-soft border border-primary-border'
-                              : 'hover:bg-slate-50 border border-transparent'
+                              ? 'bg-primary-tint border-border text-ink'
+                              : 'border-transparent text-ink-2'
                           }`}
                         >
                           <div className="min-w-0 flex-1">
-                            <span className="text-xs sm:text-sm font-semibold text-slate-900 block truncate">
+                            <span className="text-xs sm:text-sm font-semibold text-ink block truncate">
                               {item.title}
                             </span>
-                            <span className="text-[11px] text-slate-500 block truncate">
+                            <span className="text-[11px] text-ink-2 block truncate">
                               {item.subtitle}
                             </span>
                           </div>
-                          <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 shrink-0">
+                          <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-primary-soft text-ink border border-border shrink-0">
                             Mock Test
                           </span>
                         </div>
@@ -451,8 +451,8 @@ export function GlobalSearchModal({ isOpen, onClose }) {
               {/* Aptitude Topics */}
               {results.aptitude?.length > 0 && (
                 <div>
-                  <div className="flex items-center gap-2 px-2 pb-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                    <AptitudeIcon className="w-3.5 h-3.5 text-primary" />
+                  <div className="flex items-center gap-2 px-2 pb-1.5 text-[11px] font-bold uppercase tracking-wider text-ink-2">
+                    <AptitudeIcon className="w-3.5 h-3.5 text-ink" />
                     <span>Aptitude Topics ({results.aptitude.length})</span>
                   </div>
                   <div className="space-y-1">
@@ -463,21 +463,22 @@ export function GlobalSearchModal({ isOpen, onClose }) {
                         <div
                           key={item.id}
                           onClick={() => handleSelect(item)}
-                          className={`p-2.5 rounded-xl flex items-center justify-between gap-3 cursor-pointer transition-all ${
+                          onMouseMove={() => setActiveIndex(itemIdx)}
+                          className={`p-2.5 rounded-xl flex items-center justify-between gap-3 cursor-pointer transition-all border ${
                             isSelected
-                              ? 'bg-primary-soft border border-primary-border'
-                              : 'hover:bg-slate-50 border border-transparent'
+                              ? 'bg-primary-tint border-border text-ink'
+                              : 'border-transparent text-ink-2'
                           }`}
                         >
                           <div className="min-w-0 flex-1">
-                            <span className="text-xs sm:text-sm font-semibold text-slate-900 block truncate">
+                            <span className="text-xs sm:text-sm font-semibold text-ink block truncate">
                               {item.title}
                             </span>
-                            <span className="text-[11px] text-slate-500 block truncate">
+                            <span className="text-[11px] text-ink-2 block truncate">
                               {item.subtitle}
                             </span>
                           </div>
-                          <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-primary-tint text-primary-dark shrink-0">
+                          <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-primary-soft text-ink border border-border shrink-0">
                             Aptitude
                           </span>
                         </div>
@@ -490,30 +491,31 @@ export function GlobalSearchModal({ isOpen, onClose }) {
           ) : null}
         </div>
 
-        {/* Footer shortcuts */}
-        <div className="px-4 py-2.5 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+        {/* Footer shortcuts (Neutral styling, no orange/red) */}
+        <div className="px-4 py-2.5 bg-primary-soft border-t border-border flex items-center justify-between text-[11px] text-ink-2">
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1">
-              <kbd className="px-1 py-0.5 bg-white border border-slate-200 rounded font-mono text-[10px]">
+              <kbd className="px-1 py-0.5 bg-card text-ink-2 border border-border rounded font-mono text-[10px]">
                 ↑
               </kbd>
-              <kbd className="px-1 py-0.5 bg-white border border-slate-200 rounded font-mono text-[10px]">
+              <kbd className="px-1 py-0.5 bg-card text-ink-2 border border-border rounded font-mono text-[10px]">
                 ↓
               </kbd>
               Navigate
             </span>
             <span className="flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 bg-white border border-slate-200 rounded font-mono text-[10px]">
+              <kbd className="px-1.5 py-0.5 bg-card text-ink-2 border border-border rounded font-mono text-[10px]">
                 ↵
               </kbd>
               Open
             </span>
           </div>
 
-          <span className="text-slate-400">RecruitReady Search</span>
+          <span className="text-ink-2">RecruitReady Search</span>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

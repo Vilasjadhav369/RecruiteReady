@@ -1,3 +1,4 @@
+import Logo from "../common/Logo.jsx";
 import { useSidebarCollapsed } from "../../hooks/useSidebarCollapsed.js";
 import React, { useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
@@ -107,49 +108,18 @@ function AdminSidebar({ mobileOpen, setMobileOpen }) {
     <div className="flex flex-col h-full bg-white select-none">
       {/* ── Brand / Header ───────────────────────── */}
       <div className="p-4 sm:p-5 border-b border-slate-200 flex items-center justify-between shrink-0">
-        <Link
-          to="/admin"
-          className="flex items-center gap-2.5 no-underline hover:no-underline group"
-          onClick={() => setMobileOpen && setMobileOpen(false)}
-        >
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0 shadow-xs group-hover:bg-primary-dark transition-colors">
-            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-              <path
-                d="M10 3L3 7L10 11L17 7L10 3Z"
-                stroke="var(--rr-on-primary)"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M5.5 8.5V13.5C5.5 13.5 7 15.5 10 15.5C13 15.5 14.5 13.5 14.5 13.5V8.5"
-                stroke="var(--rr-on-primary)" strokeOpacity=".55"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M17 7V12"
-                stroke="var(--rr-on-primary)"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-            </svg>
+        {collapsed ? (
+          <div className="w-full flex items-center justify-center">
+            <Logo variant="symbol" size={26} to="/admin" />
           </div>
-          <div className="rr-nav-hide">
-            <div className="flex items-center gap-1.5">
-              <span className="text-slate-900 font-bold text-sm tracking-tight leading-none">
-                RecruitReady
-              </span>
-              <span className="text-[10px] font-bold uppercase tracking-wider bg-primary-tint text-primary-dark px-1.5 py-0.5 rounded leading-none border border-primary-border">
-                Admin
-              </span>
-            </div>
-            <span className="text-slate-500 text-[10px] leading-none mt-1 block">
-              Workspace Administration
+        ) : (
+          <div className="flex items-center gap-2">
+            <Logo variant="compact" size="sm" to="/admin" />
+            <span className="rr-nav-hide px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded bg-primary-tint text-primary border border-primary-border">
+              Admin
             </span>
           </div>
-        </Link>
+        )}
 
         {setMobileOpen && (
           <button

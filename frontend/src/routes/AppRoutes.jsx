@@ -1,3 +1,4 @@
+import Logo from "../components/common/Logo.jsx";
 import { lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout.jsx";
@@ -75,13 +76,18 @@ const AdminAuditLogsPage = lazy(() => import("../pages/admin/AdminAuditLogsPage.
 function PageFallback() {
   return (
     <div
-      className="min-h-[50vh] flex flex-col items-center justify-center gap-3 p-8"
+      className="min-h-[60vh] flex flex-col items-center justify-center gap-4 p-8 bg-background"
       role="status"
       aria-live="polite"
     >
       <div className="rr-loader-bar" aria-hidden="true" />
-      <div className="w-9 h-9 border-[3px] border-primary/20 border-t-primary rounded-full animate-spin" />
-      <span className="text-sm text-slate-500">Loading…</span>
+      <div className="w-16 h-16 rounded-2xl bg-card border border-border shadow-xs flex items-center justify-center animate-pulse">
+        <Logo variant="symbol" size={38} asLink={false} />
+      </div>
+      <div className="flex flex-col items-center gap-1">
+        <span className="text-xs font-semibold tracking-wider uppercase text-ink-2">RecruitReady</span>
+        <span className="text-[11px] text-ink-3">Preparing placement experience…</span>
+      </div>
     </div>
   );
 }

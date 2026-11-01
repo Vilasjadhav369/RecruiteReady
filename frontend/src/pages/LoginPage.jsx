@@ -1,3 +1,4 @@
+import Logo from "../components/common/Logo.jsx";
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -86,7 +87,7 @@ function LoginPage() {
 
         {/* ── LEFT COLUMN: Context & Journey ────────────── */}
         <div className="lg:col-span-6 space-y-6 text-left">
-          <div className="inline-flex items-center gap-2">
+          <Logo variant="full" size="lg" to="/" className="mb-2" /><div className="inline-flex items-center gap-2">
             <span className="text-[11px] font-bold uppercase tracking-wider text-primary bg-primary-tint px-2.5 py-0.5 rounded-full border border-primary-border">
               Account Access
             </span>

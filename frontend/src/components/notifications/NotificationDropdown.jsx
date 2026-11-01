@@ -5,16 +5,16 @@ import {
   CheckIcon,
   TrashIcon,
   RefreshIcon,
+  InfoIcon,
   CheckCircleIcon,
   AlertCircleIcon,
   MockTestIcon,
   AptitudeIcon,
   CodingIcon,
-  ShieldCheckIcon,
-  StarIcon,
-  InfoIcon,
-  ChevronRightIcon,
   ResourcesIcon,
+  ShieldCheckIcon,
+  ChevronRightIcon,
+  StarIcon,
 } from '../ui/Icons.jsx';
 import notificationService from '../../services/notificationService.js';
 
@@ -33,39 +33,35 @@ function formatRelativeTime(ts) {
     if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays === 1) return 'Yesterday';
     if (diffDays < 7) return `${diffDays}d ago`;
-
-    return date.toLocaleDateString('en-IN', {
-      month: 'short',
-      day: 'numeric',
-    });
+    return date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
   } catch {
-    return String(ts);
+    return '';
   }
 }
 
 function getNotificationIcon(type) {
   switch (type) {
     case 'review_approved':
-      return <CheckCircleIcon className="w-4 h-4 text-primary" />;
+      return <CheckCircleIcon className="w-4 h-4 text-success" />;
     case 'review_rejected':
-      return <AlertCircleIcon className="w-4 h-4 text-amber-600" />;
+      return <AlertCircleIcon className="w-4 h-4 text-danger" />;
     case 'mock_test_completed':
     case 'new_mock_test':
-      return <MockTestIcon className="w-4 h-4 text-primary" />;
+      return <MockTestIcon className="w-4 h-4 text-ink" />;
     case 'new_study_material':
-      return <ResourcesIcon className="w-4 h-4 text-teal-600" />;
+      return <ResourcesIcon className="w-4 h-4 text-ink" />;
     case 'aptitude_completed':
-      return <AptitudeIcon className="w-4 h-4 text-primary" />;
+      return <AptitudeIcon className="w-4 h-4 text-ink" />;
     case 'coding_accepted':
-      return <CodingIcon className="w-4 h-4 text-primary" />;
+      return <CodingIcon className="w-4 h-4 text-success" />;
     case 'coding_rejected':
-      return <CodingIcon className="w-4 h-4 text-amber-600" />;
+      return <CodingIcon className="w-4 h-4 text-warning" />;
     case 'security_alert':
-      return <ShieldCheckIcon className="w-4 h-4 text-primary" />;
+      return <ShieldCheckIcon className="w-4 h-4 text-ink" />;
     case 'admin_review_pending':
-      return <StarIcon className="w-4 h-4 text-amber-600" />;
+      return <StarIcon className="w-4 h-4 text-warning" />;
     default:
-      return <InfoIcon className="w-4 h-4 text-slate-500" />;
+      return <InfoIcon className="w-4 h-4 text-ink-2" />;
   }
 }
 
@@ -144,51 +140,59 @@ export function NotificationDropdown({ align = 'right' }) {
   }, [isOpen]);
 
   const handleMarkAsRead = async (item, e) => {
-    e?.stopPropagation();
+    e.stopPropagation();
     if (item.isRead) return;
-
     try {
       await notificationService.markNotificationAsRead(item._id);
       setNotifications((prev) =>
-        prev.map((n) => (n._id === item._id ? { ...n, isRead: true, readAt: new Date() } : n))
+        prev.map((n) => (n._id === item._id ? { ...n, isRead: true } : n))
       );
-      setUnreadCount((prev) => Math.max(0, prev - 1));
+      setUnreadCount((c) => Math.max(0, c - 1));
     } catch (err) {
-      console.error('[NotificationDropdown] Failed to mark as read:', err);
+      console.error('[NotificationDropdown] Failed to mark read:', err);
     }
   };
 
   const handleMarkAllAsRead = async () => {
-    if (unreadCount === 0 || markingAll) return;
     setMarkingAll(true);
     try {
-      await notificationService.markAllAsRead();
-      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true, readAt: new Date() })));
+      await notificationService.markAllNotificationsAsRead();
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
       setUnreadCount(0);
     } catch (err) {
-      console.error('[NotificationDropdown] Failed to mark all as read:', err);
+      console.error('[NotificationDropdown] Failed to mark all read:', err);
     } finally {
       setMarkingAll(false);
     }
   };
 
   const handleDelete = async (id, e) => {
-    e?.stopPropagation();
+    e.stopPropagation();
     try {
       await notificationService.deleteNotification(id);
-      const target = notifications.find((n) => n._id === id);
-      setNotifications((prev) => prev.filter((n) => n._id !== id));
-      if (target && !target.isRead) {
-        setUnreadCount((prev) => Math.max(0, prev - 1));
-      }
+      setNotifications((prev) => {
+        const target = prev.find((n) => n._id === id);
+        if (target && !target.isRead) {
+          setUnreadCount((c) => Math.max(0, c - 1));
+        }
+        return prev.filter((n) => n._id !== id);
+      });
     } catch (err) {
-      console.error('[NotificationDropdown] Failed to delete notification:', err);
+      console.error('[NotificationDropdown] Failed to delete:', err);
     }
   };
 
   const handleItemClick = async (item) => {
     if (!item.isRead) {
-      await handleMarkAsRead(item);
+      try {
+        await notificationService.markNotificationAsRead(item._id);
+        setNotifications((prev) =>
+          prev.map((n) => (n._id === item._id ? { ...n, isRead: true } : n))
+        );
+        setUnreadCount((c) => Math.max(0, c - 1));
+      } catch (err) {
+        console.error('[NotificationDropdown] Error reading item on click:', err);
+      }
     }
     setIsOpen(false);
     if (item.link) {
@@ -202,15 +206,15 @@ export function NotificationDropdown({ align = 'right' }) {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="relative min-w-[40px] min-h-[40px] p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-primary"
+        className="relative min-w-[36px] min-h-[36px] p-2 rounded-lg text-ink-2 hover:text-ink hover:bg-primary-soft flex items-center justify-center transition-colors cursor-pointer border border-border focus-visible:outline-2 focus-visible:outline-primary shadow-2xs"
         aria-label={unreadCount > 0 ? `Notifications (${unreadCount} unread)` : 'Notifications'}
         aria-expanded={isOpen}
         aria-haspopup="dialog"
         title="Notifications"
       >
-        <BellIcon className="w-4 h-4 text-slate-600" />
+        <BellIcon className="w-4 h-4 text-ink-2" />
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-primary text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none border-2 border-white select-none animate-in zoom-in-75">
+          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-primary text-surface text-[10px] font-mono font-bold rounded-full flex items-center justify-center leading-none border-2 border-card select-none animate-in zoom-in-75">
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
@@ -223,14 +227,14 @@ export function NotificationDropdown({ align = 'right' }) {
           aria-label="Notification center"
           className={`absolute ${
             align === 'left' ? 'left-0' : 'right-0'
-          } mt-2 w-80 sm:w-96 max-w-[calc(100vw-1.5rem)] bg-white border border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden text-xs animate-in fade-in zoom-in-95 duration-100`}
+          } mt-2 w-80 sm:w-96 max-w-[calc(100vw-1.5rem)] bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden text-xs animate-in fade-in zoom-in-95 duration-100`}
         >
           {/* Header */}
-          <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
+          <div className="px-4 py-3 border-b border-border flex items-center justify-between bg-primary-soft/50">
             <div className="flex items-center gap-2">
-              <span className="font-bold text-slate-900 text-sm">Notifications</span>
+              <span className="font-bold text-ink text-sm">Notifications</span>
               {unreadCount > 0 && (
-                <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-primary-tint text-primary-dark">
+                <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-primary-tint text-ink">
                   {unreadCount} new
                 </span>
               )}
@@ -242,7 +246,7 @@ export function NotificationDropdown({ align = 'right' }) {
                   type="button"
                   onClick={handleMarkAllAsRead}
                   disabled={markingAll}
-                  className="text-[11px] font-semibold text-primary hover:text-primary-dark hover:underline cursor-pointer disabled:opacity-50"
+                  className="text-[11px] font-semibold text-primary hover:underline cursor-pointer disabled:opacity-50"
                   aria-label="Mark all notifications as read"
                 >
                   {markingAll ? 'Marking...' : 'Mark all read'}
@@ -252,7 +256,7 @@ export function NotificationDropdown({ align = 'right' }) {
                 type="button"
                 onClick={fetchNotifications}
                 disabled={loading}
-                className="p-1 rounded text-slate-400 hover:text-slate-600 hover:bg-slate-200/50 cursor-pointer transition-colors"
+                className="p-1 rounded text-ink-2 hover:text-ink hover:bg-primary-soft cursor-pointer transition-colors"
                 aria-label="Refresh notifications"
                 title="Refresh"
               >
@@ -262,60 +266,60 @@ export function NotificationDropdown({ align = 'right' }) {
           </div>
 
           {/* List Content */}
-          <div className="max-h-[380px] overflow-y-auto divide-y divide-slate-100">
+          <div className="max-h-[380px] overflow-y-auto divide-y divide-border">
             {loading && notifications.length === 0 ? (
               <div className="p-6 space-y-3">
                 {[1, 2, 3].map((i) => (
                   <div key={i} className="flex gap-3 animate-pulse">
-                    <div className="w-8 h-8 rounded-lg bg-slate-200 shrink-0" />
+                    <div className="w-8 h-8 rounded-lg bg-primary-soft shrink-0" />
                     <div className="flex-1 space-y-1.5">
-                      <div className="h-3 bg-slate-200 rounded w-3/4" />
-                      <div className="h-2.5 bg-slate-200 rounded w-5/6" />
+                      <div className="h-3 bg-primary-soft rounded w-3/4" />
+                      <div className="h-2.5 bg-primary-soft rounded w-5/6" />
                     </div>
                   </div>
                 ))}
               </div>
             ) : error ? (
               <div className="p-6 text-center space-y-2">
-                <AlertCircleIcon className="w-6 h-6 text-red-500 mx-auto" />
-                <p className="text-slate-700 font-medium text-xs">{error}</p>
+                <AlertCircleIcon className="w-6 h-6 text-danger mx-auto" />
+                <p className="text-danger font-medium text-xs">{error}</p>
                 <button
                   type="button"
                   onClick={fetchNotifications}
-                  className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-[11px] transition-colors cursor-pointer"
+                  className="px-3 py-1 bg-primary-soft hover:bg-primary-tint text-ink font-semibold rounded-lg text-[11px] transition-colors cursor-pointer border border-border"
                 >
                   Retry
                 </button>
               </div>
             ) : notifications.length === 0 ? (
               <div className="p-8 text-center space-y-2">
-                <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-400 mx-auto flex items-center justify-center">
+                <div className="w-10 h-10 rounded-full bg-primary-soft text-ink-2 mx-auto flex items-center justify-center">
                   <BellIcon className="w-5 h-5" />
                 </div>
-                <h4 className="text-xs font-bold text-slate-800">No notifications yet</h4>
-                <p className="text-[11px] text-slate-500 max-w-[220px] mx-auto leading-relaxed">
+                <h4 className="text-xs font-bold text-ink">No notifications yet</h4>
+                <p className="text-[11px] text-ink-2 max-w-[220px] mx-auto leading-relaxed">
                   Important updates, test results, and reviews will appear here.
                 </p>
               </div>
             ) : (
-              <ul className="divide-y divide-slate-100 list-none m-0 p-0" role="list">
+              <ul className="divide-y divide-border list-none m-0 p-0" role="list">
                 {notifications.map((item) => (
                   <li
                     key={item._id}
                     onClick={() => handleItemClick(item)}
                     className={`p-3 sm:px-4 flex items-start gap-3 transition-colors cursor-pointer group ${
-                      !item.isRead ? 'bg-primary-soft/70 hover:bg-primary-soft' : 'hover:bg-slate-50'
+                      !item.isRead ? 'bg-primary-tint/50 hover:bg-primary-tint' : 'hover:bg-primary-soft'
                     }`}
                   >
                     {/* Icon */}
-                    <div className="w-8 h-8 rounded-lg bg-slate-100 border border-slate-200/60 flex items-center justify-center shrink-0 mt-0.5">
+                    <div className="w-8 h-8 rounded-lg bg-primary-soft border border-border flex items-center justify-center shrink-0 mt-0.5">
                       {getNotificationIcon(item.type)}
                     </div>
 
                     {/* Content */}
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-1">
-                        <span className="font-semibold text-slate-900 block truncate text-xs">
+                        <span className="font-semibold text-ink block truncate text-xs">
                           {item.title}
                         </span>
                         {!item.isRead && (
@@ -327,11 +331,11 @@ export function NotificationDropdown({ align = 'right' }) {
                         )}
                       </div>
 
-                      <p className="text-[11px] text-slate-600 line-clamp-2 mt-0.5 leading-relaxed">
+                      <p className="text-[11px] text-ink-2 line-clamp-2 mt-0.5 leading-relaxed">
                         {item.message}
                       </p>
 
-                      <div className="flex items-center justify-between mt-1 text-[10px] text-slate-400 font-mono">
+                      <div className="flex items-center justify-between mt-1 text-[10px] text-ink-2 font-mono">
                         <span>{formatRelativeTime(item.createdAt)}</span>
                         {item.link && (
                           <span className="text-primary font-sans font-semibold group-hover:underline flex items-center gap-0.5">
@@ -349,7 +353,7 @@ export function NotificationDropdown({ align = 'right' }) {
                           onClick={(e) => handleMarkAsRead(item, e)}
                           title="Mark as read"
                           aria-label="Mark notification as read"
-                          className="p-1 rounded text-slate-400 hover:text-primary hover:bg-white cursor-pointer"
+                          className="p-1 rounded text-ink-2 hover:text-ink hover:bg-card cursor-pointer"
                         >
                           <CheckIcon className="w-3.5 h-3.5" />
                         </button>
@@ -359,7 +363,7 @@ export function NotificationDropdown({ align = 'right' }) {
                         onClick={(e) => handleDelete(item._id, e)}
                         title="Delete notification"
                         aria-label="Delete notification"
-                        className="p-1 rounded text-slate-400 hover:text-red-600 hover:bg-white cursor-pointer"
+                        className="p-1 rounded text-ink-2 hover:text-danger hover:bg-card cursor-pointer"
                       >
                         <TrashIcon className="w-3.5 h-3.5" />
                       </button>
@@ -371,11 +375,11 @@ export function NotificationDropdown({ align = 'right' }) {
           </div>
 
           {/* Footer: View All link */}
-          <div className="px-4 py-2.5 bg-slate-50 border-t border-slate-100 flex items-center justify-center">
+          <div className="px-4 py-2.5 bg-primary-soft/50 border-t border-border flex items-center justify-center">
             <Link
               to="/notifications"
               onClick={() => setIsOpen(false)}
-              className="text-xs font-semibold text-primary hover:text-primary-dark no-underline hover:underline flex items-center gap-1"
+              className="text-xs font-semibold text-primary hover:underline flex items-center gap-1 no-underline"
             >
               View all notifications <ChevronRightIcon className="w-3.5 h-3.5" />
             </Link>

@@ -1,3 +1,4 @@
+import Logo from "./common/Logo.jsx";
 import React from "react";
 import { Link } from "react-router-dom";
 
@@ -43,40 +44,7 @@ function Footer() {
 
           {/* Brand column */}
           <div className="lg:col-span-2 space-y-4">
-            <Link to="/" className="flex items-center gap-2.5 no-underline hover:no-underline group inline-flex">
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0 shadow-xs group-hover:bg-primary-dark transition-colors">
-                <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                  <path
-                    d="M10 3L3 7L10 11L17 7L10 3Z"
-                    stroke="var(--rr-on-primary)"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M5.5 8.5V13.5C5.5 13.5 7 15.5 10 15.5C13 15.5 14.5 13.5 14.5 13.5V8.5"
-                    stroke="var(--rr-on-primary)" strokeOpacity=".55"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M17 7V12"
-                    stroke="var(--rr-on-primary)"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </div>
-              <div>
-                <span className="text-white font-bold text-base tracking-tight leading-none block">
-                  RecruitReady
-                </span>
-                <span className="text-emerald-400 text-[10px] leading-none mt-0.5 block">
-                  Placement Preparation Platform
-                </span>
-              </div>
-            </Link>
+            <Logo variant="full" size="md" to="/" showTagline={true} />
 
             <p className="text-slate-400 text-xs sm:text-sm max-w-sm leading-relaxed">
               An integrated campus placement portal offering curated coding challenges, aptitude modules, mock assessments, and company interview archives.

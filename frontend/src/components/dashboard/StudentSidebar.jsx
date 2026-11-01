@@ -1,7 +1,13 @@
-import { useSidebarCollapsed } from "../../hooks/useSidebarCollapsed.js";
-import React, { useEffect, useRef } from "react";
+import Logo from "../common/Logo.jsx";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "../../context/AuthContext.jsx";
+import { useTheme } from "../../context/ThemeContext.jsx";
+import { useSidebarCollapsed } from "../../hooks/useSidebarCollapsed.js";
+import { useReducedMotion } from "../../hooks/useReducedMotion.js";
+import { getUnreadCount } from "../../services/notificationService.js";
+import { calculateProfileCompletion } from "../../utils/profileCompletion.js";
 import {
   DashboardIcon,
   AptitudeIcon,
@@ -17,18 +23,21 @@ import {
   TrophyIcon,
   BellIcon,
   BookmarkIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  ChevronLeftIcon,
 } from "../ui/Icons.jsx";
 import { Avatar } from "../ui/Avatar.jsx";
+import { Tooltip } from "../ui/Tooltip.jsx";
 
 const NAV_GROUPS = [
   {
-    title: "Overview",
     items: [
       { label: "Dashboard", to: "/dashboard", icon: DashboardIcon },
     ],
   },
   {
-    title: "Practice & Prep",
+    title: "PRACTICE",
     items: [
       { label: "Aptitude", to: "/aptitude", icon: AptitudeIcon },
       { label: "Coding", to: "/coding", icon: CodingIcon },
@@ -37,28 +46,33 @@ const NAV_GROUPS = [
     ],
   },
   {
-    title: "Study",
+    title: "LIBRARY",
     items: [
       { label: "Study Materials", to: "/resources", icon: ResourcesIcon },
       { label: "Saved Items", to: "/saved", icon: BookmarkIcon },
     ],
   },
   {
-    title: "Performance",
+    title: "PERFORMANCE",
     items: [
       { label: "Progress", to: "/progress", icon: ProgressIcon },
       { label: "Leaderboard", to: "/leaderboard", icon: TrophyIcon },
       { label: "Reviews", to: "/reviews", icon: StarIcon },
     ],
   },
-  {
-    title: "Account",
-    items: [
-      { label: "Notifications", to: "/notifications", icon: BellIcon },
-      { label: "My Profile", to: "/profile", icon: ProfileIcon },
-    ],
-  },
 ];
+
+/**
+ * Capitalize display name safely in the view only without mutating the stored user.
+ */
+function formatDisplayName(name) {
+  if (!name || typeof name !== "string") return "";
+  return name
+    .trim()
+    .split(/\s+/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+}
 
 /**
  * Check whether a navigation route is active, including sub-paths.
@@ -71,207 +85,532 @@ function isNavActive(pathname, itemPath) {
 }
 
 /**
- * StudentSidebar — Standardized desktop sticky sidebar & mobile off-canvas drawer.
+ * StudentSidebar — Swiss Monochrome desktop sidebar & accessible mobile drawer.
  */
 function StudentSidebar({ mobileOpen, setMobileOpen }) {
   const { user, logout } = useAuth();
+  const { preference, setTheme } = useTheme();
   const navigate = useNavigate();
-  const [collapsed, toggleCollapsed] = useSidebarCollapsed("student");
   const location = useLocation();
+  const [collapsed, toggleCollapsed] = useSidebarCollapsed("student");
+  const prefersReduced = useReducedMotion();
+
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef(null);
+  const userButtonRef = useRef(null);
   const drawerRef = useRef(null);
+  const previousFocusRef = useRef(null);
+  const menuItemsRef = useRef([]);
+  const prevPathRef = useRef(location.pathname);
 
-  // Close on route change
+  // TanStack Query for unread notification count
+  const { data: unreadCount = 0 } = useQuery({
+    queryKey: ["notifications", "unread"],
+    queryFn: async () => {
+      try {
+        const count = await getUnreadCount();
+        return typeof count === "number" ? count : 0;
+      } catch {
+        return 0;
+      }
+    },
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: false,
+  });
+
+  // Calculate profile completion
+  const profileCompletion = user ? calculateProfileCompletion(user) : null;
+  const isProfileComplete = profileCompletion?.isComplete ?? true;
+  const profilePercentage = profileCompletion?.percentage ?? 100;
+
+  // Safe capitalized user names
+  const rawFullName = user?.firstName
+    ? `${user.firstName} ${user?.lastName || ""}`.trim()
+    : "Student User";
+  const formattedDisplayName = formatDisplayName(rawFullName) || "Student";
+  const userEmail = user?.email || "student@recruitready.edu";
+
+  // Close menus & drawers on route change
   useEffect(() => {
-    if (setMobileOpen) setMobileOpen(false);
-  }, [location.pathname]);
+    if (prevPathRef.current !== location.pathname) {
+      prevPathRef.current = location.pathname;
+      if (setMobileOpen) setMobileOpen(false);
+      setUserMenuOpen(false);
+    }
+  }, [location.pathname, setMobileOpen]);
 
-  // Handle Escape key and body scroll locking
+  // Keyboard shortcut '[' to toggle sidebar collapse when not typing
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === "Escape" && mobileOpen && setMobileOpen) {
-        setMobileOpen(false);
+      const activeEl = document.activeElement;
+      const isTyping =
+        activeEl &&
+        (activeEl.tagName === "INPUT" ||
+          activeEl.tagName === "TEXTAREA" ||
+          activeEl.tagName === "SELECT" ||
+          activeEl.isContentEditable);
+
+      if (!isTyping && e.key === "[" && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+        toggleCollapsed();
       }
     };
 
-    if (mobileOpen) {
-      document.body.style.overflow = "hidden";
-      window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [toggleCollapsed]);
+
+  // Close user menu on outside click or Escape
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (
+        userMenuRef.current &&
+        !userMenuRef.current.contains(e.target) &&
+        userButtonRef.current &&
+        !userButtonRef.current.contains(e.target)
+      ) {
+        setUserMenuOpen(false);
+      }
+    };
+
+    const handleMenuKeyDown = (e) => {
+      if (!userMenuOpen) return;
+
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setUserMenuOpen(false);
+        userButtonRef.current?.focus();
+      } else if (e.key === "ArrowDown") {
+        e.preventDefault();
+        const items = menuItemsRef.current.filter(Boolean);
+        const currentIndex = items.indexOf(document.activeElement);
+        const nextIndex = currentIndex < items.length - 1 ? currentIndex + 1 : 0;
+        items[nextIndex]?.focus();
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        const items = menuItemsRef.current.filter(Boolean);
+        const currentIndex = items.indexOf(document.activeElement);
+        const prevIndex = currentIndex > 0 ? currentIndex - 1 : items.length - 1;
+        items[prevIndex]?.focus();
+      }
+    };
+
+    if (userMenuOpen) {
+      document.addEventListener("mousedown", handleOutsideClick);
+      document.addEventListener("keydown", handleMenuKeyDown);
     }
     return () => {
-      document.body.style.overflow = "";
-      window.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("mousedown", handleOutsideClick);
+      document.removeEventListener("keydown", handleMenuKeyDown);
     };
+  }, [userMenuOpen]);
+
+  // Mobile drawer: body scroll lock, Escape key, and focus trap
+  useEffect(() => {
+    if (mobileOpen) {
+      previousFocusRef.current = document.activeElement;
+      document.body.style.overflow = "hidden";
+
+      const handleDrawerKeyDown = (e) => {
+        if (e.key === "Escape" && setMobileOpen) {
+          e.preventDefault();
+          setMobileOpen(false);
+        }
+
+        // Focus trap
+        if (e.key === "Tab" && drawerRef.current) {
+          const focusableEls = drawerRef.current.querySelectorAll(
+            'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])'
+          );
+          if (focusableEls.length === 0) return;
+          const firstEl = focusableEls[0];
+          const lastEl = focusableEls[focusableEls.length - 1];
+
+          if (e.shiftKey) {
+            if (document.activeElement === firstEl) {
+              e.preventDefault();
+              lastEl.focus();
+            }
+          } else {
+            if (document.activeElement === lastEl) {
+              e.preventDefault();
+              firstEl.focus();
+            }
+          }
+        }
+      };
+
+      window.addEventListener("keydown", handleDrawerKeyDown);
+
+      // Focus first element in drawer
+      requestAnimationFrame(() => {
+        const firstFocusable = drawerRef.current?.querySelector("button, a");
+        firstFocusable?.focus();
+      });
+
+      return () => {
+        document.body.style.overflow = "";
+        window.removeEventListener("keydown", handleDrawerKeyDown);
+        if (previousFocusRef.current && typeof previousFocusRef.current.focus === "function") {
+          previousFocusRef.current.focus();
+        }
+      };
+    }
   }, [mobileOpen, setMobileOpen]);
 
   const handleSignOut = async () => {
+    setUserMenuOpen(false);
     if (setMobileOpen) setMobileOpen(false);
     await logout();
     navigate("/", { replace: true });
   };
 
-  const navContent = (
-    <div className="flex flex-col h-full bg-white">
-      {/* ── Brand / Header ───────────────────────── */}
-      <div className="p-4 sm:p-5 border-b border-slate-200 flex items-center justify-between shrink-0">
-        <Link
-          to="/dashboard"
-          className="flex items-center gap-2.5 no-underline hover:no-underline group"
-          onClick={() => setMobileOpen && setMobileOpen(false)}
-        >
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0 shadow-xs group-hover:bg-primary-dark transition-colors">
-            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-              <path
-                d="M10 3L3 7L10 11L17 7L10 3Z"
-                stroke="var(--rr-on-primary)"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M5.5 8.5V13.5C5.5 13.5 7 15.5 10 15.5C13 15.5 14.5 13.5 14.5 13.5V8.5"
-                stroke="var(--rr-on-primary)" strokeOpacity=".55"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M17 7V12"
-                stroke="var(--rr-on-primary)"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-            </svg>
-          </div>
-          <div className="rr-nav-hide">
-            <span className="text-slate-900 font-bold text-sm tracking-tight leading-none block">
-              RecruitReady
-            </span>
-            <span className="text-slate-500 text-[10px] leading-none mt-1 block">
-              Placement Preparation
-            </span>
-          </div>
-        </Link>
+  const handleOpenShortcuts = () => {
+    setUserMenuOpen(false);
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "?", bubbles: true }));
+  };
 
-        {/* Mobile close button */}
-        {setMobileOpen && (
-          <button
-            type="button"
-            onClick={() => setMobileOpen(false)}
-            className="md:hidden min-w-[44px] min-h-[44px] p-2 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 flex items-center justify-center transition-colors focus-visible:outline-2 focus-visible:outline-primary"
-            aria-label="Close navigation drawer"
-          >
-            <CloseIcon className="w-5 h-5" />
-          </button>
+  // Nav Item renderer
+  const renderNavItem = (item) => {
+    const Icon = item.icon;
+    const active = isNavActive(location.pathname, item.to);
+
+    const linkEl = (
+      <Link
+        to={item.to}
+        onClick={() => setMobileOpen && setMobileOpen(false)}
+        title={collapsed ? item.label : undefined}
+        className={`relative min-h-9 flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[13px] font-medium transition-colors no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary max-md:min-h-11 ${
+          active
+            ? "bg-primary-tint text-ink font-semibold before:content-[''] before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[2px] before:bg-primary before:rounded-r"
+            : "text-ink-2 hover:bg-primary-tint/60 hover:text-ink"
+        }`}
+        aria-current={active ? "page" : undefined}
+      >
+        <Icon
+          className={`w-4 h-4 shrink-0 transition-colors ${
+            active ? "text-ink" : "text-ink-2"
+          }`}
+        />
+        <span className="rr-nav-label truncate">{item.label}</span>
+      </Link>
+    );
+
+    if (collapsed) {
+      return (
+        <Tooltip key={item.to} content={item.label} position="right" delay={300} className="w-full">
+          {linkEl}
+        </Tooltip>
+      );
+    }
+
+    return <React.Fragment key={item.to}>{linkEl}</React.Fragment>;
+  };
+
+  // Navigation Body Content
+  const navContent = (
+    <div className="flex flex-col h-full bg-card">
+      {/* ── Brand & Header Row (h-14) ───────────────────────── */}
+      <div className="h-14 px-3 border-b border-border flex items-center justify-between shrink-0">
+        {collapsed ? (
+          <div className="w-full flex items-center justify-center">
+            <Tooltip content="Expand sidebar ([)" position="right" delay={300}>
+              <button
+                type="button"
+                onClick={toggleCollapsed}
+                aria-label="Expand sidebar"
+                aria-expanded={false}
+                className="w-8 h-8 rounded-md flex items-center justify-center text-ink-2 hover:text-ink hover:bg-primary-tint/60 transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              >
+                <Logo variant="symbol" size={26} asLink={false} />
+              </button>
+            </Tooltip>
+          </div>
+        ) : (
+          <>
+            <Logo variant="compact" size="sm" to="/dashboard" />
+
+            {/* Desktop collapse button */}
+            <div className="hidden md:block">
+              <Tooltip content="Collapse sidebar ([)" position="bottom" delay={300}>
+                <button
+                  type="button"
+                  onClick={toggleCollapsed}
+                  aria-label="Collapse sidebar"
+                  aria-expanded={true}
+                  className="w-7 h-7 rounded flex items-center justify-center text-ink-2 hover:text-ink hover:bg-primary-tint/60 transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                >
+                  <ChevronLeftIcon className="w-4 h-4" />
+                </button>
+              </Tooltip>
+            </div>
+
+            {/* Mobile close button */}
+            {setMobileOpen && (
+              <button
+                type="button"
+                onClick={() => setMobileOpen(false)}
+                className="md:hidden min-w-[44px] min-h-[44px] p-2 rounded-lg text-ink-2 hover:text-ink hover:bg-primary-tint/60 flex items-center justify-center transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                aria-label="Close navigation drawer"
+              >
+                <CloseIcon className="w-5 h-5" />
+              </button>
+            )}
+          </>
         )}
       </div>
 
-      {/* ── Navigation Links (Grouped) ────────────── */}
+      {/* ── Navigation Links (space-y-3) ────────────── */}
       <nav
-        className="flex-1 px-3 py-3.5 space-y-4 overflow-y-auto"
+        className="flex-1 px-2.5 py-3 space-y-3 overflow-y-auto"
         aria-label="Student portal navigation"
       >
-        {NAV_GROUPS.map((group) => (
-          <div key={group.title} className="space-y-0.5">
-            <span className="rr-nav-group px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
-              {group.title}
-            </span>
-            {group.items.map((item) => {
-              const Icon = item.icon;
-              const active = isNavActive(location.pathname, item.to);
-              return (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  onClick={() => setMobileOpen && setMobileOpen(false)}
-                  className={`min-h-[40px] flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all no-underline ${
-                    active
-                      ? "bg-primary-tint text-primary font-semibold border-l-4 border-primary shadow-xs"
-                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 border-l-4 border-transparent"
-                  }`}
-                  aria-current={active ? "page" : undefined}
-                >
-                  <Icon
-                    className={`w-4 h-4 shrink-0 transition-colors ${
-                      active ? "text-primary" : "text-slate-500"
-                    }`}
-                  />
-                  <span className="rr-nav-label truncate">{item.label}</span>
-                </Link>
-              );
-            })}
+        {NAV_GROUPS.map((group, groupIdx) => (
+          <div key={group.title || `group-${groupIdx}`} className="space-y-1">
+            {group.title ? (
+              <>
+                <span className="rr-nav-group px-2.5 text-[11px] font-semibold uppercase tracking-wider text-ink-2 block mb-1">
+                  {group.title}
+                </span>
+                <div className="rr-nav-divider" aria-hidden="true" />
+              </>
+            ) : null}
+
+            {group.items.map((item) => renderNavItem(item))}
           </div>
         ))}
       </nav>
 
-      {/* ── User Profile & Sign Out ─────────────── */}
-      <div className="p-3 border-t border-slate-200 bg-slate-50/70 shrink-0">
-        <Link
-          to="/profile"
-          onClick={() => setMobileOpen && setMobileOpen(false)}
-          className="rr-nav-center flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-slate-100 transition-colors no-underline mb-1"
+      {/* ── Optional Profile Progress Line ──────────── */}
+      {!isProfileComplete && (
+        <div className="px-3 py-2 border-t border-border rr-nav-hide shrink-0">
+          <Link
+            to="/profile"
+            onClick={() => setMobileOpen && setMobileOpen(false)}
+            className="block group no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary rounded"
+            aria-label={`Profile ${profilePercentage}% complete. Click to finish profile.`}
+          >
+            <div className="flex items-center justify-between text-[11px] mb-1">
+              <span className="text-ink-2 group-hover:text-ink font-medium transition-colors">
+                Profile completion
+              </span>
+              <span className="text-ink font-semibold">{profilePercentage}%</span>
+            </div>
+            <div className="h-1 w-full bg-primary-soft rounded-full overflow-hidden">
+              <div
+                className="h-full bg-primary transition-all duration-300 rounded-full"
+                style={{ width: `${profilePercentage}%` }}
+              />
+            </div>
+          </Link>
+        </div>
+      )}
+
+      {/* ── User Footer & Upward Popover Menu (~56px) ─────────────── */}
+      <div className="p-2 border-t border-border bg-card relative shrink-0">
+        {/* User Card Trigger Button */}
+        <button
+          ref={userButtonRef}
+          type="button"
+          id="user-menu-button"
+          onClick={() => setUserMenuOpen((prev) => !prev)}
+          aria-haspopup="menu"
+          aria-expanded={userMenuOpen}
+          aria-label={
+            unreadCount > 0
+              ? `User menu for ${formattedDisplayName}. Notifications: ${unreadCount} unread.`
+              : `User menu for ${formattedDisplayName}`
+          }
+          className={`w-full min-h-[44px] flex items-center rounded-lg p-1.5 transition-colors cursor-pointer text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
+            userMenuOpen ? "bg-primary-tint" : "hover:bg-primary-tint/60"
+          } ${collapsed ? "justify-center" : "gap-2.5 justify-between"}`}
         >
-          <Avatar
-            name={user?.firstName ? `${user.firstName} ${user?.lastName || ""}`.trim() : "Student User"}
-            src={user?.profilePhoto}
-            size="sm"
-          />
+          <div className="relative shrink-0 flex items-center justify-center">
+            <Avatar name={formattedDisplayName} src={user?.profilePhoto} size="sm" />
+            {collapsed && unreadCount > 0 && (
+              <span
+                className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-primary ring-2 ring-card"
+                aria-label={`Notifications, ${unreadCount} unread`}
+              />
+            )}
+          </div>
+
           <div className="rr-nav-hide min-w-0 flex-1">
-            <span className="text-xs font-semibold text-slate-900 truncate block">
-              {user?.firstName ? `${user.firstName} ${user?.lastName || ""}`.trim() : "Student User"}
+            <span className="text-[13px] font-medium text-ink truncate block">
+              {formattedDisplayName}
             </span>
-            <span className="text-[10px] text-slate-500 truncate block font-mono">
-              {user?.email || "Student Portal"}
+            <span
+              className="text-[11px] text-ink-2 truncate block font-sans"
+              title={userEmail}
+            >
+              {userEmail}
             </span>
           </div>
-        </Link>
 
-        <button
-          type="button"
-          onClick={handleSignOut}
-          className="rr-nav-center min-h-[38px] w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer text-left"
-        >
-          <LogoutIcon className="w-3.5 h-3.5 text-red-500" />
-          <span className="rr-nav-hide">Sign Out</span>
+          <div className="rr-nav-hide text-ink-2 shrink-0">
+            {userMenuOpen ? (
+              <ChevronDownIcon className="w-3.5 h-3.5" />
+            ) : (
+              <ChevronUpIcon className="w-3.5 h-3.5" />
+            )}
+          </div>
         </button>
+
+        {/* Upward Floating Popover Menu */}
+        {userMenuOpen && (
+          <div
+            ref={userMenuRef}
+            role="menu"
+            aria-labelledby="user-menu-button"
+            className={`absolute bottom-full mb-2 bg-card border border-border rounded-lg shadow-lg z-50 p-1.5 text-xs animate-in fade-in zoom-in-95 duration-100 ${
+              collapsed
+                ? "left-2 w-60"
+                : "left-2 right-2 max-w-[calc(100%-1rem)]"
+            }`}
+          >
+            {/* User Details Header */}
+            <div className="px-2.5 py-2 border-b border-border mb-1">
+              <span className="font-semibold text-ink block truncate text-[13px]">
+                {formattedDisplayName}
+              </span>
+              <span className="text-[11px] text-ink-2 block truncate font-sans" title={userEmail}>
+                {userEmail}
+              </span>
+            </div>
+
+            {/* Menu Items */}
+            <div className="space-y-0.5">
+              <Link
+                ref={(el) => (menuItemsRef.current[0] = el)}
+                to="/profile"
+                role="menuitem"
+                onClick={() => {
+                  setUserMenuOpen(false);
+                  if (setMobileOpen) setMobileOpen(false);
+                }}
+                className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-ink-2 hover:text-ink hover:bg-primary-tint/60 rounded-md transition-colors no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              >
+                <ProfileIcon className="w-4 h-4 text-ink-2" />
+                <span>My Profile</span>
+              </Link>
+
+              <Link
+                ref={(el) => (menuItemsRef.current[1] = el)}
+                to="/notifications"
+                role="menuitem"
+                onClick={() => {
+                  setUserMenuOpen(false);
+                  if (setMobileOpen) setMobileOpen(false);
+                }}
+                className="w-full flex items-center justify-between px-2.5 py-1.5 text-xs text-ink-2 hover:text-ink hover:bg-primary-tint/60 rounded-md transition-colors no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              >
+                <div className="flex items-center gap-2">
+                  <BellIcon className="w-4 h-4 text-ink-2" />
+                  <span>Notifications</span>
+                </div>
+                {unreadCount > 0 && (
+                  <span
+                    className="px-1.5 py-0.2 min-w-4 text-[10px] font-bold rounded-full bg-primary text-surface inline-flex items-center justify-center leading-none"
+                    aria-label={`${unreadCount} unread`}
+                  >
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
+              </Link>
+
+              {/* Appearance Mode Segment */}
+              <div className="px-2.5 py-1.5 border-t border-border mt-1">
+                <span className="text-[11px] font-medium text-ink-2 block mb-1.5">
+                  Appearance
+                </span>
+                <div
+                  className="grid grid-cols-3 gap-1 p-0.5 bg-primary-soft rounded-md border border-border"
+                  role="group"
+                  aria-label="Appearance theme preference"
+                >
+                  {["light", "dark", "system"].map((mode) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      role="menuitem"
+                      onClick={() => setTheme(mode)}
+                      className={`px-1.5 py-1 text-[11px] capitalize rounded transition-colors cursor-pointer text-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
+                        preference === mode
+                          ? "bg-card text-ink font-semibold border border-border/80"
+                          : "text-ink-2 hover:text-ink"
+                      }`}
+                    >
+                      {mode}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Keyboard Shortcuts Trigger */}
+              <button
+                ref={(el) => (menuItemsRef.current[2] = el)}
+                type="button"
+                role="menuitem"
+                onClick={handleOpenShortcuts}
+                className="w-full flex items-center justify-between px-2.5 py-1.5 text-xs text-ink-2 hover:text-ink hover:bg-primary-tint/60 rounded-md transition-colors cursor-pointer text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              >
+                <span>Keyboard shortcuts</span>
+                <kbd className="px-1.5 py-0.5 text-[10px] font-mono border border-border bg-primary-soft rounded text-ink-2">
+                  ?
+                </kbd>
+              </button>
+
+              <div className="my-1 border-t border-border" role="separator" />
+
+              {/* Sign Out Button */}
+              <button
+                ref={(el) => (menuItemsRef.current[3] = el)}
+                type="button"
+                role="menuitem"
+                onClick={handleSignOut}
+                className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-danger hover:bg-danger/10 rounded-md transition-colors cursor-pointer text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              >
+                <LogoutIcon className="w-4 h-4 text-danger" />
+                <span>Sign Out</span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 
   return (
     <>
-      {/* Desktop fixed sidebar */}
-      <aside data-collapsed={collapsed} className="rr-sidebar hidden md:block w-64 h-screen sticky top-0 bg-white border-r border-slate-200 shrink-0 z-30">
+      {/* Desktop Fixed Sidebar */}
+      <aside
+        data-collapsed={collapsed}
+        className="rr-sidebar hidden md:block w-64 h-dvh sticky top-0 bg-card border-r border-border shrink-0 z-30"
+      >
         {navContent}
-        <button
-          type="button"
-          onClick={toggleCollapsed}
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          aria-expanded={!collapsed}
-          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className="rr-sidebar-toggle w-6 h-6 rounded-full border border-slate-300 bg-white text-slate-600 hover:text-slate-900 hover:border-slate-900 grid place-items-center cursor-pointer transition-colors"
-        >
-          <svg className={`w-3 h-3 transition-transform ${collapsed ? "rotate-180" : ""}`} viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12.5 4.5L7 10l5.5 5.5" /></svg>
-        </button>
       </aside>
 
-      {/* Mobile drawer backdrop */}
+      {/* Mobile Drawer Backdrop */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-40 md:hidden transition-opacity"
+          className="fixed inset-0 bg-black/40 backdrop-blur-xs z-40 md:hidden transition-opacity"
           onClick={() => setMobileOpen(false)}
           aria-hidden="true"
         />
       )}
 
-      {/* Mobile off-canvas drawer */}
+      {/* Mobile Off-Canvas Drawer */}
       <div
         ref={drawerRef}
-        className={`fixed top-0 bottom-0 left-0 w-64 max-w-[85vw] bg-white z-50 md:hidden transform transition-transform duration-200 ease-in-out shadow-2xl ${
-          mobileOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`fixed top-0 bottom-0 left-0 w-64 max-w-[85vw] bg-card z-50 md:hidden border-r border-border shadow-2xl ${
+          prefersReduced
+            ? ""
+            : "transform transition-transform duration-200 ease-in-out"
+        } ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}
         role="dialog"
         aria-modal="true"
-        inert={!mobileOpen}
+        inert={!mobileOpen ? "" : undefined}
         aria-label="Student navigation menu"
       >
         {navContent}

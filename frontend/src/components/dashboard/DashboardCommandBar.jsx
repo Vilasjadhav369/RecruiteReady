@@ -5,9 +5,6 @@ import {
   FireIcon,
   ArrowRightIcon,
   ClockIcon,
-  AptitudeIcon,
-  MockTestIcon,
-  SparklesIcon,
 } from "../ui/Icons.jsx";
 
 /**
@@ -39,15 +36,27 @@ function formatRelativeTime(ts) {
 }
 
 /**
- * DashboardCommandBar — Unified, high-density apex command bar.
- * Apple + Linear design pattern:
- * - Combines candidate greeting, credentials, and streak telemetry with the singular next action.
- * - Replaces separate stacked apex bar + large next action card.
- * - Handles:
- *   1. Active in-progress assessment resume CTA
- *   2. Tailored next-step recommendation CTA
- *   3. Informative getting-started state for brand-new users (no misleading claims)
- *   4. Daily practice continuity state
+ * Capitalize college name or acronym safely (e.g. pict -> PICT, iitb -> IITB).
+ */
+function formatCollegeName(college) {
+  if (!college || typeof college !== "string") return "";
+  const trimmed = college.trim();
+  if (trimmed.length <= 5) return trimmed.toUpperCase();
+  return trimmed
+    .split(/\s+/)
+    .map((word) =>
+      word.length <= 5 && !word.includes(".")
+        ? word.toUpperCase()
+        : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+    )
+    .join(" ");
+}
+
+/**
+ * DashboardCommandBar — Compact, ~130px Hero Card.
+ * Left: Greeting + One meta line (capitalized acronyms).
+ * Right: Streak chip (neutral at 0 days) + Primary button.
+ * Next Action / Skill target: Single line inside the card.
  */
 export function DashboardCommandBar({
   user = {},
@@ -56,12 +65,12 @@ export function DashboardCommandBar({
   continueActivity = null,
   recommendation = null,
 }) {
-  const firstName = user?.firstName?.trim() || "Student";
-  const academicDetails = [
-    user?.branch,
-    user?.college,
-    user?.graduationYear ? `'${String(user.graduationYear).slice(-2)}` : null,
-  ]
+  const rawFirstName = user?.firstName?.trim() || "Student";
+  const firstName = rawFirstName.charAt(0).toUpperCase() + rawFirstName.slice(1);
+  const collegeFormatted = formatCollegeName(user?.college);
+  const gradYear = user?.graduationYear ? `'${String(user.graduationYear).slice(-2)}` : null;
+
+  const academicDetails = [user?.branch, collegeFormatted, gradYear]
     .filter(Boolean)
     .join(" • ");
 
@@ -79,19 +88,15 @@ export function DashboardCommandBar({
     (continueActivity.type === "mock_test" || continueActivity.type === "aptitude");
 
   // Resolve action content
-  let actionBadge = null;
-  let actionTitle = "";
-  let actionSubtitle = "";
+  let actionBadgeText = "Daily Practice";
+  let actionTitle = "Maintain Preparation Consistency";
+  let actionSubtitle = "Solve practice problems or take a timed assessment.";
   let actionLink = "/aptitude";
   let actionBtnText = "Start Practice";
-  let isPriorityAction = false;
 
   if (hasActiveAssessment) {
     const isMock = continueActivity.type === "mock_test";
-    actionBadge = {
-      text: "Active Assessment",
-      classes: "text-primary bg-primary-tint border-primary-border",
-    };
+    actionBadgeText = "In Progress";
     actionTitle = continueActivity.title || (isMock ? "Mock Test Attempt" : "Aptitude Session");
     actionSubtitle = [
       continueActivity.subtitle,
@@ -102,134 +107,93 @@ export function DashboardCommandBar({
       .join(" • ");
     actionLink = continueActivity.actionLink || (isMock ? "/mock-tests" : "/aptitude");
     actionBtnText = continueActivity.actionText || "Resume Test";
-    isPriorityAction = true;
   } else if (recommendation && hasReadiness) {
-    const getBadgeStyle = (priority) => {
-      switch (priority) {
-        case 1:
-          return { text: "High Priority", classes: "text-amber-800 bg-amber-50 border-amber-200" };
-        case 2:
-          return { text: "Skill Target", classes: "text-blue-800 bg-blue-50 border-blue-200" };
-        case 3:
-          return { text: "Company Track", classes: "text-emerald-800 bg-emerald-50 border-emerald-200" };
-        default:
-          return { text: "Next Step", classes: "text-primary bg-primary-tint border-primary-border" };
-      }
-    };
-    actionBadge = getBadgeStyle(recommendation.priority);
+    actionBadgeText = recommendation.priority === 1 ? "Priority" : "Next Step";
     actionTitle = recommendation.title;
     actionSubtitle = recommendation.description;
     actionLink = recommendation.actionLink || "/aptitude";
     actionBtnText = recommendation.actionText || "Continue Practice";
   } else if (!hasReadiness) {
-    // New User Getting Started State
-    actionBadge = {
-      text: "Getting Started",
-      classes: "text-blue-800 bg-blue-50 border-blue-200",
-    };
+    actionBadgeText = "Diagnostic";
     actionTitle = "Benchmark Your Placement Readiness";
-    actionSubtitle =
-      "Take your first diagnostic aptitude session to establish your baseline index and unlock tailored practice recommendations.";
+    actionSubtitle = "Take your diagnostic aptitude session to calculate your baseline index.";
     actionLink = "/aptitude";
     actionBtnText = "Start Diagnostic Test";
-  } else {
-    // Default Daily Continuity
-    actionBadge = {
-      text: "Daily Practice",
-      classes: "text-slate-600 bg-slate-100 border-slate-200",
-    };
-    actionTitle = "Maintain Preparation Consistency";
-    actionSubtitle =
-      "Solve algorithmic problems or practice topic-wise quantitative and logical questions today.";
-    actionLink = "/aptitude";
-    actionBtnText = "Start Practice";
   }
+
+  const isZeroStreak = streakDays === 0;
 
   return (
     <section
       aria-label="Student command bar and next action"
-      className={`bg-white border rounded-xl p-3.5 sm:p-4 shadow-xs transition-all ${
-        isPriorityAction ? "border-primary/40 ring-1 ring-primary/20" : "border-slate-200/90"
-      }`}
+      className="bg-card border border-border rounded-xl p-3 sm:p-4 shadow-xs space-y-3"
     >
-      {/* Top Bar: Identity, Academic Badge & Streak */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 pb-2.5 border-b border-slate-100">
-        <div className="space-y-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap text-[11px]">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" aria-hidden="true" />
-            <span className="font-semibold uppercase tracking-wider text-primary bg-primary-tint px-2 py-0.5 rounded border border-primary-border">
-              Student Workspace
-            </span>
-            {user?.preparationLevel && (
-              <span className="font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 capitalize">
-                {user.preparationLevel}
-              </span>
-            )}
-            {academicDetails && (
-              <span className="text-slate-500 font-medium truncate max-w-xs sm:max-w-md hidden sm:inline">
-                {academicDetails}
-              </span>
-            )}
-          </div>
-
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+      {/* Top Row: Greeting + Meta line on Left; Streak Chip on Right */}
+      <div className="flex items-center justify-between gap-3 min-w-0">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-lg sm:text-xl font-bold font-heading text-ink tracking-tight leading-tight m-0 truncate">
             {timeGreeting}, {firstName}
           </h1>
+          {academicDetails ? (
+            <p className="text-xs text-ink-2 font-medium truncate mt-0.5 leading-normal m-0">
+              {academicDetails}
+            </p>
+          ) : (
+            <p className="text-xs text-ink-2 font-medium truncate mt-0.5 leading-normal m-0">
+              Placement Preparation Workspace
+            </p>
+          )}
         </div>
 
-        {/* Right Telemetry: Streak Pill */}
-        <div className="flex items-center gap-2.5 shrink-0 self-start sm:self-center">
+        {/* Streak Chip (Neutral outline at 0 days, warning token when active) */}
+        <div className="shrink-0 flex items-center">
           <Link
             to="/progress"
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-50/70 border border-amber-200/80 text-amber-900 hover:bg-amber-100/70 transition-colors group no-underline"
-            title={`${streakDays} consecutive practice days`}
+            aria-label={`Current streak: ${streakDays} ${streakDays === 1 ? "day" : "days"}`}
+            title="Current streak"
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition-colors no-underline font-medium ${
+              isZeroStreak
+                ? "border border-border bg-card text-ink-2 hover:bg-primary-soft hover:text-ink"
+                : "border border-warning/30 bg-warning/10 text-ink hover:bg-warning/20 font-semibold"
+            }`}
           >
-            <FireIcon className="w-4 h-4 text-amber-600 shrink-0" />
-            <div className="text-left leading-none">
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-700 block">
-                Streak
-              </span>
-              <span className="text-xs font-bold font-mono text-amber-900 mt-0.5 block">
-                {streakDays} {streakDays === 1 ? "day" : "days"}
-              </span>
-            </div>
+            <FireIcon className={`w-3.5 h-3.5 shrink-0 ${isZeroStreak ? "text-ink-2" : "text-warning"}`} />
+            <span className="font-mono text-xs font-semibold">
+              {isZeroStreak ? "0 days" : `${streakDays} ${streakDays === 1 ? "day" : "days"}`}
+            </span>
           </Link>
         </div>
       </div>
 
-      {/* Bottom Command Strip: Singular Next Action */}
-      <div className="pt-2.5 flex flex-col md:flex-row md:items-center md:justify-between gap-2.5 sm:gap-3.5">
-        <div className="space-y-1 min-w-0 max-w-2xl">
-          <div className="flex items-center gap-2 flex-wrap">
-            {actionBadge && (
-              <span
-                className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${actionBadge.classes}`}
-              >
-                {actionBadge.text}
-              </span>
-            )}
-            {hasActiveAssessment && continueActivity?.startedAt && (
-              <span className="text-xs text-slate-400 font-mono flex items-center gap-1">
-                <ClockIcon className="w-3 h-3" />
-                {formatRelativeTime(continueActivity.startedAt)}
+      {/* Bottom Row: Next Action / Skill Target Strip */}
+      <div className="pt-2.5 border-t border-border flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-primary-soft text-ink-2 shrink-0">
+            {actionBadgeText}
+          </span>
+          <div className="min-w-0 flex items-baseline gap-2">
+            <span className="text-xs sm:text-sm font-semibold text-ink truncate block">
+              {actionTitle}
+            </span>
+            {actionSubtitle && (
+              <span className="hidden md:inline text-[11px] text-ink-2 truncate">
+                — {actionSubtitle}
               </span>
             )}
           </div>
-
-          <h2 className="text-sm sm:text-base font-bold text-slate-900 tracking-tight truncate">
-            {actionTitle}
-          </h2>
-
-          <p className="text-xs text-slate-600 line-clamp-1 leading-relaxed">
-            {actionSubtitle}
-          </p>
         </div>
 
-        <div className="shrink-0 self-start md:self-center">
+        <div className="shrink-0 flex items-center gap-2">
+          {hasActiveAssessment && (
+            <span className="text-[11px] text-ink-2 flex items-center gap-1 font-mono">
+              <ClockIcon className="w-3 h-3" /> In progress
+            </span>
+          )}
           <Button
             to={actionLink}
             variant="primary"
             size="sm"
+            className="w-full sm:w-auto text-xs py-1.5 px-3 whitespace-nowrap"
             iconRight={<ArrowRightIcon className="w-3.5 h-3.5" />}
           >
             {actionBtnText}

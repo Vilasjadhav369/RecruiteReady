@@ -176,8 +176,6 @@ html.rr-theme-anim *::after {
 @keyframes rr-unlock { 0% { transform: scale(.6) rotate(-12deg); opacity: 0; } 60% { transform: scale(1.12) rotate(4deg); opacity: 1; } 100% { transform: none; } }
 .rr-unlock { animation: rr-unlock .6s cubic-bezier(.22,.61,.36,1) both; }
 
-
-
 @media (prefers-reduced-motion: reduce) {
   .rr-shimmer, .rr-q-next, .rr-q-prev, .rr-timer-pulse, .rr-flame, .rr-ok, .rr-bad, .rr-word, .rr-draw, .rr-grow-y, .rr-unlock { animation: none; }
   .rr-ring-arc { transition: none; }
@@ -218,13 +216,22 @@ html.rr-theme-anim *::after {
 
 /* ---------- Collapsible desktop sidebar (icon rail) ---------- */
 .rr-sidebar { transition: width .22s cubic-bezier(.22,.61,.36,1); }
-.rr-sidebar[data-collapsed="true"] { width: 4.25rem; }
+.rr-sidebar[data-collapsed="true"] { width: 4rem; }
 .rr-sidebar[data-collapsed="true"] .rr-nav-label,
 .rr-sidebar[data-collapsed="true"] .rr-nav-group,
 .rr-sidebar[data-collapsed="true"] .rr-nav-hide { display: none; }
-.rr-sidebar[data-collapsed="true"] nav a { justify-content: center; padding-left: 0; padding-right: 0; border-left-width: 0; }
+.rr-sidebar[data-collapsed="true"] nav a { justify-content: center; padding-left: 0; padding-right: 0; }
 .rr-sidebar[data-collapsed="true"] .rr-nav-center { justify-content: center; padding-left: 0; padding-right: 0; }
-.rr-sidebar-toggle { position: absolute; top: 4.1rem; right: -0.75rem; z-index: 40; }
+.rr-sidebar .rr-nav-divider { display: none; }
+.rr-sidebar[data-collapsed="true"] .rr-nav-divider { display: block; border-top: 1px solid var(--color-border); margin: 0.5rem 0.25rem; }
+
+/* Sidebar thin custom scrollbar (invisible until hovered) */
+.rr-sidebar nav { scrollbar-width: thin; scrollbar-color: transparent transparent; }
+.rr-sidebar nav:hover { scrollbar-color: var(--color-border) transparent; }
+.rr-sidebar nav::-webkit-scrollbar { width: 6px; }
+.rr-sidebar nav::-webkit-scrollbar-thumb { background: transparent; border-radius: 6px; }
+.rr-sidebar nav:hover::-webkit-scrollbar-thumb { background: var(--color-border); }
+
 @media (prefers-reduced-motion: reduce) { .rr-sidebar { transition: none; } }
 
 /* Printing a result page always includes the full review */

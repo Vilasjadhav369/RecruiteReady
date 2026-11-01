@@ -36,7 +36,47 @@ export const formatDate = (dateVal) => {
   return `${day} ${month} ${year}`;
 };
 
+/**
+ * Replaces raw execution status text like "Status: execution unavailable"
+ * or "execution_unavailable" with friendly "Not evaluated".
+ */
+export const formatExecutionStatus = (text) => {
+  if (!text || typeof text !== 'string') return '';
+  return text
+    .replace(/Status:\s*execution[_\s]unavailable/gi, 'Status: Not evaluated')
+    .replace(/execution[_\s]unavailable/gi, 'Not evaluated');
+};
+
+/**
+ * Returns a user-friendly label for problem/submission statuses.
+ */
+export const formatStatusLabel = (status) => {
+  if (!status || typeof status !== 'string') return '';
+  const normalized = status.trim().toLowerCase();
+  if (normalized === 'execution_unavailable' || normalized === 'execution unavailable') {
+    return 'Not evaluated';
+  }
+  return status.replace(/_/g, ' ');
+};
+
+/**
+ * Returns the keyboard modifier shortcut label: "⌘K" on macOS, "Ctrl K" on Windows/Linux.
+ */
+export const getModifierKeyHint = () => {
+  if (typeof navigator === 'undefined') return 'Ctrl K';
+  const platform = (
+    navigator.userAgentData?.platform ||
+    navigator.platform ||
+    ''
+  ).toLowerCase();
+  const isMac = platform.includes('mac') || platform.includes('iphone') || platform.includes('ipad');
+  return isMac ? '⌘K' : 'Ctrl K';
+};
+
 export default {
   formatDateTime,
   formatDate,
+  formatExecutionStatus,
+  formatStatusLabel,
+  getModifierKeyHint,
 };

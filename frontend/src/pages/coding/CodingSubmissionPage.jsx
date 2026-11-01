@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { getCodingSubmission } from '../../services/codingService.js';
-import { formatDateTime } from '../../utils/formatters.js';
+import { formatDateTime, formatStatusLabel } from '../../utils/formatters.js';
 import {
   PageHeader,
   Card,
@@ -131,7 +131,7 @@ export default function CodingSubmissionPage() {
             isAccepted
               ? 'Accepted'
               : submission.status === 'execution_unavailable'
-              ? 'Execution Unavailable'
+              ? 'Not evaluated'
               : submission.status === 'wrong_answer'
               ? 'Wrong Answer'
               : submission.status === 'time_limit_exceeded'

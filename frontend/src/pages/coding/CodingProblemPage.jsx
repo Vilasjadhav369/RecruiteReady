@@ -604,7 +604,7 @@ export default function CodingProblemPage() {
                               Submission Result
                             </span>
                             <span className="text-[11px] text-slate-500 font-mono">
-                              Status: {submissionStatus?.replace(/_/g, ' ').toUpperCase() || 'EVALUATED'}
+                              Status: {(formatStatusLabel(submissionStatus)).toUpperCase() || 'EVALUATED'}
                             </span>
                           </div>
                         </div>
@@ -614,7 +614,7 @@ export default function CodingProblemPage() {
                           size="md"
                           dot
                         >
-                          {isAccepted ? 'Accepted' : submissionStatus === 'execution_unavailable' ? 'Execution Unavailable' : submissionStatus?.replace(/_/g, ' ') || 'Submitted'}
+                          {isAccepted ? 'Accepted' : submissionStatus === 'execution_unavailable' ? 'Not evaluated' : submissionStatus?.replace(/_/g, ' ') || 'Submitted'}
                         </Badge>
                       </div>
 
@@ -662,7 +662,7 @@ export default function CodingProblemPage() {
                           size="sm"
                         >
                           {runResult.status === 'execution_unavailable'
-                            ? 'Execution Unavailable'
+                            ? 'Not evaluated'
                             : runResult.status?.replace(/_/g, ' ') || 'Completed'}
                         </Badge>
                       </div>

@@ -4,7 +4,7 @@ import { spawn } from "node:child_process";
 import fs from "node:fs";
 
 const PORT = 4173, BASE = `http://localhost:${PORT}`;
-const srv = spawn("npx", ["vite", "preview", "--port", String(PORT), "--strictPort"], { stdio: "ignore" });
+const srv = spawn("npx", ["vite", "preview", "--port", String(PORT), "--strictPort"], { stdio: "ignore", shell: true });
 await new Promise((r) => setTimeout(r, 3500));
 
 const user = { _id: "u1", firstName: "Asha", lastName: "Rao", email: "asha@test.dev", role: "student", college: "Test College", branch: "CSE", graduationYear: 2027, onboardingCompleted: true };

@@ -4,7 +4,7 @@ import ContinueCard from "../components/dashboard/ContinueCard.jsx";
 import WelcomeTour from "../components/dashboard/WelcomeTour.jsx";
 import { getDashboardSummary } from "../services/dashboardService.js";
 
-// High-Density, Streamlined P1 Dashboard Components
+// Streamlined P1.2 Compact Dashboard Components
 import DashboardCommandBar from "../components/dashboard/DashboardCommandBar.jsx";
 import MissingFieldBanner from "../components/dashboard/MissingFieldBanner.jsx";
 import PreparationLaunchpad from "../components/dashboard/PreparationLaunchpad.jsx";
@@ -15,17 +15,16 @@ import PlacementReadinessSidebar from "../components/dashboard/PlacementReadines
 import ErrorState from "../components/ui/ErrorState.jsx";
 
 /**
- * DashboardPage — Production Student Dashboard (Phase 1 Refactor).
+ * DashboardPage — Production Student Dashboard (Phase 1.2 Polish).
  *
- * Design Identity: Apple + Linear + Premium University
- * Information Architecture:
- * - Zone 1: Unified Command Bar (Greeting, credentials, streak, and singular next action)
+ * Design Identity: Swiss Monochrome
+ * Architecture:
+ * - Zone 1: ~130px Hero Command Bar (Greeting, academic details, streak, next action)
  * - Zone 1b: MissingFieldBanner (Incomplete profile setup checklist, hidden when 100%)
- * - Zone 2: Singular Preparation Launchpad (Aptitude, Coding, Mock Tests, Companies with live metrics)
- * - Zone 3: Asymmetric Desktop Grid (Left: Activity feed, Right: Placement intelligence)
- * - Responsive Ordering: On mobile, intelligence and goals are prioritized before the activity feed.
+ * - Zone 2: Compact 4-up Preparation Strip (~72px height per card with integrated stats)
+ * - Zone 3: Two Equal-Height Columns (Left: Activity feed up to 5 rows; Right: Placement Readiness & embedded tabs)
  *
- * Target: Comfortably fits within <= 1.5 viewport heights on 1280x800 desktop.
+ * Target: Visible with 0 page scroll at 1440x900 and 1920x1080; at most a short scroll on 1366x768.
  */
 function DashboardPage() {
   const { user } = useAuth();
@@ -51,34 +50,24 @@ function DashboardPage() {
     fetchSummary();
   }, [fetchSummary]);
 
-  // High-density loading skeleton
+  // Loading skeleton
   if (loading) {
     return (
       <div
-        className="max-w-[1240px] mx-auto space-y-4 sm:space-y-5 animate-pulse"
+        className="max-w-[1240px] mx-auto space-y-3 animate-pulse"
         aria-busy="true"
         aria-label="Loading dashboard"
       >
-        {/* Command Bar Skeleton */}
-        <div className="h-28 bg-white border border-slate-200 rounded-xl" />
-
-        {/* Unified Launchpad Skeleton */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="h-24 bg-white border border-slate-200 rounded-xl" />
-          <div className="h-24 bg-white border border-slate-200 rounded-xl" />
-          <div className="h-24 bg-white border border-slate-200 rounded-xl" />
-          <div className="h-24 bg-white border border-slate-200 rounded-xl" />
+        <div className="h-32 bg-card border border-border rounded-xl" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="h-[72px] bg-card border border-border rounded-xl" />
+          <div className="h-[72px] bg-card border border-border rounded-xl" />
+          <div className="h-[72px] bg-card border border-border rounded-xl" />
+          <div className="h-[72px] bg-card border border-border rounded-xl" />
         </div>
-
-        {/* Grid Skeleton */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-          <div className="lg:col-span-8 space-y-4">
-            <div className="h-64 bg-white border border-slate-200 rounded-xl" />
-          </div>
-          <div className="lg:col-span-4 space-y-4">
-            <div className="h-44 bg-white border border-slate-200 rounded-xl" />
-            <div className="h-36 bg-white border border-slate-200 rounded-xl" />
-          </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5 items-stretch">
+          <div className="h-80 bg-card border border-border rounded-xl" />
+          <div className="h-80 bg-card border border-border rounded-xl" />
         </div>
       </div>
     );
@@ -87,7 +76,7 @@ function DashboardPage() {
   // Error State
   if (error) {
     return (
-      <div className="max-w-[1240px] mx-auto py-8">
+      <div className="max-w-[1240px] mx-auto py-6">
         <ErrorState message={error} onRetry={fetchSummary} />
       </div>
     );
@@ -98,8 +87,8 @@ function DashboardPage() {
   const targetCompaniesList = summary?.targetCompanies || activeUser?.targetCompanies || [];
 
   return (
-    <div className="rr-stagger max-w-[1240px] mx-auto space-y-3.5 sm:space-y-4 pb-4">
-      {/* 1. Unified Command Bar: Greeting, Credentials, Streak & Singular Next Action */}
+    <div className="rr-stagger max-w-[1240px] mx-auto space-y-3 sm:space-y-3.5 pb-2">
+      {/* 1. Hero Command Bar (~130px) */}
       <DashboardCommandBar
         user={activeUser}
         readiness={summary?.readiness}
@@ -111,46 +100,35 @@ function DashboardPage() {
       {/* 1b. Missing Field Setup Banner (compact checklist shown only when profile is incomplete) */}
       <MissingFieldBanner profileCompletion={summary?.profileCompletion} />
 
-      {/* 1c. Unfinished sessions (only when the backend summary has no continue-activity of its own) */}
+      {/* 1c. Unfinished sessions fallback */}
       {summary && !summary.continueActivity && <ContinueCard />}
 
       <WelcomeTour />
 
-      {/* 2. Unified Preparation Launchpad: 4 Core Modules with Live Metrics */}
+      {/* 2. Compact 4-up Preparation Strip (~72px height per card) */}
       <PreparationLaunchpad
         preparation={summary?.preparation}
         targetCompaniesCount={targetCompaniesList.length}
       />
 
-      {/* 3. Primary Dashboard Layout: Asymmetric 8:4 Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-        {/* Left Column (8 cols on desktop): Accessible Tabbed Activity & Upcoming Assessments */}
-        <div className="lg:col-span-8 space-y-4 sm:space-y-5">
-          {/* Desktop Activity Feed */}
-          <div className="hidden lg:block">
-            <ActivityFeedTabs
-              activities={summary?.recentActivity || []}
-              upcomingTests={summary?.upcomingTests || []}
-            />
-          </div>
+      {/* 3. Main Two-Column Grid (Left: Activity up to 5 rows; Right: Placement Readiness & embedded tabs) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5 items-stretch">
+        {/* Left Column: Recent Activity (fills column height to match readiness card) */}
+        <div className="h-full flex flex-col">
+          <ActivityFeedTabs
+            activities={summary?.recentActivity || []}
+            upcomingTests={summary?.upcomingTests || []}
+          />
         </div>
 
-        {/* Right Column (4 cols on desktop, ordered above activity feed on mobile): Placement Intelligence */}
-        <div className="lg:col-span-4">
+        {/* Right Column: Placement Readiness Card with Embedded Tabs */}
+        <div className="h-full flex flex-col">
           <PlacementReadinessSidebar
             readiness={summary?.readiness}
             weakAreas={summary?.weakAreas}
             targetCompanies={targetCompaniesList}
             preparationGoals={summary?.preparationGoals || activeUser?.preparationGoals || []}
             profileCompletion={summary?.profileCompletion}
-          />
-        </div>
-
-        {/* Mobile Activity Feed (rendered below sidebar on mobile so readiness is never buried) */}
-        <div className="block lg:hidden col-span-1">
-          <ActivityFeedTabs
-            activities={summary?.recentActivity || []}
-            upcomingTests={summary?.upcomingTests || []}
           />
         </div>
       </div>

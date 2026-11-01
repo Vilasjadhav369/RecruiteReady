@@ -1,3 +1,4 @@
+import Logo from "./common/Logo.jsx";
 import { ThemeToggle } from "./ui/ThemeToggle.jsx";
 import React, { useState, useEffect } from "react";
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
@@ -78,43 +79,7 @@ function Navbar() {
         <div className="flex items-center justify-between h-16">
 
           {/* ── Brand Logo ───────────────────────────────── */}
-          <Link
-            to="/"
-            className="flex items-center gap-2.5 no-underline hover:no-underline shrink-0 group"
-          >
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0 shadow-xs group-hover:bg-primary-dark transition-colors">
-              <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                <path
-                  d="M10 3L3 7L10 11L17 7L10 3Z"
-                  stroke="var(--rr-on-primary)"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d="M5.5 8.5V13.5C5.5 13.5 7 15.5 10 15.5C13 15.5 14.5 13.5 14.5 13.5V8.5"
-                  stroke="var(--rr-on-primary)" strokeOpacity=".55"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d="M17 7V12"
-                  stroke="var(--rr-on-primary)"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-              </svg>
-            </div>
-            <div>
-              <span className="text-slate-900 font-bold text-base tracking-tight leading-none block">
-                RecruitReady
-              </span>
-              <span className="text-slate-500 text-[10px] leading-none mt-0.5 block">
-                Placement Preparation Portal
-              </span>
-            </div>
-          </Link>
+          <Logo variant="compact" size="md" to={isAuthenticated ? (user?.role === "admin" ? "/admin" : "/dashboard") : "/"} />
 
           {/* ── Desktop Center Navigation ─────────────────── */}
           <nav className="hidden md:flex items-center gap-1" aria-label="Main navigation">

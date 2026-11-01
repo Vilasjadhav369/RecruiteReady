@@ -5,10 +5,6 @@ import {
   ProfileIcon,
 } from "../ui/Icons.jsx";
 
-/**
- * Maps profile completion field keys to the most specific target anchor
- * within the Student Profile page, providing direct focus for students.
- */
 const FIELD_ANCHOR_MAP = {
   firstName: "/profile#personal-section",
   lastName: "/profile#personal-section",
@@ -21,18 +17,7 @@ const FIELD_ANCHOR_MAP = {
 };
 
 /**
- * MissingFieldBanner — Compact, actionable dashboard setup banner for incomplete profiles.
- * 
- * Apple + Linear Design System:
- * - Rendered when required profile fields remain incomplete (< 100%).
- * - Displays human-readable field labels (never raw internal database keys).
- * - Compact horizontal chip checklist that is fully responsive on mobile.
- * - Clear, singular call-to-action linking to the profile page.
- * - Zero fabricated completion states.
- * - Completely hidden when profile is 100% complete or while loading/error.
- *
- * @param {Object} props
- * @param {Object} props.profileCompletion - Profile completion summary { percentage, missingFields, isComplete }
+ * MissingFieldBanner — Actionable setup banner with neutral outline chips.
  */
 export function MissingFieldBanner({ profileCompletion = null }) {
   if (!profileCompletion) return null;
@@ -50,37 +35,36 @@ export function MissingFieldBanner({ profileCompletion = null }) {
     return null;
   }
 
-  // Determine the primary jump link based on the first missing field
   const primaryField = missing[0];
   const primaryHref = (primaryField?.key && FIELD_ANCHOR_MAP[primaryField.key]) || "/profile";
 
   return (
     <section
       aria-label="Profile completion checklist"
-      className="bg-amber-50/80 border border-amber-200/90 rounded-xl p-3.5 sm:p-4 shadow-2xs transition-all"
+      className="bg-primary-soft border border-border rounded-xl p-3 sm:p-3.5 shadow-2xs transition-all"
     >
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-        {/* Left: Icon, Header & Checklist Chips */}
-        <div className="flex items-start gap-3 min-w-0">
-          <div className="w-8 h-8 rounded-lg bg-amber-100 border border-amber-200 text-amber-800 flex items-center justify-center shrink-0 mt-0.5">
-            <ProfileIcon className="w-4 h-4 text-amber-800" />
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        {/* Left: Icon, Header & Neutral Checklist Chips */}
+        <div className="flex items-start gap-2.5 min-w-0 flex-1">
+          <div className="w-7 h-7 rounded-lg bg-card border border-border text-ink flex items-center justify-center shrink-0 mt-0.5">
+            <ProfileIcon className="w-3.5 h-3.5 text-ink" />
           </div>
 
-          <div className="space-y-1.5 min-w-0">
+          <div className="space-y-1 min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-xs sm:text-sm font-bold text-amber-950 tracking-tight">
+              <h2 className="text-xs sm:text-sm font-bold text-ink tracking-tight m-0">
                 Complete Your Candidate Profile
               </h2>
-              <span className="text-[10px] font-bold font-mono uppercase tracking-wider text-amber-800 bg-amber-100/90 px-1.5 py-0.5 rounded border border-amber-200">
-                {percentage}% Set Up ({missing.length} Missing)
+              <span className="text-[10px] font-bold font-mono uppercase px-1.5 py-0.5 rounded border border-border bg-card text-ink-2">
+                {percentage}% ({missing.length} missing)
               </span>
             </div>
 
-            <p className="text-[11px] sm:text-xs text-amber-900/90 leading-relaxed">
-              Fill in your remaining details to unlock tailored company tracks and accurate campus drive eligibility checks.
+            <p className="text-[11px] text-ink-2 leading-relaxed m-0">
+              Fill in remaining academic and target company details to unlock tailored preparation.
             </p>
 
-            {/* Checklist of missing items */}
+            {/* Neutral outline chips */}
             <div className="flex flex-wrap items-center gap-1.5 pt-0.5" role="list" aria-label="Missing profile fields">
               {missing.map((field) => {
                 const href = FIELD_ANCHOR_MAP[field.key] || "/profile";
@@ -89,9 +73,9 @@ export function MissingFieldBanner({ profileCompletion = null }) {
                     key={field.key}
                     to={href}
                     role="listitem"
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white border border-amber-200/90 text-[11px] font-medium text-amber-950 hover:bg-amber-100/80 hover:border-amber-300 transition-colors no-underline shadow-2xs"
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-card border border-border text-[11px] font-medium text-ink hover:bg-primary-tint/60 transition-colors no-underline"
                   >
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" aria-hidden="true" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-ink-2 shrink-0" aria-hidden="true" />
                     <span>{field.label}</span>
                   </Link>
                 );
@@ -101,10 +85,10 @@ export function MissingFieldBanner({ profileCompletion = null }) {
         </div>
 
         {/* Right: Primary Action Button */}
-        <div className="shrink-0 self-start sm:self-center pt-1 sm:pt-0">
+        <div className="shrink-0 self-start sm:self-center">
           <Link
             to={primaryHref}
-            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-900 hover:bg-amber-950 text-white text-xs font-semibold shadow-xs transition-colors no-underline whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-1"
+            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-surface text-xs font-semibold shadow-xs hover:bg-primary-hover transition-colors no-underline whitespace-nowrap focus-visible:outline-2 focus-visible:outline-primary"
           >
             <span>Complete Profile</span>
             <ArrowRightIcon className="w-3.5 h-3.5" />

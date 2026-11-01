@@ -1,3 +1,4 @@
+import { LogoSymbol } from "../common/Logo.jsx";
 import React from 'react';
 import { SpinnerIcon } from './Icons.jsx';
 
@@ -17,8 +18,8 @@ export function LoadingState({
       role="status"
       aria-live="polite"
     >
-      <SpinnerIcon className={`${spinnerSize} text-primary mb-3`} />
-      <span className="text-xs sm:text-sm font-medium text-slate-500">
+      <div className="animate-pulse mb-3 flex items-center justify-center"><LogoSymbol size={size === "sm" ? 24 : size === "lg" ? 44 : 32} /></div>
+      <span className="text-xs sm:text-sm font-medium text-ink-2">
         {message}
       </span>
     </div>
