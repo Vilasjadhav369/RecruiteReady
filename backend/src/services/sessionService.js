@@ -56,11 +56,7 @@ export const maskIp = (ip = '') => {
  */
 export const createSession = async ({ user, req, token = null, tokenHash = null, expiresInMs = 7 * 24 * 60 * 60 * 1000 }) => {
   const userAgent = req?.headers?.['user-agent'] || 'Unknown Device';
-  const ipAddress =
-    req?.ip ||
-    req?.headers?.['x-forwarded-for']?.split(',')[0]?.trim() ||
-    req?.socket?.remoteAddress ||
-    'unknown';
+  const ipAddress = req?.ip || req?.socket?.remoteAddress || 'unknown';
 
   const expiresAt = new Date(Date.now() + expiresInMs);
   let resolvedHash = tokenHash;

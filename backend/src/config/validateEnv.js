@@ -42,6 +42,14 @@ export const validateEnv = () => {
     }
   }
 
+  // TRUST_PROXY check
+  if (process.env.TRUST_PROXY !== undefined && process.env.TRUST_PROXY !== '') {
+    const val = Number(process.env.TRUST_PROXY);
+    if (!Number.isInteger(val) || val < 0) {
+      errors.push('TRUST_PROXY must be a non-negative integer representing proxy hops (e.g. 0, 1, 2).');
+    }
+  }
+
   // SMTP Configuration check in production
   if (isProduction) {
     const host = process.env.EMAIL_HOST;

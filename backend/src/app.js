@@ -21,13 +21,16 @@ import goalRouter from './routes/goal.js';
 import notFound from './middleware/notFound.js';
 import errorHandler from './middleware/errorHandler.js';
 import requestTracing from './middleware/requestTracing.js';
+import { generalApiLimiter } from './middleware/rateLimiter.js';
 
 const app = express();
 
-// Enable trust proxy for Render / Cloudflare reverse proxies in production
-if (process.env.NODE_ENV === 'production') {
-  app.set('trust proxy', 1);
-}
+// Configure proxy trust based on TRUST_PROXY environment variable (default: 0)
+const trustProxyHops =
+  process.env.TRUST_PROXY !== undefined && process.env.TRUST_PROXY !== ''
+    ? parseInt(process.env.TRUST_PROXY, 10)
+    : 0;
+app.set('trust proxy', trustProxyHops);
 
 // Request ID and latency tracing
 app.use(requestTracing);
@@ -83,6 +86,14 @@ app.use((req, res, next) => {
   if (req.query) sanitizeMongoQuery(req.query);
   if (req.params) sanitizeMongoQuery(req.params);
   next();
+});
+
+// Rate limit unauthenticated general API requests (authenticated requests are limited in protect)
+app.use('/api', (req, res, next) => {
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+    return next();
+  }
+  return generalApiLimiter(req, res, next);
 });
 
 // 6. Register routes

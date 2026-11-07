@@ -19,21 +19,26 @@ import {
   logoutAllSessions,
 } from '../controllers/authController.js';
 import protect from '../middleware/auth.js';
-import { authRateLimiter } from '../middleware/rateLimiter.js';
+import {
+  authRateLimiter,
+  loginRateLimiter,
+  registerRateLimiter,
+  passwordRecoveryRateLimiter,
+} from '../middleware/rateLimiter.js';
 
 const router = Router();
 
 // Public authentication routes (with rate limiting)
-router.post('/register', authRateLimiter, register);
-router.post('/login', authRateLimiter, login);
-router.post('/google', authRateLimiter, googleLogin);
-router.get('/github', authRateLimiter, githubLogin);
-router.get('/github/callback', authRateLimiter, githubCallback);
-router.post('/forgot-password', authRateLimiter, forgotPassword);
-router.post('/reset-password', authRateLimiter, resetPassword);
-router.post('/verify-email', authRateLimiter, verifyEmail);
-router.get('/verify-email', authRateLimiter, verifyEmail);
-router.post('/resend-verification', authRateLimiter, resendVerification);
+router.post('/register', registerRateLimiter, register);
+router.post('/login', loginRateLimiter, login);
+router.post('/google', loginRateLimiter, googleLogin);
+router.get('/github', loginRateLimiter, githubLogin);
+router.get('/github/callback', loginRateLimiter, githubCallback);
+router.post('/forgot-password', passwordRecoveryRateLimiter, forgotPassword);
+router.post('/reset-password', passwordRecoveryRateLimiter, resetPassword);
+router.post('/verify-email', passwordRecoveryRateLimiter, verifyEmail);
+router.get('/verify-email', passwordRecoveryRateLimiter, verifyEmail);
+router.post('/resend-verification', passwordRecoveryRateLimiter, resendVerification);
 router.post('/logout', logout);
 
 // Protected account routes

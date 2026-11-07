@@ -105,6 +105,7 @@ npm run build
 | `JWT_SECRET` | Secret key used to sign and verify JSON Web Tokens | **Yes** | Strong 64-char hex secret |
 | `JWT_EXPIRES_IN` | Validity duration of issued JWT tokens | No | `7d` |
 | `CLIENT_URL` | Allowed frontend origin for CORS policy | **Yes** | `http://localhost:5173` |
+| `TRUST_PROXY` | Number of upstream reverse proxy hops to trust | No | `0` (Local/Direct), `1` (Render, Nginx), `2` (Cloudflare + Nginx) |
 | `GOOGLE_CLIENT_ID` | OAuth 2.0 Client ID for Google Social Sign-In | No | Google Cloud Console ID |
 | `GITHUB_CLIENT_ID` | OAuth App Client ID for GitHub Sign-In | No | GitHub App Client ID |
 | `GITHUB_CLIENT_SECRET` | OAuth App Secret for GitHub Sign-In | No | GitHub App Secret |
@@ -117,6 +118,15 @@ npm run build
 | `CODE_EXECUTION_URL` | Endpoint of isolated external sandbox runner (Judge0 / Piston) | No | Optional HTTP runner URL |
 | `ADMIN_EMAIL` | Initial admin account email for seeding | No | `admin@recruiteready.local` |
 | `ADMIN_PASSWORD` | Initial admin account password for seeding | No | Secure dev password |
+
+### Rate Limiting & Proxy Configuration
+
+- **In-Memory Store Notice**: Rate limits are stored in-memory per Node.js process. When scaling horizontally across multiple Node.js instances, cluster workers, or serverless containers, an external distributed store such as Redis (`rate-limit-redis`) must be plugged into `createRateLimiter` to coordinate counters across instances.
+- **Reverse Proxy & `TRUST_PROXY` Settings**:
+  - **Local Development / Direct Exposure**: `TRUST_PROXY=0` (default). Disables proxy header spoofing; uses socket remote IP.
+  - **Render**: `TRUST_PROXY=1` (Render terminates TLS at an ingress reverse proxy and forwards the real client IP in standard 1-hop proxy configuration).
+  - **Nginx**: `TRUST_PROXY=1` (standard single-hop reverse proxy forwarding `X-Forwarded-For`).
+  - **Cloudflare**: `TRUST_PROXY=1` (when traffic routes directly from Cloudflare to Node), or `TRUST_PROXY=2` (if traffic routes through Cloudflare -> Nginx -> Node).
 
 ### Frontend Configuration (`frontend/.env`)
 

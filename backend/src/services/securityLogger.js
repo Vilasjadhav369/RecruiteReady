@@ -47,11 +47,7 @@ export const logSecurityEvent = async ({
   severity = 'info',
 }) => {
   try {
-    const ipAddress =
-      req?.ip ||
-      req?.headers?.['x-forwarded-for']?.split(',')[0]?.trim() ||
-      req?.socket?.remoteAddress ||
-      'unknown';
+    const ipAddress = req?.ip || req?.socket?.remoteAddress || 'unknown';
 
     const userAgent = req?.headers?.['user-agent'] || 'unknown';
     const sanitizedDetails = sanitizeMetadata(details);

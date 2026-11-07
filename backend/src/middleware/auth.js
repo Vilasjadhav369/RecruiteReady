@@ -1,6 +1,7 @@
 import { verifyToken } from '../utils/jwt.js';
 import User from '../models/User.js';
 import sessionService from '../services/sessionService.js';
+import { generalApiLimiter } from './rateLimiter.js';
 
 /**
  * protect — Middleware to protect routes requiring authentication.
@@ -71,7 +72,9 @@ export const protect = async (req, res, next) => {
     // Attach user and raw token to request object
     req.user = user;
     req.token = token;
-    next();
+
+    // Apply authenticated general API rate limiter (keyed by authenticated user id)
+    return generalApiLimiter(req, res, next);
   } catch (error) {
     next(error);
   }
@@ -123,4 +126,3 @@ export const optionalAuth = async (req, res, next) => {
 };
 
 export default protect;
-
