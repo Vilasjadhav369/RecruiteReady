@@ -5,7 +5,7 @@ import { generalApiLimiter } from './rateLimiter.js';
 
 /**
  * protect — Middleware to protect routes requiring authentication.
- * Validates the Authorization Bearer token, enforces session status/revocation,
+ * Validates the Authorization Bearer token, enforces mandatory session status/revocation,
  * and attaches user and session identifiers to req.
  */
 export const protect = async (req, res, next) => {
@@ -28,7 +28,7 @@ export const protect = async (req, res, next) => {
       });
     }
 
-    // Verify token cryptographic signature and algorithm
+    // Verify token cryptographic signature and pinned HS256 algorithm
     let decoded;
     try {
       decoded = verifyToken(token);
@@ -39,18 +39,24 @@ export const protect = async (req, res, next) => {
       });
     }
 
-    // Server-side session verification if token is bound to a session
-    if (decoded.sessionId) {
-      const activeSession = await sessionService.verifySession(decoded.sessionId, decoded.id, token);
-      if (!activeSession) {
-        return res.status(401).json({
-          success: false,
-          message: 'Authentication failed. Session has been revoked or expired.',
-        });
-      }
-      req.sessionId = decoded.sessionId;
-      req.session = activeSession;
+    // Mandatory sessionId requirement: tokens without sessionId are rejected
+    if (!decoded || !decoded.sessionId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication failed. Token is missing required session identifier.',
+      });
     }
+
+    // Server-side session verification
+    const activeSession = await sessionService.verifySession(decoded.sessionId, decoded.id, token);
+    if (!activeSession) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication failed. Session has been revoked or expired.',
+      });
+    }
+    req.sessionId = decoded.sessionId;
+    req.session = activeSession;
 
     // Find active user (password is automatically excluded by select: false)
     const user = await User.findById(decoded.id);
@@ -83,7 +89,7 @@ export const protect = async (req, res, next) => {
 /**
  * optionalAuth — Middleware for public routes that optionally enrich the request
  * with the authenticated user if a valid Bearer token is provided.
- * Rejects expired or revoked sessions to prevent authentication state leakage.
+ * Rejects tokens without mandatory sessionId, or expired/revoked sessions, with 401.
  */
 export const optionalAuth = async (req, res, next) => {
   try {
@@ -98,30 +104,50 @@ export const optionalAuth = async (req, res, next) => {
     try {
       decoded = verifyToken(token);
     } catch {
-      return next();
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication failed. Invalid or expired token.',
+      });
     }
 
-    if (decoded?.id) {
-      // Validate session status if token is bound to a server session
-      if (decoded.sessionId) {
-        const activeSession = await sessionService.verifySession(decoded.sessionId, decoded.id, token);
-        if (!activeSession) {
-          // Session is expired or revoked: do not attach user, proceed anonymously
-          return next();
-        }
-        req.sessionId = decoded.sessionId;
-        req.session = activeSession;
-      }
-
-      const user = await User.findById(decoded.id);
-      if (user && user.isActive) {
-        req.user = user;
-        req.token = token;
-      }
+    // Mandatory sessionId requirement: tokens without sessionId are rejected
+    if (!decoded || !decoded.sessionId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication failed. Token is missing required session identifier.',
+      });
     }
+
+    const activeSession = await sessionService.verifySession(decoded.sessionId, decoded.id, token);
+    if (!activeSession) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication failed. Session has been revoked or expired.',
+      });
+    }
+
+    const user = await User.findById(decoded.id);
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication failed. User no longer exists.',
+      });
+    }
+
+    if (!user.isActive) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication failed. Account has been deactivated.',
+      });
+    }
+
+    req.sessionId = decoded.sessionId;
+    req.session = activeSession;
+    req.user = user;
+    req.token = token;
     next();
-  } catch {
-    next();
+  } catch (error) {
+    next(error);
   }
 };
 
