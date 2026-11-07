@@ -22,6 +22,7 @@ import notFound from './middleware/notFound.js';
 import errorHandler from './middleware/errorHandler.js';
 import requestTracing from './middleware/requestTracing.js';
 import { generalApiLimiter } from './middleware/rateLimiter.js';
+import sanitizeMiddleware from './middleware/sanitize.js';
 
 const app = express();
 
@@ -68,25 +69,8 @@ app.use(
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
-// 5. NoSQL Injection Protection: recursively sanitize object keys starting with '$' or containing '.'
-const sanitizeMongoQuery = (obj) => {
-  if (!obj || typeof obj !== 'object') return obj;
-  for (const key of Object.keys(obj)) {
-    if (key.startsWith('$') || key.includes('.')) {
-      delete obj[key];
-    } else if (typeof obj[key] === 'object') {
-      sanitizeMongoQuery(obj[key]);
-    }
-  }
-  return obj;
-};
-
-app.use((req, res, next) => {
-  if (req.body) sanitizeMongoQuery(req.body);
-  if (req.query) sanitizeMongoQuery(req.query);
-  if (req.params) sanitizeMongoQuery(req.params);
-  next();
-});
+// 5. NoSQL & Prototype Pollution Sanitization
+app.use(sanitizeMiddleware);
 
 // Rate limit unauthenticated general API requests (authenticated requests are limited in protect)
 app.use('/api', (req, res, next) => {
