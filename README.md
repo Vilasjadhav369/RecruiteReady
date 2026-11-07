@@ -72,6 +72,25 @@ npm run lint
 npm run build
 ```
 
+### 4. Testing Runbook
+
+- **Unit Tests (Hermetic, No Database)**:
+  ```bash
+  cd backend
+  npm test
+  ```
+  Runs fast, hermetic unit tests with Vitest (no MongoDB or external network connection required).
+
+- **Integration Tests (Database Required)**:
+  ```bash
+  cd backend
+  npm run test:integration
+  # or run all test suites:
+  npm run test:all
+  ```
+  > [!IMPORTANT]
+  > Integration test suites (`test:integration`, `test:all`, etc.) connect to MongoDB and perform live database mutations. They must ALWAYS be executed against a dedicated throwaway test database, never against staging or production.
+
 ---
 
 ## Environment Variables
@@ -121,7 +140,8 @@ RecruitReady/
 │   │   ├── routes/             # Express API route declarations
 │   │   ├── scripts/            # Database seeders and validation suites
 │   │   ├── services/           # Code execution abstraction, email & auth services
-│   │   └── server.js           # Express application entrypoint
+│   │   ├── app.js              # Express application configuration and route assembly
+│   │   └── server.js           # Express application entrypoint and server lifecycle
 │   └── package.json
 ├── frontend/
 │   ├── public/                 # Static assets and branding SVGs/PNGs

@@ -9,7 +9,8 @@
     "dev": "nodemon src/server.js",
     "seed:admin": "node src/scripts/seedAdmin.js",
     "seed:content": "node src/scripts/seedDevContent.js",
-    "test": "node src/scripts/testPhase10ObservabilitySuite.js",
+    "test": "vitest run",
+    "test:integration": "node src/scripts/testPhase10ObservabilitySuite.js",
     "test:all": "node src/scripts/testPhaseP0AssessmentSecuritySuite.js && node src/scripts/testLoginRegistrationSuite.js && node src/scripts/testPhase10ObservabilitySuite.js && node src/scripts/testAuthSuite.js && node src/scripts/testAdminProductivitySuite.js && node src/scripts/testCompanyPreparationSuite.js",
     "test:p0": "node src/scripts/testPhaseP0AssessmentSecuritySuite.js",
     "test:login-reg": "node src/scripts/testLoginRegistrationSuite.js",
@@ -37,6 +38,8 @@
     "nodemailer": "^10.0.15"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14"
+    "nodemon": "^3.1.14",
+    "supertest": "^7.3.1",
+    "vitest": "^5.1.0"
   }
 }
