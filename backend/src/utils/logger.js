@@ -1,70 +1,77 @@
-const SENSITIVE_KEYS = new Set([
-  'password',
-  'currentpassword',
-  'newpassword',
-  'confirmpassword',
-  'token',
-  'refreshtoken',
-  'rawtoken',
-  'credential',
-  'secret',
-  'clientsecret',
+import pino from 'pino';
+
+const isProduction = process.env.NODE_ENV === 'production';
+
+export const redactPaths = [
+  'req.headers.authorization',
+  'headers.authorization',
   'authorization',
+  '*.authorization',
+  '*.*.authorization',
+  'req.headers.cookie',
+  'headers.cookie',
   'cookie',
-  'sessionid',
-]);
+  '*.cookie',
+  '*.*.cookie',
+  'password',
+  '*.password',
+  '*.*.password',
+  'currentPassword',
+  '*.currentPassword',
+  'newPassword',
+  '*.newPassword',
+  'confirmPassword',
+  '*.confirmPassword',
+  'token',
+  '*.token',
+  '*.*.token',
+  'refreshToken',
+  '*.refreshToken',
+  'accessToken',
+  '*.accessToken',
+  'rawToken',
+  '*.rawToken',
+  'code',
+  '*.code',
+  '*.*.code',
+  'req.body',
+  'body',
+  '*.body',
+  '*.*.body',
+  'sourceCode',
+  '*.sourceCode',
+  '*.*.sourceCode',
+  'email',
+  '*.email',
+  '*.*.email',
+];
 
-/**
- * Strips sensitive keys recursively from objects before logging
- */
-export const sanitizeForLog = (obj) => {
-  if (!obj || typeof obj !== 'object') return obj;
-  if (Array.isArray(obj)) return obj.map(sanitizeForLog);
+const pinoInstance = pino({
+  level: process.env.LOG_LEVEL || (isProduction ? 'info' : 'debug'),
+  redact: {
+    paths: redactPaths,
+    censor: '[REDACTED]',
+  },
+  timestamp: pino.stdTimeFunctions.isoTime,
+});
 
-  const clean = {};
-  for (const [key, value] of Object.entries(obj)) {
-    if (SENSITIVE_KEYS.has(key.toLowerCase())) {
-      clean[key] = '[REDACTED]';
-    } else if (value && typeof value === 'object') {
-      clean[key] = sanitizeForLog(value);
-    } else {
-      clean[key] = value;
+const wrapLogMethod = (method) => {
+  return (arg1, arg2, ...args) => {
+    if (typeof arg1 === 'string' && typeof arg2 === 'object' && arg2 !== null) {
+      return pinoInstance[method](arg2, arg1, ...args);
     }
-  }
-  return clean;
+    return pinoInstance[method](arg1, arg2, ...args);
+  };
 };
 
-/**
- * Structured logger formatting info, warn, and error entries with ISO timestamp and request context
- */
 export const logger = {
-  info: (message, meta = {}) => {
-    const entry = {
-      level: 'info',
-      message,
-      timestamp: new Date().toISOString(),
-      ...sanitizeForLog(meta),
-    };
-    console.log(JSON.stringify(entry));
-  },
-  warn: (message, meta = {}) => {
-    const entry = {
-      level: 'warn',
-      message,
-      timestamp: new Date().toISOString(),
-      ...sanitizeForLog(meta),
-    };
-    console.warn(JSON.stringify(entry));
-  },
-  error: (message, meta = {}) => {
-    const entry = {
-      level: 'error',
-      message,
-      timestamp: new Date().toISOString(),
-      ...sanitizeForLog(meta),
-    };
-    console.error(JSON.stringify(entry));
-  },
+  fatal: wrapLogMethod('fatal'),
+  error: wrapLogMethod('error'),
+  warn: wrapLogMethod('warn'),
+  info: wrapLogMethod('info'),
+  debug: wrapLogMethod('debug'),
+  trace: wrapLogMethod('trace'),
+  pino: pinoInstance,
 };
 
 export default logger;
