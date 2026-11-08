@@ -28,7 +28,8 @@ function LoginPage() {
   const location = useLocation();
 
   // Redirect destination after successful login
-  const from = location.state?.from?.pathname || "/dashboard";
+  const returnTo = new URLSearchParams(location.search).get("returnTo");
+  const from = returnTo || location.state?.from?.pathname || "/dashboard";
 
   // Check URL query parameters for OAuth error messages (e.g. from GitHub callback)
   useEffect(() => {

@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Toast } from './Toast.jsx';
 import { Modal } from './Modal.jsx';
 import { Button } from './Button.jsx';
@@ -19,14 +19,38 @@ export function FeedbackProvider({ children }) {
   const dismiss = useCallback((id) => setToasts((t) => t.filter((x) => x.id !== id)), []);
 
   const notify = useCallback(
-    ({ variant = 'info', title, message, duration = 4500 }) => {
+    ({ variant = 'info', title, message, requestId, duration = 4500 }) => {
       const id = ++idRef.current;
-      setToasts((t) => [...t.slice(-3), { id, variant, title, message }]);
+      setToasts((t) => [...t.slice(-3), { id, variant, title, message, requestId }]);
       if (duration) setTimeout(() => dismiss(id), duration);
       return id;
     },
     [dismiss]
   );
+
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem('rr_session_expired')) {
+        sessionStorage.removeItem('rr_session_expired');
+        notify({
+          variant: 'warning',
+          message: 'Your session expired. Please log in again.',
+        });
+      }
+    } catch {
+      /* ignore storage errors */
+    }
+
+    const handleGlobalToast = (event) => {
+      const { variant = 'info', title, message, requestId } = event.detail || {};
+      if (message) {
+        notify({ variant, title, message, requestId });
+      }
+    };
+
+    window.addEventListener('app:toast', handleGlobalToast);
+    return () => window.removeEventListener('app:toast', handleGlobalToast);
+  }, [notify]);
 
   const confirm = useCallback(
     (opts) => new Promise((resolve) => setDialog({ ...opts, resolve })),
@@ -50,7 +74,13 @@ export function FeedbackProvider({ children }) {
       >
         {toasts.map((t) => (
           <div key={t.id} className="pointer-events-auto animate-toast shadow-lg rounded-lg">
-            <Toast variant={t.variant} title={t.title} message={t.message} onClose={() => dismiss(t.id)} />
+            <Toast
+              variant={t.variant}
+              title={t.title}
+              message={t.message}
+              requestId={t.requestId}
+              onClose={() => dismiss(t.id)}
+            />
           </div>
         ))}
       </div>

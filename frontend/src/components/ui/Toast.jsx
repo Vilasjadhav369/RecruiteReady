@@ -9,6 +9,7 @@ export function Toast({
   variant = 'info', // 'success' | 'warning' | 'error' | 'info'
   title,
   message,
+  requestId,
   onClose,
   className = '',
 }) {
@@ -36,6 +37,7 @@ export function Toast({
   return (
     <div
       role="alert"
+      aria-live="polite"
       className={`flex items-start gap-3 p-3.5 border rounded-xl shadow-sm ${current.bg} ${className}`}
     >
       <div className="shrink-0 mt-0.5">{current.icon}</div>
@@ -48,6 +50,11 @@ export function Toast({
         )}
         {message && (
           <p className="text-xs leading-relaxed opacity-90">{message}</p>
+        )}
+        {requestId && (
+          <p className="text-[10px] font-mono opacity-70 mt-1 select-all">
+            Request ID: {requestId}
+          </p>
         )}
       </div>
 
