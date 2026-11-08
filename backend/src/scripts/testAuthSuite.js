@@ -28,11 +28,13 @@ import helmet from 'helmet';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { assertTestDatabase, createTestSession } from './testHelpers.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 dotenv.config();
+assertTestDatabase();
 
 import connectDB from '../config/db.js';
 import User from '../models/User.js';
@@ -446,7 +448,7 @@ const runTests = async () => {
       role: 'student',
       emailVerified: false,
     });
-    const unverifiedToken = generateToken(unverifiedStudent);
+    const unverifiedToken = await createTestSession(unverifiedStudent);
     await fetch(`${BASE_URL}/api/auth/profile`, {
       method: 'PUT',
       headers: {
@@ -948,6 +950,17 @@ const runTests = async () => {
       typeof customLimiter === 'function',
       29,
       'Rate limiting middleware is configured and guards authentication endpoints'
+    );
+
+    // TEST 29b: Token without sessionId is rejected with 401
+    const tokenWithoutSession = generateToken(localUser);
+    const res29b = await fetch(BASE_URL + '/api/auth/me', {
+      headers: { Authorization: 'Bearer ' + tokenWithoutSession },
+    });
+    assert(
+      res29b.status === 401,
+      '29b',
+      'Token minted without sessionId is strictly rejected with 401 Unauthorized'
     );
 
     // TEST 30: CORS rejects unauthorized origins

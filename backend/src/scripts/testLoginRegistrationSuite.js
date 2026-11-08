@@ -7,11 +7,18 @@ import Session from '../models/Session.js';
 
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { assertTestDatabase } from './testHelpers.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 dotenv.config();
+assertTestDatabase();
+
+const _testApiUrl = process.env.TEST_API_URL || 'http://localhost:5000';
+const _parsedApiUrl = new URL(_testApiUrl);
+const apiHost = _parsedApiUrl.hostname;
+const apiPort = parseInt(_parsedApiUrl.port || '5000', 10);
 
 const makeRequest = (options, postData = null) => {
   return new Promise((resolve) => {
@@ -78,8 +85,8 @@ const runSuite = async () => {
     // -------------------------------------------------------------
     const regRes = await makeRequest(
       {
-        hostname: 'localhost',
-        port: 5000,
+        hostname: apiHost,
+        port: apiPort,
         path: '/api/auth/register',
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -122,8 +129,8 @@ const runSuite = async () => {
     // -------------------------------------------------------------
     const invalidEmailRes = await makeRequest(
       {
-        hostname: 'localhost',
-        port: 5000,
+        hostname: apiHost,
+        port: apiPort,
         path: '/api/auth/register',
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -148,8 +155,8 @@ const runSuite = async () => {
     // -------------------------------------------------------------
     const missingFieldsRes = await makeRequest(
       {
-        hostname: 'localhost',
-        port: 5000,
+        hostname: apiHost,
+        port: apiPort,
         path: '/api/auth/register',
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -171,8 +178,8 @@ const runSuite = async () => {
     // -------------------------------------------------------------
     const duplicateEmailRes = await makeRequest(
       {
-        hostname: 'localhost',
-        port: 5000,
+        hostname: apiHost,
+        port: apiPort,
         path: '/api/auth/register',
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -199,8 +206,8 @@ const runSuite = async () => {
     // -------------------------------------------------------------
     const validLoginRes = await makeRequest(
       {
-        hostname: 'localhost',
-        port: 5000,
+        hostname: apiHost,
+        port: apiPort,
         path: '/api/auth/login',
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -226,8 +233,8 @@ const runSuite = async () => {
     // -------------------------------------------------------------
     const wrongPassRes = await makeRequest(
       {
-        hostname: 'localhost',
-        port: 5000,
+        hostname: apiHost,
+        port: apiPort,
         path: '/api/auth/login',
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -252,8 +259,8 @@ const runSuite = async () => {
     // -------------------------------------------------------------
     const nonExistentRes = await makeRequest(
       {
-        hostname: 'localhost',
-        port: 5000,
+        hostname: apiHost,
+        port: apiPort,
         path: '/api/auth/login',
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -277,8 +284,8 @@ const runSuite = async () => {
     // POINT 8: Access protected endpoint without authentication
     // -------------------------------------------------------------
     const unauthRes = await makeRequest({
-      hostname: 'localhost',
-      port: 5000,
+      hostname: apiHost,
+      port: apiPort,
       path: '/api/auth/me',
       method: 'GET',
     });
@@ -294,8 +301,8 @@ const runSuite = async () => {
     // POINT 9: Access protected endpoint with valid authentication credential
     // -------------------------------------------------------------
     const authMeRes = await makeRequest({
-      hostname: 'localhost',
-      port: 5000,
+      hostname: apiHost,
+      port: apiPort,
       path: '/api/auth/me',
       method: 'GET',
       headers: { Authorization: `Bearer ${authToken}` },
@@ -315,8 +322,8 @@ const runSuite = async () => {
     // -------------------------------------------------------------
     // When browser refreshes, AuthContext reads token from localStorage and calls /api/auth/me
     const refreshRes = await makeRequest({
-      hostname: 'localhost',
-      port: 5000,
+      hostname: apiHost,
+      port: apiPort,
       path: '/api/auth/me',
       method: 'GET',
       headers: { Authorization: `Bearer ${authToken}` },
@@ -335,8 +342,8 @@ const runSuite = async () => {
     // -------------------------------------------------------------
     const adminLoginRes = await makeRequest(
       {
-        hostname: 'localhost',
-        port: 5000,
+        hostname: apiHost,
+        port: apiPort,
         path: '/api/auth/login',
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

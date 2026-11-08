@@ -9,6 +9,8 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+dotenv.config();
+assertTestDatabase();
 
 import User from '../models/User.js';
 import AptitudeQuestion from '../models/AptitudeQuestion.js';
@@ -22,6 +24,7 @@ import mockTestRoutes from '../routes/mockTest.js';
 import errorHandler from '../middleware/errorHandler.js';
 import requestTracing from '../middleware/requestTracing.js';
 import { generateToken } from '../utils/jwt.js';
+import { assertTestDatabase, createTestSession } from './testHelpers.js';
 
 const TEST_PORT = 5012;
 const BASE_URL = `http://127.0.0.1:${TEST_PORT}`;
@@ -54,7 +57,8 @@ async function run() {
   console.log(' PHASE P0: ASSESSMENT SECURITY, INTEGRITY & RELIABILITY SUITE');
   console.log('===============================================================');
 
-  const mongoUri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/recruiteready';
+  const mongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/recruitready_test';
+  assertTestDatabase();
   await mongoose.connect(mongoUri);
   console.log('Connected to MongoDB for Phase P0 verification suite.');
   await AptitudeAttempt.syncIndexes();
@@ -79,7 +83,7 @@ async function run() {
       isEmailVerified: true,
       isOnboarded: true,
     });
-    studentToken = generateToken(studentUser._id);
+    studentToken = await createTestSession(studentUser);
 
     studentBUser = await User.create({
       firstName: 'P0Student',
@@ -90,7 +94,7 @@ async function run() {
       isEmailVerified: true,
       isOnboarded: true,
     });
-    studentBToken = generateToken(studentBUser._id);
+    studentBToken = await createTestSession(studentBUser);
 
     // Setup isolated test questions
     const testCategory = 'P0-Assessment-Category';

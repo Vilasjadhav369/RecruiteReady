@@ -9,6 +9,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+assertTestDatabase();
 
 import User from '../models/User.js';
 import AptitudeQuestion from '../models/AptitudeQuestion.js';
@@ -104,7 +105,7 @@ async function runPerformanceObservabilitySuite() {
   console.log(' RECRUITEREADY PHASE 10: QUALITY, OBSERVABILITY & PERFORMANCE SUITE');
   console.log('===============================================================\n');
 
-  const uri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/recruiteready';
+  const uri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/recruitready_test';
   await mongoose.connect(uri);
   console.log('Connected to MongoDB.\n');
 
@@ -129,7 +130,7 @@ async function runPerformanceObservabilitySuite() {
       backlogs: 0,
       onboardingCompleted: true,
     });
-    const studentToken = generateToken(studentUser);
+    const studentToken = await createTestSession(studentUser);
     const studentHeaders = { Authorization: `Bearer ${studentToken}` };
 
     const studentUser2 = await User.create({
@@ -144,7 +145,7 @@ async function runPerformanceObservabilitySuite() {
       branch: 'Electronics',
       graduationYear: 2025,
     });
-    const studentToken2 = generateToken(studentUser2);
+    const studentToken2 = await createTestSession(studentUser2);
     const studentHeaders2 = { Authorization: `Bearer ${studentToken2}` };
 
     const adminUser = await User.create({
@@ -156,7 +157,7 @@ async function runPerformanceObservabilitySuite() {
       isActive: true,
       emailVerified: true,
     });
-    const adminToken = generateToken(adminUser);
+    const adminToken = await createTestSession(adminUser);
     const adminHeaders = { Authorization: `Bearer ${adminToken}` };
 
     // --- GROUP 1: Health, Readiness & Request Tracing ---
@@ -213,7 +214,7 @@ async function runPerformanceObservabilitySuite() {
       role: 'student',
       isActive: false,
     });
-    const inactiveToken = generateToken(inactiveUser);
+    const inactiveToken = await createTestSession(inactiveUser);
     const inactiveRes = await request('/api/dashboard/summary', {
       headers: { Authorization: `Bearer ${inactiveToken}` },
     });

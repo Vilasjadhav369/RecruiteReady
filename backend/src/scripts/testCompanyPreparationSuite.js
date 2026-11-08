@@ -10,10 +10,13 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { assertTestDatabase, createTestSession } from './testHelpers.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+dotenv.config();
+assertTestDatabase();
 
 import User from '../models/User.js';
 import Session from '../models/Session.js';
@@ -83,7 +86,7 @@ async function runSuite() {
   console.log(' Testing all 35 Verification Points across Phases 1-53');
   console.log('===============================================================\n');
 
-  const mongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/recruiteready';
+  const mongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/recruitready_test';
   await mongoose.connect(mongoUri);
   console.log('Connected to MongoDB for Company Prep test suite.\n');
 
@@ -108,7 +111,7 @@ async function runSuite() {
       cgpa: 8.5,
       backlogs: 0,
     });
-    const tokenA = generateToken(studentA);
+    const tokenA = await createTestSession(studentA);
     const authHeadersA = { Authorization: `Bearer ${tokenA}` };
 
     const studentB = await User.create({
@@ -125,7 +128,7 @@ async function runSuite() {
       cgpa: 6.2,
       backlogs: 2,
     });
-    const tokenB = generateToken(studentB);
+    const tokenB = await createTestSession(studentB);
     const authHeadersB = { Authorization: `Bearer ${tokenB}` };
 
     const studentIncomplete = await User.create({
@@ -138,7 +141,7 @@ async function runSuite() {
       emailVerified: true,
       // Missing branch, graduationYear, cgpa
     });
-    const tokenInc = generateToken(studentIncomplete);
+    const tokenInc = await createTestSession(studentIncomplete);
     const authHeadersInc = { Authorization: `Bearer ${tokenInc}` };
 
     // 2. Admin User
@@ -151,7 +154,7 @@ async function runSuite() {
       isActive: true,
       emailVerified: true,
     });
-    const adminToken = generateToken(adminUser);
+    const adminToken = await createTestSession(adminUser);
     const adminHeaders = { Authorization: `Bearer ${adminToken}` };
 
     // 3. Active Company (Featured)
