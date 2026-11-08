@@ -14,6 +14,16 @@ if (!envCheck.isValid) {
   process.exit(1);
 }
 
+// 1c. Warn in production if TRUST_PROXY is not configured
+if (
+  process.env.NODE_ENV === 'production' &&
+  (process.env.TRUST_PROXY === undefined || process.env.TRUST_PROXY === '')
+) {
+  logger.warn(
+    'TRUST_PROXY is not set. All users will appear to share one IP behind a reverse proxy. Set TRUST_PROXY=1 (or the number of upstream proxy hops) in production.'
+  );
+}
+
 const PORT = process.env.PORT || 5000;
 
 // Connect to MongoDB and start HTTP server

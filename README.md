@@ -127,6 +127,7 @@ npm run build
   - **Render**: `TRUST_PROXY=1` (Render terminates TLS at an ingress reverse proxy and forwards the real client IP in standard 1-hop proxy configuration).
   - **Nginx**: `TRUST_PROXY=1` (standard single-hop reverse proxy forwarding `X-Forwarded-For`).
   - **Cloudflare**: `TRUST_PROXY=1` (when traffic routes directly from Cloudflare to Node), or `TRUST_PROXY=2` (if traffic routes through Cloudflare -> Nginx -> Node).
+  - **Production Startup Warning**: At startup in production (`NODE_ENV=production`), if `TRUST_PROXY` is not set, RecruitReady logs a clear warning: all users behind a reverse proxy will appear to share one IP address. This can trigger account-wide rate limit blocks on legitimate users. Always configure `TRUST_PROXY` in production environments behind a load balancer, CDN, or reverse proxy.
 
 ### Frontend Configuration (`frontend/.env`)
 
