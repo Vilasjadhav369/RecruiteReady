@@ -11,13 +11,14 @@
     "seed:content": "node src/scripts/seedDevContent.js",
     "test": "vitest run",
     "test:integration": "node src/scripts/testPhase10ObservabilitySuite.js",
-    "test:all": "node src/scripts/testPhaseP0AssessmentSecuritySuite.js && node src/scripts/testLoginRegistrationSuite.js && node src/scripts/testPhase10ObservabilitySuite.js && node src/scripts/testAuthSuite.js && node src/scripts/testAdminProductivitySuite.js && node src/scripts/testCompanyPreparationSuite.js",
+    "test:all": "npm run test:integration:all",
     "test:p0": "node src/scripts/testPhaseP0AssessmentSecuritySuite.js",
     "test:login-reg": "node src/scripts/testLoginRegistrationSuite.js",
     "test:auth": "node src/scripts/testAuthSuite.js",
     "test:admin": "node src/scripts/testAdminProductivitySuite.js",
     "test:company": "node src/scripts/testCompanyPreparationSuite.js",
-    "test:quality": "node src/scripts/testPhase10ObservabilitySuite.js"
+    "test:quality": "node src/scripts/testPhase10ObservabilitySuite.js",
+    "test:integration:all": "node src/scripts/runIntegrationSuites.js"
   },
   "keywords": [
     "recruitready",
