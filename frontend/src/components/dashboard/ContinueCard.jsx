@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Card } from "../ui/Card.jsx";
 import { getAptitudeHistory } from "../../services/aptitudeService.js";
 import { getMockHistory } from "../../services/mockTestService.js";
 

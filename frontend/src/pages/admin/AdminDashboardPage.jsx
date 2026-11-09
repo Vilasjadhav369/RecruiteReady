@@ -166,7 +166,7 @@ function AdminDashboardPage() {
 
   // Platform Health
   const healthStatus = stats?.health?.dbStatus === "connected" ? "Operational" : "Degraded";
-  const uptimeHours = stats?.health?.uptimeSeconds
+  const _uptimeHours = stats?.health?.uptimeSeconds
     ? Math.floor(stats.health.uptimeSeconds / 3600)
     : 0;
   const memoryMb = stats?.health?.memoryUsageMb ?? 0;

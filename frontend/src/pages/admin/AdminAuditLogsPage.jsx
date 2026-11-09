@@ -28,7 +28,6 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   EyeIcon,
-  ClockIcon,
 } from "../../components/ui/Icons.jsx";
 
 function formatTimestamp(dateStr) {

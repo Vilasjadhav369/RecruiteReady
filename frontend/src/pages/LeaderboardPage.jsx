@@ -253,7 +253,7 @@ export default function LeaderboardPage() {
           {/* Section 3: Top Three Highlight Podium (Rendered strictly if >= 3 real ranked students) */}
           {leaderboard.length >= 3 && (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {leaderboard.slice(0, 3).map((item, idx) => {
+              {leaderboard.slice(0, 3).map((item, _idx) => {
                 const rankNum = item.rank;
                 const isFirst = rankNum === 1;
                 const isSecond = rankNum === 2;

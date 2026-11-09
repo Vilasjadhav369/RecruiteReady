@@ -28,7 +28,7 @@ export default function MockTestSessionPage() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const [attempt, setAttempt] = useState(null);
+  const [_attempt, setAttempt] = useState(null);
   const [test, setTest] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -155,7 +155,7 @@ export default function MockTestSessionPage() {
     };
   }, [id, loading, submitting]);
 
-  const performSubmission = useCallback(async (isAuto = false) => {
+  const performSubmission = useCallback(async (_isAuto = false) => {
     if (hasSubmittedRef.current) return;
     hasSubmittedRef.current = true;
     setSubmitting(true);
@@ -167,7 +167,7 @@ export default function MockTestSessionPage() {
       await submitMockTest(id);
       try {
         sessionStorage.removeItem(`mock_answers_${id}`);
-      } catch (e) {}
+      } catch {}
       navigate(`/mock-tests/result/${id}`, { replace: true });
     } catch (err) {
       console.error('Submit error:', err);
@@ -209,7 +209,7 @@ export default function MockTestSessionPage() {
         try {
           const raw = sessionStorage.getItem(`mock_answers_${id}`);
           if (raw) localCache = JSON.parse(raw);
-        } catch (e) {
+        } catch {
           // ignore parsing error
         }
 
@@ -256,7 +256,7 @@ export default function MockTestSessionPage() {
     // Persist to sessionStorage fallback buffer (P0-D)
     try {
       sessionStorage.setItem(`mock_answers_${id}`, JSON.stringify(newAnswers));
-    } catch (e) {
+    } catch {
       // ignore quota errors
     }
 

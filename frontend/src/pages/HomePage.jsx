@@ -8,7 +8,6 @@ import { Badge } from "../components/ui/Badge.jsx";
 import { Skeleton } from "../components/ui/Skeleton.jsx";
 import HeroAbstract from "../components/home/HeroAbstract.jsx";
 import { Reveal } from "../components/ui/Reveal.jsx";
-import { TypingText } from "../components/ui/TypingText.jsx";
 import {
   AptitudeIcon,
   CodingIcon,

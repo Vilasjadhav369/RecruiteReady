@@ -9,10 +9,8 @@ import {
 import {
   PageHeader,
   Card,
-  CardTitle,
   CardContent,
   Button,
-  Badge,
   StatusBadge,
   SearchInput,
   Select,
@@ -31,16 +29,11 @@ import {
 } from "../../components/ui/index.js";
 import {
   ProfileIcon,
-  SearchIcon,
-  CheckCircleIcon,
   RefreshIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   EyeIcon,
-  CompanyIcon,
-  ShieldCheckIcon,
   DocumentIcon,
-  CloseIcon,
 } from "../../components/ui/Icons.jsx";
 
 /**

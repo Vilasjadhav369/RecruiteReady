@@ -13,7 +13,6 @@ import {
   CloseIcon,
   AlertCircleIcon,
   FlagIcon,
-  CheckIcon,
 } from "../ui/Icons.jsx";
 import { getGoals } from "../../services/goalService.js";
 

@@ -1,4 +1,4 @@
-﻿import { defineConfig } from "vite";
+import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 
@@ -15,6 +15,10 @@ export default defineConfig({
           groups: [
             { name: "react-vendor", test: /node_modules[\\/](react|react-dom|react-router|react-router-dom|scheduler)[\\/]/, priority: 20 },
           ],
+        },
+        // Drop console.log and debugger calls in production builds
+        minify: {
+          compress: { dropConsole: true, dropDebugger: true },
         },
       },
     },

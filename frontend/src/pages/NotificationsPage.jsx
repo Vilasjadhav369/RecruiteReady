@@ -19,7 +19,7 @@ import {
 } from '../components/ui/Icons.jsx';
 import { Button } from '../components/ui/Button.jsx';
 import { Badge } from '../components/ui/Badge.jsx';
-import { Card, CardTitle, CardContent } from '../components/ui/Card.jsx';
+import { Card, CardContent } from '../components/ui/Card.jsx';
 import notificationService from '../services/notificationService.js';
 import { useInvalidateUnreadCount } from '../hooks/useUnreadNotificationCount.js';
 

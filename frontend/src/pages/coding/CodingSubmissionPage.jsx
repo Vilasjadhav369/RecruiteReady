@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { getCodingSubmission } from '../../services/codingService.js';
-import { formatDateTime, formatStatusLabel } from '../../utils/formatters.js';
+import { formatDateTime } from '../../utils/formatters.js';
 import {
   PageHeader,
   Card,

@@ -11,7 +11,7 @@ export function Table({
   loading = false,
   empty = false,
   emptyMessage = 'No records found.',
-  columnsCount = 1,
+  _columnsCount = 1,
   children,
   ...props
 }) {

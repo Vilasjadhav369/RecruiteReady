@@ -32,7 +32,7 @@ export const sendAptitudeTelemetry = async (sessionId, { eventType, metadata }) 
       metadata,
     });
     return response.data?.data;
-  } catch (err) {
+  } catch {
     // Non-punitive telemetry dispatch failure shouldn't disrupt student session
     return null;
   }

@@ -231,7 +231,7 @@ export default function AptitudeSessionPage() {
         try {
           const raw = sessionStorage.getItem(`aptitude_answers_${id}`);
           if (raw) localCache = JSON.parse(raw);
-        } catch (e) {
+        } catch {
           // ignore parsing error
         }
 
@@ -279,7 +279,7 @@ export default function AptitudeSessionPage() {
     // Persist to sessionStorage fallback buffer (P0-D)
     try {
       sessionStorage.setItem(`aptitude_answers_${id}`, JSON.stringify(newAnswers));
-    } catch (e) {
+    } catch {
       // ignore quota errors
     }
 
@@ -326,7 +326,7 @@ export default function AptitudeSessionPage() {
       // Clean up sessionStorage cache upon successful submission
       try {
         sessionStorage.removeItem(`aptitude_answers_${id}`);
-      } catch (e) {}
+      } catch {}
       navigate(`/aptitude/result/${id}`, { replace: true });
     } catch (err) {
       console.error('Submit error:', err);

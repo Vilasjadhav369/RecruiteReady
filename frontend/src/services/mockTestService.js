@@ -39,7 +39,7 @@ export const sendMockTelemetry = async (attemptId, { eventType, metadata }) => {
       metadata,
     });
     return response.data?.data;
-  } catch (err) {
+  } catch {
     return null;
   }
 };

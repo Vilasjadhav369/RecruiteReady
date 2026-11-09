@@ -1,6 +1,5 @@
 import { LogoSymbol } from "../common/Logo.jsx";
 import React from 'react';
-import { SpinnerIcon } from './Icons.jsx';
 
 /**
  * LoadingState — Centered loading indicator with clear message.
@@ -10,7 +9,7 @@ export function LoadingState({
   className = '',
   size = 'md',
 }) {
-  const spinnerSize = size === 'sm' ? 'w-5 h-5' : size === 'lg' ? 'w-8 h-8' : 'w-6 h-6';
+  const _spinnerSize = size === 'sm' ? 'w-5 h-5' : size === 'lg' ? 'w-8 h-8' : 'w-6 h-6';
 
   return (
     <div

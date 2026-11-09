@@ -68,7 +68,6 @@ api.interceptors.response.use(
 
     let userMessage = "";
     let toastVariant = "error";
-    let toastTitle;
     let requestId;
 
     const status = error.response?.status;
@@ -161,7 +160,6 @@ api.interceptors.response.use(
       emitGlobalToast({
         message: userMessage,
         variant: toastVariant,
-        title: toastTitle,
         requestId,
       });
     }
