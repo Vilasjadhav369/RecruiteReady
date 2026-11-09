@@ -1,12 +1,11 @@
 import Logo from "../common/Logo.jsx";
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useTheme } from "../../context/ThemeContext.jsx";
 import { useSidebarCollapsed } from "../../hooks/useSidebarCollapsed.js";
 import { useReducedMotion } from "../../hooks/useReducedMotion.js";
-import { getUnreadCount } from "../../services/notificationService.js";
+import { useUnreadNotificationCount } from "../../hooks/useUnreadNotificationCount.js";
 import { calculateProfileCompletion } from "../../utils/profileCompletion.js";
 import {
   DashboardIcon,
@@ -103,21 +102,8 @@ function StudentSidebar({ mobileOpen, setMobileOpen }) {
   const menuItemsRef = useRef([]);
   const prevPathRef = useRef(location.pathname);
 
-  // TanStack Query for unread notification count
-  const { data: unreadCount = 0 } = useQuery({
-    queryKey: ["notifications", "unread"],
-    queryFn: async () => {
-      try {
-        const count = await getUnreadCount();
-        return typeof count === "number" ? count : 0;
-      } catch {
-        return 0;
-      }
-    },
-    staleTime: 30_000,
-    refetchInterval: 60_000,
-    refetchOnWindowFocus: false,
-  });
+  // Shared TanStack Query for unread count (consolidated via useUnreadNotificationCount)
+  const { data: unreadCount = 0 } = useUnreadNotificationCount();
 
   // Calculate profile completion
   const profileCompletion = user ? calculateProfileCompletion(user) : null;

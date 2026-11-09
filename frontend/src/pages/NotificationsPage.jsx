@@ -21,6 +21,7 @@ import { Button } from '../components/ui/Button.jsx';
 import { Badge } from '../components/ui/Badge.jsx';
 import { Card, CardTitle, CardContent } from '../components/ui/Card.jsx';
 import notificationService from '../services/notificationService.js';
+import { useInvalidateUnreadCount } from '../hooks/useUnreadNotificationCount.js';
 
 function formatFullTime(ts) {
   if (!ts) return '';
@@ -107,6 +108,7 @@ export function NotificationsPage() {
   const [markingAll, setMarkingAll] = useState(false);
 
   const navigate = useNavigate();
+  const invalidateUnreadCount = useInvalidateUnreadCount();
 
   const fetchNotifications = async () => {
     setLoading(true);
@@ -143,6 +145,7 @@ export function NotificationsPage() {
           n._id === item._id ? { ...n, isRead: true, readAt: new Date() } : n
         ),
       }));
+      invalidateUnreadCount();
     } catch (err) {
       console.error('[NotificationsPage] Failed to mark as read:', err);
     }
@@ -158,6 +161,7 @@ export function NotificationsPage() {
         unreadCount: 0,
         items: prev.items.map((n) => ({ ...n, isRead: true, readAt: new Date() })),
       }));
+      invalidateUnreadCount();
       if (filter === 'unread') {
         fetchNotifications();
       }

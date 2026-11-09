@@ -17,6 +17,10 @@ import {
   StarIcon,
 } from '../ui/Icons.jsx';
 import notificationService from '../../services/notificationService.js';
+import {
+  useUnreadNotificationCount,
+  useInvalidateUnreadCount,
+} from '../../hooks/useUnreadNotificationCount.js';
 
 function formatRelativeTime(ts) {
   if (!ts) return '';
@@ -68,7 +72,6 @@ function getNotificationIcon(type) {
 export function NotificationDropdown({ align = 'right' }) {
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
-  const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [markingAll, setMarkingAll] = useState(false);
@@ -76,23 +79,9 @@ export function NotificationDropdown({ align = 'right' }) {
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
 
-  // Load unread count on mount
-  const fetchUnreadCount = async () => {
-    try {
-      const count = await notificationService.getUnreadCount();
-      setUnreadCount(typeof count === 'number' ? count : 0);
-    } catch (err) {
-      console.error('[NotificationDropdown] Failed to fetch unread count:', err);
-    }
-  };
-
-  useEffect(() => {
-    fetchUnreadCount();
-    // Refresh count on window focus
-    const handleFocus = () => fetchUnreadCount();
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
-  }, []);
+  // Shared TanStack Query for unread count (consolidated with StudentSidebar)
+  const { data: unreadCount = 0 } = useUnreadNotificationCount();
+  const invalidateUnreadCount = useInvalidateUnreadCount();
 
   // Fetch recent notifications when dropdown opens
   const fetchNotifications = async () => {
@@ -101,7 +90,6 @@ export function NotificationDropdown({ align = 'right' }) {
     try {
       const data = await notificationService.getNotifications({ page: 1, limit: 6 });
       setNotifications(data?.items || []);
-      setUnreadCount(data?.unreadCount || 0);
     } catch (err) {
       setError('Unable to load notifications.');
       console.error('[NotificationDropdown] Failed to load notifications:', err);
@@ -147,7 +135,7 @@ export function NotificationDropdown({ align = 'right' }) {
       setNotifications((prev) =>
         prev.map((n) => (n._id === item._id ? { ...n, isRead: true } : n))
       );
-      setUnreadCount((c) => Math.max(0, c - 1));
+      invalidateUnreadCount();
     } catch (err) {
       console.error('[NotificationDropdown] Failed to mark read:', err);
     }
@@ -158,7 +146,7 @@ export function NotificationDropdown({ align = 'right' }) {
     try {
       await notificationService.markAllNotificationsAsRead();
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-      setUnreadCount(0);
+      invalidateUnreadCount();
     } catch (err) {
       console.error('[NotificationDropdown] Failed to mark all read:', err);
     } finally {
@@ -173,7 +161,7 @@ export function NotificationDropdown({ align = 'right' }) {
       setNotifications((prev) => {
         const target = prev.find((n) => n._id === id);
         if (target && !target.isRead) {
-          setUnreadCount((c) => Math.max(0, c - 1));
+          invalidateUnreadCount();
         }
         return prev.filter((n) => n._id !== id);
       });
@@ -189,7 +177,7 @@ export function NotificationDropdown({ align = 'right' }) {
         setNotifications((prev) =>
           prev.map((n) => (n._id === item._id ? { ...n, isRead: true } : n))
         );
-        setUnreadCount((c) => Math.max(0, c - 1));
+        invalidateUnreadCount();
       } catch (err) {
         console.error('[NotificationDropdown] Error reading item on click:', err);
       }
