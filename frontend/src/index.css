@@ -241,8 +241,8 @@ button {
     z-index: 100;
     padding: 0.5rem 1rem;
     border-radius: 0.5rem;
-    background: #2563EB;
-    color: #fff;
+    background: var(--color-primary);
+    color: var(--color-surface);
     font-size: 0.875rem;
     font-weight: 600;
     transition: top 0.15s ease;

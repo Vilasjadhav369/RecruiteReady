@@ -101,6 +101,7 @@ function AdminHeader({ onMenuClick }) {
         <button
           type="button"
           onClick={handleLogout}
+          aria-label="Sign out"
           className="min-h-[36px] flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-red-600 hover:text-red-700 bg-white hover:bg-red-50 rounded-lg transition-colors cursor-pointer border border-slate-200 hover:border-red-200 shadow-2xs focus-visible:outline-2 focus-visible:outline-red-600"
         >
           <LogoutIcon className="w-3.5 h-3.5" />
