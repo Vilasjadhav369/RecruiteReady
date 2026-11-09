@@ -285,6 +285,7 @@ async function main() {
     { name: 'Authentication & Session Hardening', file: 'src/scripts/testAuthSuite.js' },
     { name: 'Admin Productivity 2.0', file: 'src/scripts/testAdminProductivitySuite.js' },
     { name: 'Company Preparation 2.0', file: 'src/scripts/testCompanyPreparationSuite.js' },
+    { name: 'Preparation Goal Tracking', file: 'src/scripts/testPreparationGoalTrackingSuite.js' },
   ];
 
   const suiteResults = [];
