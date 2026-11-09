@@ -605,18 +605,41 @@ export const bulkUpdateStudentStatus = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'No valid IDs provided' });
     }
 
-    // Role protection: STRICTLY match role: 'student' so admins are NEVER modified!
-    const result = await User.updateMany(
-      { _id: { $in: validIds }, role: 'student' },
-      { $set: { isActive } }
-    );
+    // Exclude admin accounts BEFORE any status change or session revocation.
+    // Query users to ensure we strictly target accounts with role: 'student'
+    // and explicitly exclude any admin accounts and the acting admin.
+    const actingAdminId = req.user?._id ? req.user._id.toString() : null;
 
-    // Revoke all active sessions for deactivated students
-    if (!isActive) {
-      await Session.updateMany(
-        { user: { $in: validIds }, revokedAt: null },
-        { $set: { revokedAt: new Date() } }
-      );
+    const studentUsers = await User.find({
+      _id: { $in: validIds },
+      role: 'student',
+    }).select('_id');
+
+    const targetStudentIds = studentUsers
+      .map((u) => u._id)
+      .filter((id) => id.toString() !== actingAdminId);
+
+    const result =
+      targetStudentIds.length > 0
+        ? await User.updateMany(
+            { _id: { $in: targetStudentIds }, role: 'student' },
+            { $set: { isActive } }
+          )
+        : { modifiedCount: 0 };
+
+    // Revoke all active sessions for deactivated students only.
+    // Never revoke the acting admin's own session or any admin session.
+    if (!isActive && targetStudentIds.length > 0) {
+      const sessionFilter = {
+        user: { $in: targetStudentIds },
+        revokedAt: null,
+      };
+      if (req.user?.sessionId) {
+        sessionFilter._id = { $ne: req.user.sessionId };
+      }
+      await Session.updateMany(sessionFilter, {
+        $set: { revokedAt: new Date() },
+      });
     }
 
     await logSecurityEvent({
