@@ -38,6 +38,8 @@ export function AuthCallbackPage() {
         const user = await loginWithToken(token);
         if (user?.role === "admin") {
           navigate("/admin", { replace: true });
+        } else if (!user?.consentAcceptedAt) {
+          navigate("/consent", { replace: true });
         } else if (!user?.onboardingCompleted) {
           navigate("/onboarding", { replace: true });
         } else {

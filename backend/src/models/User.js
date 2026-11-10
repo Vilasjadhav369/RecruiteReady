@@ -135,6 +135,15 @@ const userSchema = new mongoose.Schema(
     passwordResetExpiresAt: {
       type: Date,
     },
+    consentAcceptedAt: {
+      type: Date,
+      default: null,
+    },
+    consentVersion: {
+      type: String,
+      default: null,
+      trim: true,
+    },
   },
   {
     timestamps: true,

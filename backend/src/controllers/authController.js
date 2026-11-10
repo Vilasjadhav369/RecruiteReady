@@ -84,6 +84,13 @@ export const register = async (req, res, next) => {
       });
     }
 
+    if (req.body.consent !== true) {
+      return res.status(400).json({
+        success: false,
+        message: 'You must accept the Terms of Service and Privacy Policy to create an account.',
+      });
+    }
+
     // Optional string fields type validation
     if (college !== undefined && typeof college !== 'string') {
       return res.status(400).json({ success: false, message: 'College must be text' });
@@ -122,6 +129,8 @@ export const register = async (req, res, next) => {
       emailVerified: false,
       emailVerificationTokenHash: hashedVerificationToken,
       emailVerificationExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+      consentAcceptedAt: new Date(),
+      consentVersion: '1.0-test',
     });
 
     // 6. Send verification email
@@ -1384,6 +1393,49 @@ export const submitOnboarding = async (req, res, next) => {
   }
 };
 
+
+/**
+ * POST /api/auth/consent
+ * Records consent for authenticated users (e.g. first-time Google/GitHub sign-ups).
+ */
+export const recordConsent = async (req, res, next) => {
+  try {
+    const { consent } = req.body;
+    if (consent !== true) {
+      return res.status(400).json({
+        success: false,
+        message: 'Consent is required.',
+      });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    user.consentAcceptedAt = new Date();
+    user.consentVersion = '1.0-test';
+    await user.save();
+
+    await securityLogger.logSecurityEvent({
+      action: 'auth.consent_accepted',
+      user,
+      req,
+      details: { consentVersion: '1.0-test' },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Consent recorded successfully',
+      data: {
+        user: serializeUser(user),
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   register,
   login,
@@ -1402,6 +1454,7 @@ export default {
   getActiveSessions,
   revokeSingleSession,
   logoutAllSessions,
+  recordConsent,
 };
 
 

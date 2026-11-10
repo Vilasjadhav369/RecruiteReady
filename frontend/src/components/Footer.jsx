@@ -25,9 +25,11 @@ const FOOTER_SECTIONS = [
   },
   {
     heading: "Legal & Info",
+    links: [
+      { label: "Privacy Policy (Test Version)", to: "/privacy" },
+      { label: "Terms of Service", to: "/terms" },
+    ],
     items: [
-      { label: "Privacy Policy (Updated for 2026)", isPlaceholder: true },
-      { label: "Terms of Service", isPlaceholder: true },
       { label: "Academic Honor Code", isPlaceholder: true },
     ],
   },

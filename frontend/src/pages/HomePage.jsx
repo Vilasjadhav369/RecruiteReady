@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { isCodingEnabled } from "../utils/featureFlags.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import companyService from "../services/companyService.js";
 import { Button } from "../components/ui/Button.jsx";
@@ -165,7 +166,7 @@ function HomePage() {
 
         {/* 2-Column Spacious Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {CORE_MODULES.map((module) => {
+          {CORE_MODULES.filter((m) => isCodingEnabled() || m.to !== "/coding").map((module) => {
             const Icon = module.icon;
             return (
               <Card

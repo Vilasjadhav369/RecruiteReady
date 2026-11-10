@@ -14,6 +14,9 @@ import RegisterPage from "../pages/RegisterPage.jsx";
 const ForgotPasswordPage = lazy(() => import("../pages/auth/ForgotPasswordPage.jsx"));
 const ResetPasswordPage = lazy(() => import("../pages/auth/ResetPasswordPage.jsx"));
 const VerifyEmailPage = lazy(() => import("../pages/auth/VerifyEmailPage.jsx"));
+const PrivacyPage = lazy(() => import("../pages/PrivacyPage.jsx"));
+const TermsPage = lazy(() => import("../pages/TermsPage.jsx"));
+const ConsentPage = lazy(() => import("../pages/ConsentPage.jsx"));
 const AuthCallbackPage = lazy(() => import("../pages/auth/AuthCallbackPage.jsx"));
 const DashboardPage = lazy(() => import("../pages/DashboardPage.jsx"));
 const ProfilePage = lazy(() => import("../pages/ProfilePage.jsx"));
@@ -105,10 +108,22 @@ function AppRoutes() {
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/verify-email" element={<VerifyEmailPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/terms" element={<TermsPage />} />
       </Route>
 
       {/* ── OAuth Callback Route ────────────────────────── */}
       <Route path="/auth/callback" element={<AuthCallbackPage />} />
+
+      {/* ── One-Time Student Consent Screen ─────────────────── */}
+      <Route
+        path="/consent"
+        element={
+          <ProtectedRoute>
+            <ConsentPage />
+          </ProtectedRoute>
+        }
+      />
 
       {/* ── Student Onboarding Wizard ────────────────────── */}
       <Route

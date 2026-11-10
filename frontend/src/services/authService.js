@@ -193,6 +193,14 @@ export const logoutAllSessions = async () => {
   return response.data;
 };
 
+/**
+ * Record user consent for terms and privacy policy (e.g. one-time OAuth consent).
+ */
+export const recordUserConsent = async () => {
+  const response = await api.post("/auth/consent", { consent: true });
+  return response.data;
+};
+
 export default {
   getToken,
   setToken,
@@ -212,5 +220,6 @@ export default {
   revokeSession,
   submitOnboarding,
   logoutAllSessions,
+  recordUserConsent,
 };
 

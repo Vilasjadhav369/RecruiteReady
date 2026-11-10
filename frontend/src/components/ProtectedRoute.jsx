@@ -6,7 +6,7 @@ import { useAuth } from "../context/AuthContext.jsx";
  * Redirects to /login with state preserved for post-login redirect.
  */
 function ProtectedRoute({ children }) {
-  const { isAuthenticated, loading } = useAuth();
+  const { user, isAuthenticated, loading } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -20,6 +20,11 @@ function ProtectedRoute({ children }) {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // Mandatory consent gate for first-time Google/GitHub candidates
+  if (user && user.role === "student" && !user.consentAcceptedAt && location.pathname !== "/consent") {
+    return <Navigate to="/consent" replace />;
   }
 
   return children ? children : <Outlet />;

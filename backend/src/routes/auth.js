@@ -17,6 +17,7 @@ import {
   getActiveSessions,
   revokeSingleSession,
   logoutAllSessions,
+  recordConsent,
 } from '../controllers/authController.js';
 import protect from '../middleware/auth.js';
 import {
@@ -48,6 +49,7 @@ router.put('/profile', protect, updateProfile);
 router.put('/onboarding', protect, submitOnboarding);
 router.patch('/onboarding', protect, submitOnboarding);
 router.patch('/change-password', protect, authRateLimiter, changePassword);
+router.post('/consent', protect, recordConsent);
 
 // Session management routes (authenticated)
 router.get('/sessions', protect, getActiveSessions);

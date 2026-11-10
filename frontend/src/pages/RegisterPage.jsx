@@ -22,6 +22,7 @@ function RegisterPage() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [consent, setConsent] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -78,6 +79,11 @@ function RegisterPage() {
       return;
     }
 
+    if (!consent) {
+      setErrorMessage("You must accept the Terms of Service and Privacy Policy to register for this test version.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -89,6 +95,7 @@ function RegisterPage() {
         college: college.trim(),
         branch: branch.trim(),
         graduationYear: graduationYear ? Number(graduationYear) : undefined,
+        consent: true,
       });
 
       const user = res?.data?.user;
@@ -417,6 +424,21 @@ function RegisterPage() {
                     </div>
                   </div>
                 </div>
+              </div>
+
+              <div className="flex items-start gap-2.5 pt-1 text-left mb-2">
+                <input
+                  id="register-consent"
+                  name="consent"
+                  type="checkbox"
+                  checked={consent}
+                  onChange={(e) => setConsent(e.target.checked)}
+                  className="mt-1 h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary/30"
+                  required
+                />
+                <label htmlFor="register-consent" className="text-xs text-slate-600 leading-snug cursor-pointer select-none">
+                  I agree to the <Link to="/terms" target="_blank" className="text-primary underline hover:text-primary-dark">Terms of Service</Link> and <Link to="/privacy" target="_blank" className="text-primary underline hover:text-primary-dark">Privacy Policy</Link> (Test Version).
+                </label>
               </div>
 
               <div className="pt-2">

@@ -56,8 +56,10 @@ function LoginPage() {
       const res = await login({ email: email.trim(), password });
       const user = res?.data?.user;
       if (user?.role === "admin") {
-        navigate("/admin", { replace: true });
-      } else if (!user?.onboardingCompleted) {
+      navigate("/admin", { replace: true });
+    } else if (!user?.consentAcceptedAt) {
+      navigate("/consent", { replace: true });
+    } else if (!user?.onboardingCompleted) {
         navigate("/onboarding", { replace: true });
       } else {
         navigate(from, { replace: true });
