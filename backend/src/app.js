@@ -48,15 +48,16 @@ app.use(
 
 // 3. Configure CORS (Cross-Origin Resource Sharing)
 const allowedOrigins = process.env.CLIENT_URL
-  ? process.env.CLIENT_URL.split(',').map((url) => url.trim()).filter(Boolean)
+  ? process.env.CLIENT_URL.split(',').map((url) => url.trim().replace(/\/+$/, '')).filter(Boolean)
   : ['http://localhost:5173'];
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (e.g. mobile apps, curl, or same-origin server calls in test)
+      // Allow requests with no origin (e.g. mobile apps, curl, uptime monitor, or same-origin server calls in test)
       if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) {
+      const normalizedOrigin = origin.replace(/\/+$/, '');
+      if (allowedOrigins.includes(normalizedOrigin)) {
         return callback(null, true);
       }
       return callback(new Error('CORS policy: Not allowed by CORS'));

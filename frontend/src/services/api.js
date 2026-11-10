@@ -6,8 +6,24 @@ import axios from "axios";
  * Base URL points to the backend API via Vite proxy.
  * All API calls should use this instance.
  */
+/**
+ * Resolves the backend API base URL.
+ * Supports absolute URLs (e.g. "https://api.domain.com" or "https://api.domain.com/api")
+ * while preserving "/api" relative routing for Vite's local dev proxy.
+ */
+export function resolveApiBaseUrl(rawUrl = import.meta.env.VITE_API_URL) {
+  if (!rawUrl || typeof rawUrl !== "string" || !rawUrl.trim() || rawUrl === "/api") {
+    return "/api";
+  }
+  const trimmed = rawUrl.trim().replace(/\/+$/, "");
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed.endsWith("/api") ? trimmed : `${trimmed}/api`;
+  }
+  return trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+}
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "/api",
+  baseURL: resolveApiBaseUrl(),
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",
