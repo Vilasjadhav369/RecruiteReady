@@ -9,6 +9,7 @@
     "dev": "nodemon src/server.js",
     "seed:admin": "node src/scripts/seedAdmin.js",
     "seed:content": "node src/scripts/seedDevContent.js",
+    "seed:prod": "node src/scripts/seedProdContent.js",
     "test": "vitest run",
     "test:integration": "node src/scripts/testPhase10ObservabilitySuite.js",
     "test:all": "npm run test:integration:all",

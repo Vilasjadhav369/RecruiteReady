@@ -10,7 +10,7 @@ import User from '../models/User.js';
 
 dotenv.config();
 
-const APTITUDE_SEED = [
+export const APTITUDE_SEED = [
   // ── Quantitative Aptitude ──
   {
     question: 'A train 240 m long passes a pole in 24 seconds. How long will it take to pass a platform 650 m long?',
@@ -649,7 +649,7 @@ const CODING_SEED = [
   },
 ];
 
-const COMPANY_SEED = [
+export const COMPANY_SEED = [
   {
     name: 'Tata Consultancy Services',
     slug: 'tcs',
@@ -712,7 +712,7 @@ const COMPANY_SEED = [
   },
 ];
 
-const RESOURCE_SEED = [
+export const RESOURCE_SEED = [
   {
     title: 'Complete Quantitative Aptitude Formula Cheat Sheet',
     description: 'Essential shortcuts and formulas for Speed, Time, Work, Percentages, and Profit-Loss tailored for campus recruitment assessments.',
