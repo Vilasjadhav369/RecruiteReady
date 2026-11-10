@@ -77,6 +77,65 @@ const childEnv = {
   ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || 'AdminPassword2026!',
 };
 
+// ── Parsing & Formatting Helpers ──────────────────────────────────────────
+
+export const parseSuiteOutput = (stdoutBuffer = '', stderrBuffer = '', exitCode = 0) => {
+  let passed = 0;
+  let failed = 0;
+  let crashed = false;
+  let firstErrorLine = '';
+
+  const combined = stdoutBuffer + '\n' + stderrBuffer;
+
+  // Pattern 1: RESULTS: X PASSED / Y FAILED
+  const match1 = combined.match(/RESULTS:\s*(\d+)\s*PASSED\s*\/\s*(\d+)\s*FAILED/i);
+  // Pattern 2: PASSED: X | FAILED: Y
+  const match2 = combined.match(/PASSED:\s*(\d+)\s*\|\s*FAILED:\s*(\d+)/i);
+
+  if (match1) {
+    passed = parseInt(match1[1], 10);
+    failed = parseInt(match1[2], 10);
+  } else if (match2) {
+    passed = parseInt(match2[1], 10);
+    failed = parseInt(match2[2], 10);
+  } else {
+    // Structured output wasn't printed
+    if (exitCode === 0) {
+      passed = 1;
+      failed = 0;
+    } else {
+      crashed = true;
+      passed = 0;
+      failed = 0;
+
+      const lines = (stderrBuffer + '\n' + stdoutBuffer)
+        .split(/\r?\n/)
+        .map((l) => l.trim())
+        .filter(Boolean);
+
+      const explicitError = lines.find((l) =>
+        /\b(?:[A-Z]\w*Error|Exception)\b/i.test(l)
+      );
+
+      firstErrorLine = explicitError || lines[0] || 'Unknown crash before results';
+    }
+  }
+
+  return { exitCode, passed, failed, crashed, firstErrorLine };
+};
+
+export const formatSuiteResultRow = (s) => {
+  if (s.crashed) {
+    const statusMark = `${s.exitCode} (CRASH)`;
+    const row = `${s.name.padEnd(36)} | ${'CRASH'.padStart(8)} | ${'—'.padStart(8)} | ${statusMark.padStart(10)}`;
+    const errorDetail = s.firstErrorLine ? `\n  CRASH: ${s.firstErrorLine}` : '';
+    return `${row}${errorDetail}`;
+  }
+
+  const statusMark = s.exitCode === 0 ? '0 (PASS)' : `${s.exitCode} (FAIL)`;
+  return `${s.name.padEnd(36)} | ${String(s.passed).padStart(8)} | ${String(s.failed).padStart(8)} | ${statusMark.padStart(10)}`;
+};
+
 // ── Helper: Run a Node Script as Child Process ───────────────────────────────
 
 const runNodeScript = (scriptRelativePath, captureResults = false) => {
@@ -107,41 +166,28 @@ const runNodeScript = (scriptRelativePath, captureResults = false) => {
 
     child.on('error', (err) => {
       console.error(`[runner] Failed to spawn ${scriptRelativePath}:`, err.message);
-      resolve({ exitCode: 1, passed: 0, failed: 1, error: err.message });
+      resolve({
+        exitCode: 1,
+        passed: 0,
+        failed: 0,
+        crashed: true,
+        firstErrorLine: err.message,
+      });
     });
 
     child.on('close', (code) => {
       const exitCode = code ?? 1;
-      let passed = 0;
-      let failed = 0;
-
       if (captureResults) {
-        const combined = stdoutBuffer + '\n' + stderrBuffer;
-
-        // Pattern 1: RESULTS: X PASSED / Y FAILED
-        const match1 = combined.match(/RESULTS:\s*(\d+)\s*PASSED\s*\/\s*(\d+)\s*FAILED/i);
-        // Pattern 2: PASSED: X | FAILED: Y
-        const match2 = combined.match(/PASSED:\s*(\d+)\s*\|\s*FAILED:\s*(\d+)/i);
-
-        if (match1) {
-          passed = parseInt(match1[1], 10);
-          failed = parseInt(match1[2], 10);
-        } else if (match2) {
-          passed = parseInt(match2[1], 10);
-          failed = parseInt(match2[2], 10);
-        } else {
-          // Fallback if structured output wasn't matched
-          if (exitCode === 0) {
-            passed = 1;
-            failed = 0;
-          } else {
-            passed = 0;
-            failed = 1;
-          }
-        }
+        resolve(parseSuiteOutput(stdoutBuffer, stderrBuffer, exitCode));
+      } else {
+        resolve({
+          exitCode,
+          passed: exitCode === 0 ? 1 : 0,
+          failed: exitCode === 0 ? 0 : 1,
+          crashed: false,
+          firstErrorLine: '',
+        });
       }
-
-      resolve({ exitCode, passed, failed });
     });
   });
 };
@@ -285,6 +331,7 @@ async function main() {
     { name: 'Authentication & Session Hardening', file: 'src/scripts/testAuthSuite.js' },
     { name: 'Admin Productivity 2.0', file: 'src/scripts/testAdminProductivitySuite.js' },
     { name: 'Company Preparation 2.0', file: 'src/scripts/testCompanyPreparationSuite.js' },
+    { name: 'Preparation Goal Tracking', file: 'src/scripts/testPreparationGoalTrackingSuite.js' },
   ];
 
   const suiteResults = [];
@@ -303,6 +350,8 @@ async function main() {
         passed: result.passed,
         failed: result.failed,
         exitCode: result.exitCode,
+        crashed: result.crashed || false,
+        firstErrorLine: result.firstErrorLine || '',
       });
     }
   } finally {
@@ -330,15 +379,16 @@ async function main() {
   let hasFailure = false;
 
   for (const s of suiteResults) {
-    totalPassed += s.passed;
-    totalFailed += s.failed;
-    if (s.exitCode !== 0 || s.failed > 0) {
+    if (s.crashed) {
       hasFailure = true;
+    } else {
+      totalPassed += s.passed;
+      totalFailed += s.failed;
+      if (s.exitCode !== 0 || s.failed > 0) {
+        hasFailure = true;
+      }
     }
-    const statusMark = s.exitCode === 0 ? '0 (PASS)' : `${s.exitCode} (FAIL)`;
-    console.log(
-      `${s.name.padEnd(36)} | ${String(s.passed).padStart(8)} | ${String(s.failed).padStart(8)} | ${statusMark.padStart(10)}`
-    );
+    console.log(formatSuiteResultRow(s));
   }
 
   console.log('----------------------------------------------------------------------------------------');
@@ -358,7 +408,20 @@ async function main() {
   }
 }
 
-main().catch((err) => {
-  console.error('[runner Fatal Exception]:', err);
-  process.exit(1);
-});
+const isMainModule = () => {
+  if (!process.argv[1]) return false;
+  try {
+    const executedPath = path.resolve(process.argv[1]);
+    const modulePath = path.resolve(fileURLToPath(import.meta.url));
+    return executedPath === modulePath;
+  } catch {
+    return false;
+  }
+};
+
+if (isMainModule()) {
+  main().catch((err) => {
+    console.error('[runner Fatal Exception]:', err);
+    process.exit(1);
+  });
+}

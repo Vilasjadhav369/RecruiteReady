@@ -1,7 +1,10 @@
 import http from 'http';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import connectDB from '../config/db.js';
+import app from '../app.js';
 import User from '../models/User.js';
 import Session from '../models/Session.js';
 import CodingProblem from '../models/CodingProblem.js';
@@ -15,9 +18,13 @@ import PreparationGoal, {
   resolveGoalTemplate,
   PREDEFINED_GOAL_CATALOG,
 } from '../models/PreparationGoal.js';
-import { generateToken } from '../utils/jwt.js';
+import { assertTestDatabase, createTestSession } from './testHelpers.js';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 dotenv.config();
+assertTestDatabase();
 
 const TEST_PORT = 5028;
 let serverInstance = null;
@@ -66,7 +73,6 @@ const runGoalTrackingSuite = async () => {
   await connectDB();
   console.log('Connected to MongoDB.');
 
-  const { default: app } = await import('../server.js');
   serverInstance = app.listen(TEST_PORT);
   await new Promise((r) => setTimeout(r, 600));
 
@@ -95,16 +101,7 @@ const runGoalTrackingSuite = async () => {
       role: 'student',
       preparationGoals: [],
     });
-    const student1Token = generateToken(student1);
-    await Session.create({
-      user: student1._id,
-      token: student1Token,
-      tokenHash: student1Token.slice(-16),
-      device: 'Node Test Agent',
-      ip: '127.0.0.1',
-      isValid: true,
-      expiresAt: new Date(Date.now() + 86400000),
-    });
+    const student1Token = await createTestSession(student1);
     const s1Headers = { Authorization: `Bearer ${student1Token}` };
 
     const student2 = await User.create({
@@ -115,16 +112,7 @@ const runGoalTrackingSuite = async () => {
       role: 'student',
       preparationGoals: [],
     });
-    const student2Token = generateToken(student2);
-    await Session.create({
-      user: student2._id,
-      token: student2Token,
-      tokenHash: student2Token.slice(-16),
-      device: 'Node Test Agent',
-      ip: '127.0.0.1',
-      isValid: true,
-      expiresAt: new Date(Date.now() + 86400000),
-    });
+    const student2Token = await createTestSession(student2);
     const s2Headers = { Authorization: `Bearer ${student2Token}` };
 
     // ── SECTION 1: AUTHENTICATION & SECURITY ──
