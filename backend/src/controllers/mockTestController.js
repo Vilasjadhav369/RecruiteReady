@@ -6,6 +6,7 @@ import CodingProblem from '../models/CodingProblem.js';
 import CodingSubmission from '../models/CodingSubmission.js';
 import Company from '../models/Company.js';
 import notificationService from '../services/notificationService.js';
+import { isCodingEnabled } from '../config/features.js';
 
 /**
  * Build immutable snapshot for an aptitude question in a mock test with shuffled options.

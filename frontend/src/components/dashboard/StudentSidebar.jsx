@@ -28,7 +28,9 @@ import {
 } from "../ui/Icons.jsx";
 import { Avatar } from "../ui/Avatar.jsx";
 import { Tooltip } from "../ui/Tooltip.jsx";
+import { isCodingEnabled } from "../../utils/featureFlags.js";
 
+const codingEnabled = isCodingEnabled();
 const NAV_GROUPS = [
   {
     items: [
@@ -39,7 +41,7 @@ const NAV_GROUPS = [
     title: "PRACTICE",
     items: [
       { label: "Aptitude", to: "/aptitude", icon: AptitudeIcon },
-      { label: "Coding", to: "/coding", icon: CodingIcon },
+      ...(codingEnabled ? [{ label: "Coding", to: "/coding", icon: CodingIcon }] : []),
       { label: "Mock Tests", to: "/mock-tests", icon: MockTestIcon },
       { label: "Companies", to: "/companies", icon: CompanyIcon },
     ],

@@ -8,6 +8,7 @@ import {
   ArrowRightIcon,
 } from "../ui/Icons.jsx";
 import { AnimatedNumber } from "../ui/AnimatedNumber.jsx";
+import { isCodingEnabled } from "../../utils/featureFlags.js";
 
 /**
  * PreparationLaunchpad — Compact 4-up strip (~72px height per card).
@@ -30,7 +31,8 @@ export function PreparationLaunchpad({
       "Explore tracks"
     );
 
-  const modules = [
+  const codingEnabled = isCodingEnabled();
+  const rawModules = [
     {
       title: "Aptitude",
       subtitle: "Quantitative, Logical & Verbal Aptitude",
@@ -61,9 +63,12 @@ export function PreparationLaunchpad({
     },
   ];
 
+  const modules = rawModules.filter((m) => m.title !== "Coding" || codingEnabled);
+  const gridColsClass = modules.length === 3 ? "grid-cols-1 sm:grid-cols-3 lg:grid-cols-3" : "grid-cols-2 lg:grid-cols-4";
+
   return (
     <section aria-label="Core preparation modules launchpad">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
+      <div className={`grid ${gridColsClass} gap-2.5 sm:gap-3`}>
         {modules.map((mod) => {
           const IconComponent = mod.icon;
           return (

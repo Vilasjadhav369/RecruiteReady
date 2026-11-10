@@ -1,13 +1,14 @@
 import Logo from "./common/Logo.jsx";
 import React from "react";
 import { Link } from "react-router-dom";
+import { isCodingEnabled } from "../utils/featureFlags.js";
 
 const FOOTER_SECTIONS = [
   {
     heading: "Product",
     links: [
       { label: "Aptitude Practice", to: "/aptitude" },
-      { label: "Coding Problems", to: "/coding" },
+      ...(isCodingEnabled() ? [{ label: "Coding Problems", to: "/coding" }] : []),
       { label: "Mock Tests", to: "/mock-tests" },
       { label: "Company Preparation", to: "/companies" },
       { label: "Study Resources", to: "/resources" },

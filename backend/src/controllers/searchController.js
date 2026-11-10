@@ -3,6 +3,7 @@ import StudyMaterial from '../models/StudyMaterial.js';
 import CodingProblem from '../models/CodingProblem.js';
 import MockTest from '../models/MockTest.js';
 import AptitudeQuestion from '../models/AptitudeQuestion.js';
+import { isCodingEnabled } from '../config/features.js';
 
 /**
  * Escape regex special characters safely to prevent ReDoS / syntax errors.

@@ -88,7 +88,7 @@ export function PlacementReadinessCard({ readiness = null }) {
         {breakdown && (
           <div className="space-y-2 pt-1 border-t border-slate-100">
             <div className="flex items-center justify-between text-[11px] text-slate-600">
-              <span>Coding ({breakdown.codingScore}/30)</span>
+              {isCodingEnabled() && <span>Coding ({breakdown.codingScore}/30)</span>}
               <span>Aptitude ({breakdown.aptitudeScore}/30)</span>
             </div>
             <div className="flex items-center justify-between text-[11px] text-slate-600">

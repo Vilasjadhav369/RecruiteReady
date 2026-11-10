@@ -34,7 +34,7 @@ export function GlobalSearchModal({ isOpen, onClose }) {
   const allCommands = [
     { id: 'cmd-dashboard', title: 'Dashboard', subtitle: 'Go to your overview', link: '/dashboard' },
     { id: 'cmd-aptitude', title: 'Aptitude Practice', subtitle: 'Start or resume practice', link: '/aptitude' },
-    { id: 'cmd-coding', title: 'Coding Practice', subtitle: 'Browse coding problems', link: '/coding' },
+    ...(isCodingEnabled() ? [{ id: 'cmd-coding', title: 'Coding Practice', subtitle: 'Browse coding problems', link: '/coding' }] : []),
     { id: 'cmd-mock', title: 'Mock Tests', subtitle: 'Timed assessments', link: '/mock-tests' },
     { id: 'cmd-companies', title: 'Companies', subtitle: 'Company preparation tracks', link: '/companies' },
     { id: 'cmd-resources', title: 'Study Materials', subtitle: 'Notes, PDFs and links', link: '/resources' },
@@ -115,7 +115,7 @@ export function GlobalSearchModal({ isOpen, onClose }) {
     }
     const list = [];
     if (results.companies?.length) list.push(...results.companies.map((c) => ({ ...c, kind: 'company', link: `/companies/${c.id}` })));
-    if (results.coding?.length) list.push(...results.coding.map((c) => ({ ...c, kind: 'coding', link: `/coding/${c.id}` })));
+    if (isCodingEnabled() && results.coding?.length) list.push(...results.coding.map((c) => ({ ...c, kind: 'coding', link: `/coding/${c.id}` })));
     if (results.resources?.length) list.push(...results.resources.map((r) => ({ ...r, kind: 'resource', link: `/resources/${r.id}` })));
     if (results.mockTests?.length) list.push(...results.mockTests.map((m) => ({ ...m, kind: 'mockTest', link: `/mock-tests/${m.id}` })));
     if (results.aptitude?.length) list.push(...results.aptitude.map((a) => ({ ...a, kind: 'aptitude', link: `/aptitude?topic=${encodeURIComponent(a.title)}` })));
@@ -208,7 +208,7 @@ export function GlobalSearchModal({ isOpen, onClose }) {
                 Quick Search RecruitReady
               </h4>
               <p className="text-xs text-ink-2 max-w-sm mx-auto leading-relaxed">
-                Search companies (e.g., TCS, Google), coding problems (e.g., Two Sum), mock assessments, or study materials.
+                {isCodingEnabled() ? 'Search companies (e.g., TCS, Google), coding problems (e.g., Two Sum), mock assessments, or study materials.' : 'Search companies (e.g., TCS, Google), aptitude topics, mock assessments, or study materials.'}
               </p>
               <div className="flex flex-wrap justify-center gap-1.5 pt-2">
                 {['TCS', 'Infosys', 'Two Sum', 'Aptitude', 'DBMS', 'Mock Test'].map((tag) => (
@@ -329,7 +329,7 @@ export function GlobalSearchModal({ isOpen, onClose }) {
               )}
 
               {/* Coding Problems */}
-              {results.coding?.length > 0 && (
+              {isCodingEnabled() && results.coding?.length > 0 && (
                 <div>
                   <div className="flex items-center gap-2 px-2 pb-1.5 text-[11px] font-bold uppercase tracking-wider text-ink-2">
                     <CodingIcon className="w-3.5 h-3.5 text-ink" />

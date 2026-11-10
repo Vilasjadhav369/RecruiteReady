@@ -1,5 +1,6 @@
 import Logo from "../common/Logo.jsx";
 import { useSidebarCollapsed } from "../../hooks/useSidebarCollapsed.js";
+import { isCodingEnabled } from "../../utils/featureFlags.js";
 import React, { useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
@@ -17,6 +18,7 @@ import {
   ShieldCheckIcon,
 } from "../ui/Icons.jsx";
 
+const codingEnabled = isCodingEnabled();
 const NAV_SECTIONS = [
   {
     title: "Overview",
@@ -34,7 +36,7 @@ const NAV_SECTIONS = [
     title: "Content",
     items: [
       { label: "Aptitude", to: "/admin/aptitude", icon: AptitudeIcon },
-      { label: "Coding Problems", to: "/admin/coding", icon: CodingIcon },
+      ...(codingEnabled ? [{ label: "Coding Problems", to: "/admin/coding", icon: CodingIcon }] : []),
       { label: "Companies", to: "/admin/companies", icon: CompanyIcon },
       { label: "Study Materials", to: "/admin/resources", icon: ResourcesIcon },
       { label: "Mock Tests", to: "/admin/mock-tests", icon: MockTestIcon },

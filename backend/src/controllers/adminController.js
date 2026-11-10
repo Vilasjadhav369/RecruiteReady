@@ -14,6 +14,7 @@ import Session from '../models/Session.js';
 import { logSecurityEvent } from '../services/securityLogger.js';
 import notificationService from '../services/notificationService.js';
 import sessionService from '../services/sessionService.js';
+import { isCodingEnabled } from '../config/features.js';
 
 // ─── ADMIN DASHBOARD ──────────────────────────────────────────────────────────
 
@@ -776,6 +777,25 @@ export const updateAptitudeQuestion = async (req, res, next) => {
   try {
     const updates = { ...req.body };
     delete updates.createdBy;
+
+    const existingTest = await MockTest.findById(req.params.id);
+    if (!existingTest) {
+      return res.status(404).json({ success: false, message: 'Mock test not found' });
+    }
+
+    const willBePublished = updates.isPublished !== undefined ? updates.isPublished : existingTest.isPublished;
+    if (!isCodingEnabled() && willBePublished) {
+      const effectiveQuestions = updates.questions !== undefined ? updates.questions : existingTest.questions;
+      const hasCoding = Array.isArray(effectiveQuestions) && effectiveQuestions.some(
+        (q) => q.questionType === 'coding' || q.questionTypeRef === 'CodingProblem'
+      );
+      if (hasCoding) {
+        return res.status(400).json({
+          success: false,
+          message: 'Cannot publish mock test containing coding questions while coding module is disabled.',
+        });
+      }
+    }
 
     if (updates.options !== undefined) {
       if (!Array.isArray(updates.options) || updates.options.length !== 4) {
@@ -1845,6 +1865,18 @@ export const createMockTest = async (req, res, next) => {
       }
     }
 
+    if (!isCodingEnabled() && isPublished !== false) {
+      const hasCoding = Array.isArray(questions) && questions.some(
+        (q) => q.questionType === 'coding' || q.questionTypeRef === 'CodingProblem'
+      );
+      if (hasCoding) {
+        return res.status(400).json({
+          success: false,
+          message: 'Cannot publish mock test containing coding questions while coding module is disabled.',
+        });
+      }
+    }
+
     const test = await MockTest.create({
       title: title.trim(),
       description: description || '',
@@ -1977,6 +2009,18 @@ export const updateMockTestStatus = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Mock test not found' });
     }
 
+    if (isPublished && !isCodingEnabled()) {
+      const hasCoding = (testDoc.questions || []).some(
+        (q) => q.questionType === 'coding' || q.questionTypeRef === 'CodingProblem'
+      );
+      if (hasCoding) {
+        return res.status(400).json({
+          success: false,
+          message: 'Cannot publish mock test containing coding questions while coding module is disabled.',
+        });
+      }
+    }
+
     if (isPublished && (!testDoc.questions || testDoc.questions.length === 0)) {
       return res.status(400).json({
         success: false,
@@ -2019,6 +2063,24 @@ export const bulkUpdateMockTestStatus = async (req, res, next) => {
     const validIds = ids.filter((id) => mongoose.Types.ObjectId.isValid(id));
     if (validIds.length === 0) {
       return res.status(400).json({ success: false, message: 'No valid mock test IDs provided' });
+    }
+
+    if (isPublished && !isCodingEnabled()) {
+      const testsWithCoding = await MockTest.find({
+        _id: { $in: validIds },
+        $or: [
+          { 'questions.questionType': 'coding' },
+          { 'questions.questionTypeRef': 'CodingProblem' },
+        ],
+      }).select('title');
+
+      if (testsWithCoding.length > 0) {
+        const titles = testsWithCoding.map((t) => t.title).join(', ');
+        return res.status(400).json({
+          success: false,
+          message: `Cannot publish mock test(s) containing coding questions while coding module is disabled: ${titles}`,
+        });
+      }
     }
 
     if (isPublished) {

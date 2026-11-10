@@ -1,6 +1,7 @@
 import Logo from "../components/common/Logo.jsx";
 import { lazy, Suspense } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
+import { isCodingEnabled } from "../utils/featureFlags.js";
 import MainLayout from "../layouts/MainLayout.jsx";
 import StudentLayout from "../layouts/StudentLayout.jsx";
 import ProtectedRoute from "../components/ProtectedRoute.jsx";
@@ -182,7 +183,11 @@ function AppRoutes() {
         <Route path="/admin" element={<AdminDashboardPage />} />
         <Route path="/admin/students" element={<AdminStudentsPage />} />
         <Route path="/admin/aptitude" element={<AdminAptitudePage />} />
-        <Route path="/admin/coding" element={<AdminCodingPage />} />
+        {isCodingEnabled() ? (
+          <Route path="/admin/coding" element={<AdminCodingPage />} />
+        ) : (
+          <Route path="/admin/coding" element={<Navigate to="/admin" replace />} />
+        )}
         <Route path="/admin/companies" element={<AdminCompaniesPage />} />
         <Route path="/admin/resources" element={<AdminResourcesPage />} />
         <Route path="/admin/mock-tests" element={<AdminMockTestsPage />} />

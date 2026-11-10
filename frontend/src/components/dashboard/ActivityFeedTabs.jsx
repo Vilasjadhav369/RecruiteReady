@@ -67,7 +67,11 @@ export function ActivityFeedTabs({
     }
   };
 
-  const hasActivities = Array.isArray(activities) && activities.length > 0;
+  const codingEnabled = isCodingEnabled();
+  const safeActivities = Array.isArray(activities)
+    ? activities.filter((a) => codingEnabled || (a.type !== "coding" && a.kind !== "coding"))
+    : [];
+  const hasActivities = safeActivities.length > 0;
   const hasUpcoming = Array.isArray(upcomingTests) && upcomingTests.length > 0;
 
   return (
@@ -97,7 +101,7 @@ export function ActivityFeedTabs({
             Recent Activity
             {hasActivities && (
               <span className="ml-1.5 text-[10px] py-0.2 px-1.5 rounded-full bg-primary-soft text-ink-2 font-mono">
-                {activities.length}
+                {safeActivities.length}
               </span>
             )}
           </button>
@@ -171,7 +175,7 @@ export function ActivityFeedTabs({
       >
         {hasActivities ? (
           <div className="divide-y divide-border">
-            {activities.slice(0, 5).map((item, idx) => (
+            {safeActivities.slice(0, 5).map((item, idx) => (
               <div
                 key={item.id || idx}
                 className="py-2 first:pt-0 last:pb-0 flex items-center justify-between gap-3"

@@ -145,10 +145,12 @@ export function PlacementReadinessSidebar({
           {/* Breakdown List */}
           {hasReadiness && breakdown ? (
             <div className="space-y-1.5 pt-2 border-t border-border text-xs text-ink-2">
+              {isCodingEnabled() && (
               <div className="flex items-center justify-between">
                 <span>Coding Mastery</span>
                 <span className="font-mono font-semibold text-ink">{breakdown.codingScore}/30</span>
               </div>
+              )}
               <div className="flex items-center justify-between">
                 <span>Aptitude Accuracy</span>
                 <span className="font-mono font-semibold text-ink">{breakdown.aptitudeScore}/30</span>
