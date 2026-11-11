@@ -81,6 +81,38 @@ const runSuite = async () => {
 
   try {
     // -------------------------------------------------------------
+    // POINT 0: Registration without consent returns 400 Bad Request
+    // -------------------------------------------------------------
+    const noConsentRes = await makeRequest(
+      {
+        hostname: apiHost,
+        port: apiPort,
+        path: '/api/auth/register',
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      },
+      {
+        firstName: 'NoConsent',
+        lastName: 'Candidate',
+        email: `no_consent_${Date.now()}@example.com`,
+        password: testPassword,
+        college: 'Test Institute of Technology',
+        branch: 'CSE',
+        graduationYear: 2026,
+      }
+    );
+
+    assert(
+      noConsentRes.statusCode === 400 &&
+        noConsentRes.data?.success === false &&
+        typeof noConsentRes.data?.message === 'string' &&
+        /consent|terms/i.test(noConsentRes.data.message),
+      '0',
+      'Registration without consent returns 400 Bad Request and requires terms acceptance',
+      `Status: ${noConsentRes.statusCode}, Data: ${JSON.stringify(noConsentRes.data)}`
+    );
+
+    // -------------------------------------------------------------
     // POINT 1: Register a new student with valid details
     // -------------------------------------------------------------
     const regRes = await makeRequest(
@@ -123,6 +155,18 @@ const runSuite = async () => {
       !regRes.data?.data?.user?.password && !regRes.data?.data?.user?.passwordResetTokenHash,
       '1b',
       'Registration payload never exposes password hash or token hashes'
+    );
+
+    // Verify registration with consent stores consentAcceptedAt and consentVersion
+    const registeredUserDoc = await User.findById(createdUserId);
+    assert(
+      Boolean(registeredUserDoc?.consentAcceptedAt) &&
+        registeredUserDoc?.consentVersion === '1.0-test' &&
+        Boolean(regRes.data?.data?.user?.consentAcceptedAt) &&
+        regRes.data?.data?.user?.consentVersion === '1.0-test',
+      '1c',
+      'Registration with consent stores consentAcceptedAt and consentVersion on user document and returns them in response',
+      `consentAcceptedAt: ${registeredUserDoc?.consentAcceptedAt}, consentVersion: ${registeredUserDoc?.consentVersion}`
     );
 
     // -------------------------------------------------------------
