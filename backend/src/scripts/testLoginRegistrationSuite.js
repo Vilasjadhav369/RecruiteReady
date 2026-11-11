@@ -99,6 +99,7 @@ const runSuite = async () => {
         college: 'Test Institute of Technology',
         branch: 'CSE',
         graduationYear: 2026,
+        consent: true,
         role: 'admin', // Attack vector: trying to elevate role on registration
       }
     );
@@ -140,6 +141,7 @@ const runSuite = async () => {
         lastName: 'Email',
         email: 'not-a-valid-email-address',
         password: testPassword,
+        consent: true,
       }
     );
 
@@ -189,6 +191,7 @@ const runSuite = async () => {
         lastName: 'Student',
         email: testEmail,
         password: testPassword,
+        consent: true,
       }
     );
 

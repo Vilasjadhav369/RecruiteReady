@@ -1058,6 +1058,7 @@ const runTests = async () => {
         lastName: 'Target',
         email: 'unverified_target@auth-test.local',
         password: 'AttackerPassword123!',
+        consent: true,
       }),
     });
     const regData35 = await regRes35.json();
@@ -1228,6 +1229,7 @@ const runTests = async () => {
         lastName: ['Smith'],
         email: { $gt: '' },
         password: 12345678,
+        consent: true,
       }),
     });
 

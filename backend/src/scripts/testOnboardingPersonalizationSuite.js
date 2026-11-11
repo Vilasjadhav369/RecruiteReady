@@ -104,6 +104,7 @@ async function runSuite() {
         lastName: 'Sharma',
         email: studentEmail,
         password: 'Password123!',
+        consent: true,
       }),
     });
     const regJson = await regRes.json();
@@ -435,6 +436,7 @@ async function runSuite() {
         lastName: 'Student',
         email: `fresh_${testTimestamp}@test.com`,
         password: 'Password123!',
+        consent: true,
       }),
     });
     const empToken = (await empRegRes.json()).data?.token;
