@@ -8,6 +8,7 @@ import { Card } from "../components/ui/Card.jsx";
 import GoogleSignInButton from "../components/auth/GoogleSignInButton.jsx";
 import GitHubSignInButton from "../components/auth/GitHubSignInButton.jsx";
 import { usePublicConfig } from "../hooks/usePublicConfig.js";
+import { emitGlobalToast } from "../services/api.js";
 
 function RegisterPage() {
   const { inviteCodeRequired } = usePublicConfig();
@@ -28,6 +29,7 @@ function RegisterPage() {
   const [consent, setConsent] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [emailFailedNotice, setEmailFailedNotice] = useState(false);
 
   const { register } = useAuth();
   const navigate = useNavigate();
@@ -106,6 +108,16 @@ function RegisterPage() {
         inviteCode: formData.inviteCode.trim() || undefined,
         consent: true,
       });
+
+      const emailSent = res?.emailSent !== false && res?.data?.emailSent !== false;
+      if (!emailSent) {
+        setEmailFailedNotice(true);
+        emitGlobalToast({
+          message: "Account created, but we could not send the email. Use Resend.",
+          variant: "warning",
+        });
+        return;
+      }
 
       const user = res?.data?.user;
       if (user?.role === "admin") {
@@ -195,7 +207,41 @@ function RegisterPage() {
         {/* ── RIGHT COLUMN: Registration Form ───────────── */}
         <div className="lg:col-span-7 w-full">
           <Card className="p-6 sm:p-8 shadow-xs border-slate-200">
-            <div className="mb-6">
+            {emailFailedNotice ? (
+              <div className="space-y-6 text-center py-4" role="status">
+                <div className="w-12 h-12 bg-amber-50 text-amber-600 border border-amber-200 rounded-full flex items-center justify-center mx-auto text-xl font-bold">
+                  ✉
+                </div>
+                <div className="space-y-2">
+                  <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+                    Account Created
+                  </h2>
+                  <div className="p-4 bg-amber-50/90 border border-amber-200 rounded-lg text-xs sm:text-sm text-amber-900 font-medium leading-relaxed text-left">
+                    Account created, but we could not send the email. Use Resend.
+                  </div>
+                </div>
+                <div className="pt-2 flex flex-col gap-2.5">
+                  <Button
+                    variant="primary"
+                    size="md"
+                    className="w-full font-semibold"
+                    onClick={() => navigate("/verify-email", { replace: true, state: { emailFailed: true } })}
+                  >
+                    Go to Verification / Resend Email
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="md"
+                    className="w-full"
+                    onClick={() => navigate("/onboarding", { replace: true })}
+                  >
+                    Continue to Onboarding
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="mb-6">
               <h2 className="text-xl font-bold text-slate-900 tracking-tight">
                 Create Your Account
               </h2>
@@ -495,6 +541,8 @@ function RegisterPage() {
                 </Link>
               </span>
             </div>
+            </>
+          )}
           </Card>
         </div>
 

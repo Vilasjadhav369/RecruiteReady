@@ -15,6 +15,8 @@ export function VerifyEmailPage() {
 
   const searchParams = new URLSearchParams(location.search);
   const token = searchParams.get("token");
+  const emailFailed =
+    Boolean(location.state?.emailFailed) || searchParams.get("emailFailed") === "true";
 
   const [status, setStatus] = useState(token ? "verifying" : "idle");
   const [errorMessage, setErrorMessage] = useState("");
@@ -130,6 +132,12 @@ export function VerifyEmailPage() {
                     : "Email verification is off in this test version."}
                 </p>
               </div>
+
+              {emailFailed && (
+                <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-lg text-xs sm:text-sm text-amber-900 font-medium text-left leading-relaxed">
+                  Account created, but we could not send the email. Use Resend.
+                </div>
+              )}
 
               {!emailVerificationRequired ? (
                 <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-600 text-center font-medium">

@@ -159,6 +159,8 @@ export const register = async (req, res, next) => {
       consentVersion: '1.0-test',
     });
 
+    let emailSent = true;
+
     // 6. Send verification email (only when email verification is required)
     if (verificationRequired) {
       try {
@@ -170,8 +172,13 @@ export const register = async (req, res, next) => {
           verifyUrl,
           expiresInHours: 24,
         });
-      } catch {
-        // Non-blocking email dispatch
+      } catch (err) {
+        // Non-blocking email dispatch — handle mailer failure resiliently without failing registration
+        emailSent = false;
+        logger.warn(
+          { err: { message: err?.message, code: err?.code } },
+          'Failed to dispatch verification email during registration'
+        );
       }
     }
 
@@ -182,20 +189,26 @@ export const register = async (req, res, next) => {
       action: 'auth.register',
       user: newUser,
       req,
-      details: { email: newUser.email, authProvider: 'local' },
+      details: { email: newUser.email, authProvider: 'local', emailSent },
     });
 
     // 8. Return safe user data without password
     const userResponse = serializeUser(newUser);
 
+    const message = !emailSent
+      ? 'Account created, but we could not send the email. Use Resend.'
+      : verificationRequired
+      ? 'Registration successful. Please verify your email address.'
+      : 'Registration successful.';
+
     res.status(201).json({
       success: true,
-      message: verificationRequired
-        ? 'Registration successful. Please verify your email address.'
-        : 'Registration successful.',
+      emailSent,
+      message,
       data: {
         user: userResponse,
         token,
+        emailSent,
       },
     });
   } catch (error) {
