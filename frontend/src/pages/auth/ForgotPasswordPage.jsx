@@ -3,8 +3,10 @@ import { Link } from "react-router-dom";
 import { forgotPassword } from "../../services/authService.js";
 import { Card } from "../../components/ui/Card.jsx";
 import { Button } from "../../components/ui/Button.jsx";
+import { usePublicConfig } from "../../hooks/usePublicConfig.js";
 
 export function ForgotPasswordPage() {
+  const { emailVerificationRequired } = usePublicConfig();
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -48,7 +50,27 @@ export function ForgotPasswordPage() {
             </p>
           </div>
 
-          {submitted ? (
+          {!emailVerificationRequired ? (
+            <div className="space-y-6 text-center" role="status">
+              <div className="w-12 h-12 bg-amber-50 text-amber-600 border border-amber-200 rounded-full flex items-center justify-center mx-auto text-lg font-bold">
+                ℹ
+              </div>
+
+              <div className="p-4 bg-amber-50/80 border border-amber-200 rounded-lg text-xs sm:text-sm text-amber-900 leading-relaxed font-medium text-left">
+                Password reset by email is off in this test version. Ask the organiser to reset it.
+              </div>
+
+              <div className="pt-2">
+                <Link
+                  to="/login"
+                  className="text-xs font-semibold text-primary hover:text-primary-hover inline-flex items-center gap-1.5 transition-colors"
+                >
+                  <span>←</span>
+                  <span>Return to Sign In</span>
+                </Link>
+              </div>
+            </div>
+          ) : submitted ? (
             <div className="space-y-6 text-center" role="status">
               <div className="w-12 h-12 bg-blue-50 text-primary border border-blue-100 rounded-full flex items-center justify-center mx-auto">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

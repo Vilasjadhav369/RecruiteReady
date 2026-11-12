@@ -18,7 +18,12 @@ export const isEmailVerificationRequired = () => {
   return true;
 };
 
+export const isInviteCodeRequired = () => {
+  return Boolean(process.env.SIGNUP_INVITE_CODE && process.env.SIGNUP_INVITE_CODE.trim());
+};
+
 export default {
   isCodingEnabled,
   isEmailVerificationRequired,
+  isInviteCodeRequired,
 };

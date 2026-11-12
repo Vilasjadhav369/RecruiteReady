@@ -7,8 +7,10 @@ import { Button } from "../components/ui/Button.jsx";
 import { Card } from "../components/ui/Card.jsx";
 import GoogleSignInButton from "../components/auth/GoogleSignInButton.jsx";
 import GitHubSignInButton from "../components/auth/GitHubSignInButton.jsx";
+import { usePublicConfig } from "../hooks/usePublicConfig.js";
 
 function RegisterPage() {
+  const { inviteCodeRequired } = usePublicConfig();
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -18,6 +20,7 @@ function RegisterPage() {
     college: "",
     branch: "",
     graduationYear: "",
+    inviteCode: "",
   });
 
   const [showPassword, setShowPassword] = useState(false);
@@ -79,6 +82,11 @@ function RegisterPage() {
       return;
     }
 
+    if (inviteCodeRequired && !formData.inviteCode.trim()) {
+      setErrorMessage("Please enter an invite code.");
+      return;
+    }
+
     if (!consent) {
       setErrorMessage("You must accept the Terms of Service and Privacy Policy to register for this test version.");
       return;
@@ -95,6 +103,7 @@ function RegisterPage() {
         college: college.trim(),
         branch: branch.trim(),
         graduationYear: graduationYear ? Number(graduationYear) : undefined,
+        inviteCode: formData.inviteCode.trim() || undefined,
         consent: true,
       });
 
@@ -425,6 +434,27 @@ function RegisterPage() {
                   </div>
                 </div>
               </div>
+
+              {inviteCodeRequired && (
+                <div className="pt-1">
+                  <label
+                    htmlFor="inviteCode"
+                    className="block text-xs font-semibold text-slate-700 mb-1.5"
+                  >
+                    Invite Code <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="inviteCode"
+                    name="inviteCode"
+                    type="text"
+                    required={inviteCodeRequired}
+                    value={formData.inviteCode}
+                    onChange={handleChange}
+                    placeholder="Enter registration invite code"
+                    className="w-full min-h-[44px] sm:min-h-0 h-10 sm:h-9 px-3.5 text-sm bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-mono"
+                  />
+                </div>
+              )}
 
               <div className="flex items-start gap-2.5 pt-1 text-left mb-2">
                 <input

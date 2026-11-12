@@ -24,6 +24,7 @@ import {
   logoutAllSessions,
   resendVerification,
 } from "../../services/authService.js";
+import { usePublicConfig } from "../../hooks/usePublicConfig.js";
 
 /**
  * AccountSecurityTab — Dedicated account security, authentication identities,
@@ -32,6 +33,7 @@ import {
  * Follows RecruitReady Design System: Apple + Linear + Premium University.
  */
 export default function AccountSecurityTab({ user }) {
+  const { emailVerificationRequired } = usePublicConfig();
   // Password Change Form State
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
@@ -294,9 +296,9 @@ export default function AccountSecurityTab({ user }) {
                 <div className="font-medium text-slate-900 truncate mb-1.5">
                   {user?.email || "Unknown"}
                 </div>
-                {user?.emailVerified ? (
+                {user?.emailVerified || !emailVerificationRequired ? (
                   <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                    <CheckCircleIcon className="w-3 h-3 text-emerald-600" /> Verified
+                    <CheckCircleIcon className="w-3 h-3 text-emerald-600" /> {!emailVerificationRequired && !user?.emailVerified ? "Active (Test Mode)" : "Verified"}
                   </span>
                 ) : (
                   <div className="flex flex-col gap-1.5">
