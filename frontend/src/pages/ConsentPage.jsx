@@ -5,9 +5,12 @@ import { recordUserConsent } from "../services/authService.js";
 import { Button } from "../components/ui/Button.jsx";
 import { Card } from "../components/ui/Card.jsx";
 import Logo from "../components/common/Logo.jsx";
+import { usePublicConfig } from "../hooks/usePublicConfig.js";
 
 export default function ConsentPage() {
   const { user, updateUser, logout } = useAuth();
+  const { inviteCodeRequired } = usePublicConfig();
+  const [inviteCode, setInviteCode] = useState("");
   const [agreed, setAgreed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -15,6 +18,11 @@ export default function ConsentPage() {
 
   const handleAccept = async (e) => {
     e.preventDefault();
+    if (inviteCodeRequired && !inviteCode.trim()) {
+      setErrorMsg("Please enter an invite code.");
+      return;
+    }
+
     if (!agreed) {
       setErrorMsg("Please check the box to agree to the Terms and Privacy Policy.");
       return;
@@ -24,7 +32,9 @@ export default function ConsentPage() {
     setErrorMsg("");
 
     try {
-      const res = await recordUserConsent();
+      const res = await recordUserConsent({
+        inviteCode: inviteCode.trim() || undefined,
+      });
       const updatedUser = res?.data?.user;
       if (updatedUser) {
         updateUser(updatedUser);
@@ -90,6 +100,26 @@ export default function ConsentPage() {
           </div>
 
           <form onSubmit={handleAccept} className="space-y-5">
+            {inviteCodeRequired && (
+              <div>
+                <label
+                  htmlFor="consent-invite-code"
+                  className="block text-xs font-semibold text-slate-700 mb-1.5"
+                >
+                  Invite code <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="consent-invite-code"
+                  type="text"
+                  required={inviteCodeRequired}
+                  value={inviteCode}
+                  onChange={(e) => setInviteCode(e.target.value)}
+                  placeholder="Enter invite code"
+                  className="w-full h-10 px-3.5 text-sm bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-mono"
+                />
+              </div>
+            )}
+
             <label className="flex items-start gap-2.5 cursor-pointer select-none text-xs text-slate-700">
               <input
                 type="checkbox"
