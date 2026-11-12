@@ -10,6 +10,15 @@ export const isCodingEnabled = () => {
   return process.env.NODE_ENV !== 'production';
 };
 
+export const isEmailVerificationRequired = () => {
+  if (process.env.EMAIL_VERIFICATION_REQUIRED !== undefined && process.env.EMAIL_VERIFICATION_REQUIRED !== '') {
+    const val = String(process.env.EMAIL_VERIFICATION_REQUIRED).trim().toLowerCase();
+    return val === 'true' || val === '1';
+  }
+  return true;
+};
+
 export default {
   isCodingEnabled,
+  isEmailVerificationRequired,
 };

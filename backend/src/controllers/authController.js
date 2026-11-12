@@ -10,6 +10,8 @@ import emailService from '../services/emailService.js';
 import sessionService from '../services/sessionService.js';
 import securityLogger from '../services/securityLogger.js';
 import { reconcileGoalsFromStringArray } from '../services/goalService.js';
+import { isEmailVerificationRequired } from '../config/features.js';
+import logger from '../utils/logger.js';
 
 /**
  * Strips all sensitive credentials and internal tokens from user payload.
@@ -112,9 +114,18 @@ export const register = async (req, res, next) => {
     const salt = await bcrypt.genSalt(12);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // 4. Generate email verification token (SHA-256 hashed in database, raw in email)
-    const rawVerificationToken = crypto.randomBytes(32).toString('hex');
-    const hashedVerificationToken = crypto.createHash('sha256').update(rawVerificationToken).digest('hex');
+    const verificationRequired = isEmailVerificationRequired();
+
+    // 4. Generate email verification token if verification is required
+    let rawVerificationToken = null;
+    let hashedVerificationToken = undefined;
+    let emailVerificationExpiresAt = undefined;
+
+    if (verificationRequired) {
+      rawVerificationToken = crypto.randomBytes(32).toString('hex');
+      hashedVerificationToken = crypto.createHash('sha256').update(rawVerificationToken).digest('hex');
+      emailVerificationExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+    }
 
     // 5. Create user — strictly enforce role: 'student' (never accept role from public body)
     const newUser = await User.create({
@@ -126,25 +137,28 @@ export const register = async (req, res, next) => {
       college: college ? college.trim() : '',
       branch: branch ? branch.trim() : '',
       graduationYear: graduationYear ? Number(graduationYear) : undefined,
-      emailVerified: false,
+      emailVerified: !verificationRequired,
+      emailVerifiedAt: !verificationRequired ? new Date() : undefined,
       emailVerificationTokenHash: hashedVerificationToken,
-      emailVerificationExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+      emailVerificationExpiresAt,
       consentAcceptedAt: new Date(),
       consentVersion: '1.0-test',
     });
 
-    // 6. Send verification email
-    try {
-      const clientUrl = getPrimaryClientUrl();
-      const verifyUrl = `${clientUrl}/verify-email?token=${rawVerificationToken}`;
-      await emailService.sendVerificationEmail({
-        email: newUser.email,
-        firstName: newUser.firstName,
-        verifyUrl,
-        expiresInHours: 24,
-      });
-    } catch {
-      // Non-blocking email dispatch
+    // 6. Send verification email (only when email verification is required)
+    if (verificationRequired) {
+      try {
+        const clientUrl = getPrimaryClientUrl();
+        const verifyUrl = `${clientUrl}/verify-email?token=${rawVerificationToken}`;
+        await emailService.sendVerificationEmail({
+          email: newUser.email,
+          firstName: newUser.firstName,
+          verifyUrl,
+          expiresInHours: 24,
+        });
+      } catch {
+        // Non-blocking email dispatch
+      }
     }
 
     // 7. Generate session and JWT token
@@ -162,7 +176,9 @@ export const register = async (req, res, next) => {
 
     res.status(201).json({
       success: true,
-      message: 'Registration successful. Please verify your email address.',
+      message: verificationRequired
+        ? 'Registration successful. Please verify your email address.'
+        : 'Registration successful.',
       data: {
         user: userResponse,
         token,
@@ -968,6 +984,11 @@ export const forgotPassword = async (req, res, next) => {
     const { email } = req.body;
     const genericMsg = 'If an account exists for this email, a password reset link has been sent.';
 
+    if (!isEmailVerificationRequired()) {
+      logger.warn('Password reset requested but email delivery is disabled in test mode');
+      return res.status(200).json({ success: true, message: genericMsg });
+    }
+
     if (!email || typeof email !== 'string' || !email.trim()) {
       return res.status(200).json({ success: true, message: genericMsg });
     }
@@ -1107,6 +1128,13 @@ export const resetPassword = async (req, res, next) => {
  */
 export const verifyEmail = async (req, res, next) => {
   try {
+    if (!isEmailVerificationRequired()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email verification is off in this test version',
+      });
+    }
+
     const token = req.body?.token || req.query?.token;
 
     if (!token || typeof token !== 'string' || !token.trim()) {
@@ -1174,6 +1202,13 @@ export const verifyEmail = async (req, res, next) => {
  */
 export const resendVerification = async (req, res, next) => {
   try {
+    if (!isEmailVerificationRequired()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email verification is off in this test version',
+      });
+    }
+
     const { email } = req.body;
     const genericMsg = 'If your account requires verification, a new verification email has been sent.';
 
