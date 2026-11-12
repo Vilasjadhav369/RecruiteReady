@@ -3,6 +3,8 @@
  * Validates required environment variables and policies before accepting traffic.
  */
 
+import { isEmailVerificationRequired } from './features.js';
+
 export const validateEnv = () => {
   const isProduction = process.env.NODE_ENV === 'production';
   const errors = [];
@@ -50,8 +52,8 @@ export const validateEnv = () => {
     }
   }
 
-  // SMTP Configuration check in production
-  if (isProduction) {
+  // SMTP Configuration check in production (required only when email verification is enabled)
+  if (isProduction && isEmailVerificationRequired()) {
     const host = process.env.EMAIL_HOST;
     const user = process.env.EMAIL_USER;
     const pass = process.env.EMAIL_PASSWORD;

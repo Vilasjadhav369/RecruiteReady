@@ -196,8 +196,12 @@ export const logoutAllSessions = async () => {
 /**
  * Record user consent for terms and privacy policy (e.g. one-time OAuth consent).
  */
-export const recordUserConsent = async () => {
-  const response = await api.post("/auth/consent", { consent: true });
+export const recordUserConsent = async (payload = {}) => {
+  const body =
+    typeof payload === "object" && payload !== null
+      ? { consent: true, ...payload }
+      : { consent: true };
+  const response = await api.post("/auth/consent", body);
   return response.data;
 };
 

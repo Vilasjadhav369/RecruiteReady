@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import healthRouter from './routes/health.js';
+import publicConfigRouter from './routes/publicConfig.js';
 import authRouter from './routes/auth.js';
 import dashboardRouter from './routes/dashboard.js';
 import adminRouter from './routes/admin.js';
@@ -83,6 +84,7 @@ app.use('/api', (req, res, next) => {
 
 // 6. Register routes
 app.use('/api', healthRouter);
+app.use('/api', publicConfigRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/profile', profileRouter);
 app.use('/api/dashboard', dashboardRouter);

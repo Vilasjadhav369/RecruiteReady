@@ -2,17 +2,21 @@ import React, { useEffect, useState, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { verifyEmail, resendVerification } from "../../services/authService.js";
 import { useAuth } from "../../context/AuthContext.jsx";
+import { usePublicConfig } from "../../hooks/usePublicConfig.js";
 import { Card } from "../../components/ui/Card.jsx";
 import { Button } from "../../components/ui/Button.jsx";
 import { CheckIcon } from "../../components/ui/Icons.jsx";
 
 export function VerifyEmailPage() {
+  const { emailVerificationRequired } = usePublicConfig();
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated, user, refreshUser } = useAuth();
 
   const searchParams = new URLSearchParams(location.search);
   const token = searchParams.get("token");
+  const emailFailed =
+    Boolean(location.state?.emailFailed) || searchParams.get("emailFailed") === "true";
 
   const [status, setStatus] = useState(token ? "verifying" : "idle");
   const [errorMessage, setErrorMessage] = useState("");
@@ -123,11 +127,23 @@ export function VerifyEmailPage() {
                 <p className="text-xs text-slate-500 leading-relaxed">
                   {status === "error"
                     ? errorMessage
-                    : "Please check your inbox for the confirmation link sent after registration, or request a new one below."}
+                    : emailVerificationRequired
+                    ? "Please check your inbox for the confirmation link sent after registration, or request a new one below."
+                    : "Email verification is off in this test version."}
                 </p>
               </div>
 
-              {resendSuccess ? (
+              {emailFailed && (
+                <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-lg text-xs sm:text-sm text-amber-900 font-medium text-left leading-relaxed">
+                  Account created, but we could not send the email. Use Resend.
+                </div>
+              )}
+
+              {!emailVerificationRequired ? (
+                <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-600 text-center font-medium">
+                  Email verification is off in this test version.
+                </div>
+              ) : resendSuccess ? (
                 <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-800 text-center space-y-1">
                   <div className="font-semibold">Verification link sent!</div>
                   <div className="text-slate-600">
