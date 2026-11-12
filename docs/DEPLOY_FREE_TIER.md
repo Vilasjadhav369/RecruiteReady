@@ -32,10 +32,24 @@ This guide provides click-by-click instructions for deploying a test version of 
 
 | Service | Resource Tier | Key Limits |
 | :--- | :--- | :--- |
-| **Render Web Service** | Free (`plan: free`) | 512 MB RAM, 0.1 vCPU, 750 free instance hours/month. **Spins down after 15 minutes of inactivity** (~50s cold start). |
+| **Render Web Service** | Free (`plan: free`) | 512 MB RAM, 0.1 vCPU, 750 free instance hours/month. **Spins down after 15 minutes of inactivity** (~50s cold start). **Outbound SMTP blocked** (see alert below). |
 | **Render Static Site** | Free | 100 GB bandwidth/month, unlimited builds, global CDN. |
 | **MongoDB Atlas** | M0 Sandbox Free Tier | 512 MB storage, shared RAM/vCPU, 500 max connections, no automated snapshot backups. |
-| **Google Gmail SMTP** | Free | 500 emails/day standard limit (sufficient for dozens of test users). |
+| **Email Delivery** | Disabled in Test Mode | SMTP ports 25, 465, 587 are blocked on Render free tier. Use `EMAIL_VERIFICATION_REQUIRED=false`. |
+
+> [!IMPORTANT]
+> **Outbound SMTP is Blocked on Render Free Web Services:**
+> Render no longer permits outbound traffic to SMTP ports (25, 465, 587) on free web services:
+> [Render Changelog: Free web services will no longer allow outbound traffic to SMTP ports](https://render.com/changelog/free-web-services-will-no-longer-allow-outbound-traffic-to-smtp-ports)
+>
+> Consequently, **Gmail SMTP (and any traditional SMTP provider) CANNOT connect on Render's free tier**.
+> For this free-tier test deployment:
+> - Set `EMAIL_VERIFICATION_REQUIRED=false` on `recruitready-backend`.
+> - Student registration marks accounts as verified immediately and does not send emails.
+> - Logins do not require email verification.
+> - Password reset requests safely return generic success notices and advise contacting the organiser.
+> - The backend environment validator (`validateEnv`) does **NOT** require `EMAIL_*` variables when `EMAIL_VERIFICATION_REQUIRED=false`.
+> - **Later Production Option:** When email delivery is desired, migrate to an **HTTPS-API email provider** (e.g. Resend, SendGrid REST API, or Postmark API over port 443), which works reliably across all cloud hosting tiers.
 
 ---
 
@@ -91,21 +105,19 @@ This guide provides click-by-click instructions for deploying a test version of 
 
 ## Step 2: Configure Third-Party Integrations
 
-### 2.1 Gmail SMTP Setup (App Password)
-RecruitReady uses Nodemailer to send verification and password reset emails. Standard Gmail passwords will not work.
+### 2.1 Email Setup: SMTP Blocked on Render Free Tier (Set EMAIL_VERIFICATION_REQUIRED=false)
 
-1. Open your Google Account at [myaccount.google.com](https://myaccount.google.com).
-2. Go to **Security** > **How you sign in to Google** > Ensure **2-Step Verification** is enabled.
-3. Search for or navigate to **App passwords** ([myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords)).
-4. Enter an app name, e.g., `RecruitReady Test Server`, and click **Create**.
-5. Google will display a 16-character passkey (e.g. `abcd efgh ijkl mnop`).
-6. Remove any spaces: `abcdefghijklmnop`.
-7. This gives you:
-   - `EMAIL_HOST`: `smtp.gmail.com`
-   - `EMAIL_PORT`: `587`
-   - `EMAIL_USER`: `your-email@gmail.com`
-   - `EMAIL_PASSWORD`: `abcdefghijklmnop` (the 16-character App Password)
-   - `EMAIL_FROM`: `"RecruitReady Support" <your-email@gmail.com>`
+> [!WARNING]
+> Render free web services block outbound connections on ports 25, 465, and 587. Attempting to connect to `smtp.gmail.com:587` on Render's free tier will trigger `connect ETIMEDOUT` or `ECONNREFUSED`.
+> Reference: [Render Free Web Services SMTP Port Restriction](https://render.com/changelog/free-web-services-will-no-longer-allow-outbound-traffic-to-smtp-ports).
+
+For this free-tier test version, **do not configure SMTP credentials**.
+Instead, configure:
+- `EMAIL_VERIFICATION_REQUIRED=false` on Render.
+- Optionally set `SIGNUP_INVITE_CODE=<your_secret_code>` if you want to restrict registration to invited testers.
+
+**Later Production Option (HTTPS-API Mail Provider):**
+When transitioning beyond the free test deployment, integrate an email service with an HTTPS REST API (such as [Resend](https://resend.com) or SendGrid HTTP API) operating over port 443.
 
 ### 2.2 Google OAuth Setup
 1. Go to [Google Cloud Console](https://console.cloud.google.com/).
@@ -167,18 +179,18 @@ In the **Environment Variables** section, add:
 | `PORT` | `10000` | Port assigned by Render for incoming traffic. |
 | `TRUST_PROXY` | `1` | Enables Express to trust Render's reverse proxy for secure cookies and rate limits. |
 | `CODING_ENABLED` | `false` | Explicitly disables coding features in test deployment. |
+| `EMAIL_VERIFICATION_REQUIRED` | `false` | **Required for test version.** Bypasses SMTP ports blocked on Render free tier. |
+| `SIGNUP_INVITE_CODE` | *`<optional_invite_code>`* | *(Optional)* Restricts registration and first-time social sign-ups to invite holders. |
 | `MONGODB_URI` | `mongodb+srv://...` | Full MongoDB connection string from Step 1.5. |
 | `JWT_SECRET` | *`<32+ character hex>`* | Generate via `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`. |
 | `CLIENT_URL` | `https://recruitready-frontend.onrender.com` | URL of your frontend static site (no trailing slash). |
-| `EMAIL_HOST` | `smtp.gmail.com` | Gmail SMTP host. |
-| `EMAIL_PORT` | `587` | Gmail SMTP submission port with STARTTLS. |
-| `EMAIL_USER` | `your-email@gmail.com` | Your Gmail address. |
-| `EMAIL_PASSWORD` | *`<16-char app password>`* | Google App Password generated in Step 2.1. |
-| `EMAIL_FROM` | `"RecruitReady Support" <your-email@gmail.com>` | Sender display header. |
 | `GOOGLE_CLIENT_ID` | `xxx.apps.googleusercontent.com` | OAuth Client ID from Step 2.2. |
 | `GITHUB_CLIENT_ID` | *`<github_client_id>`* | OAuth Client ID from Step 2.3. |
 | `GITHUB_CLIENT_SECRET` | *`<github_client_secret>`* | OAuth Client Secret from Step 2.3. |
 | `GITHUB_CALLBACK_URL` | `https://recruitready-backend.onrender.com/api/auth/github/callback` | OAuth redirect URL. |
+
+> [!NOTE]
+> `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USER`, `EMAIL_PASSWORD`, and `EMAIL_FROM` are **NOT required** for this test version because `EMAIL_VERIFICATION_REQUIRED=false`. Render free web services block SMTP ports 25, 465, and 587. When transitioning to a production mailer, use an HTTPS REST API provider (e.g. Resend) over port 443.
 
 5. Click **Create Web Service**. Wait for the initial deployment to build and report "Live".
 6. Verify health check by visiting:
