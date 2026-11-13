@@ -38,6 +38,7 @@ coverage/
 *.temp
 test-results/
 playwright-report/
+output/
 
 # Archives & Export Bundles
 *.zip
