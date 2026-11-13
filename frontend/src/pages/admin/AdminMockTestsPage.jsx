@@ -461,7 +461,7 @@ export default function AdminMockTestsPage() {
       );
       setIsDeleteModalOpen(false);
       setDeleteTarget(null);
-      fetchMockTests();
+      fetchTests();
     } catch (err) {
       console.error('Error deleting mock test:', err);
       showToast(

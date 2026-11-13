@@ -154,6 +154,7 @@ export default function AdminCodingPage() {
   // ── View Detail Modal ──
   const [viewProblem, setViewProblem] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [viewLoading, setViewLoading] = useState(false);
 
   // ── Status Toggle Confirmation ──
   const [toggleTarget, setToggleTarget] = useState(null);
