@@ -26,6 +26,7 @@ import {
 import BookmarkButton from '../../components/bookmarks/BookmarkButton.jsx';
 import CodeEditor from '../../components/coding/CodeEditor.jsx';
 import { recordRecentlyViewed } from "../../lib/recentlyViewed.js";
+import { formatStatusLabel } from '../../utils/formatters.js';
 
 const LANGUAGE_OPTIONS = [
   { value: 'javascript', label: 'JavaScript (Node.js)', extension: 'js' },
