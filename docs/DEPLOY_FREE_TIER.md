@@ -114,7 +114,6 @@ This guide provides click-by-click instructions for deploying a test version of 
 For this free-tier test version, **do not configure SMTP credentials**.
 Instead, configure:
 - `EMAIL_VERIFICATION_REQUIRED=false` on Render.
-- Optionally set `SIGNUP_INVITE_CODE=<your_secret_code>` if you want to restrict registration to invited testers.
 
 **Later Production Option (HTTPS-API Mail Provider):**
 When transitioning beyond the free test deployment, integrate an email service with an HTTPS REST API (such as [Resend](https://resend.com) or SendGrid HTTP API) operating over port 443.
@@ -180,7 +179,6 @@ In the **Environment Variables** section, add:
 | `TRUST_PROXY` | `1` | Enables Express to trust Render's reverse proxy for secure cookies and rate limits. |
 | `CODING_ENABLED` | `false` | Explicitly disables coding features in test deployment. |
 | `EMAIL_VERIFICATION_REQUIRED` | `false` | **Required for test version.** Bypasses SMTP ports blocked on Render free tier. |
-| `SIGNUP_INVITE_CODE` | *`<optional_invite_code>`* | *(Optional)* Restricts registration and first-time social sign-ups to invite holders. |
 | `MONGODB_URI` | `mongodb+srv://...` | Full MongoDB connection string from Step 1.5. |
 | `JWT_SECRET` | *`<32+ character hex>`* | Generate via `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`. |
 | `CLIENT_URL` | `https://recruitready-frontend.onrender.com` | URL of your frontend static site (no trailing slash). |

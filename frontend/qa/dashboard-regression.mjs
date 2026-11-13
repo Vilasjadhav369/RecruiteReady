@@ -104,7 +104,7 @@ async function setupMocks(page, user, summary) {
     if (p === "/notifications") return route.fulfill(ok({ notifications: [], pagination: {} }));
     if (p === "/search") return route.fulfill(ok({ companies: [], coding: [], resources: [], mockTests: [], aptitude: [] }));
     if (p === "/goals") return route.fulfill(ok({ goals: summary.preparationGoals || [] }));
-    if (p === "/config/public") return route.fulfill(ok({ inviteCodeRequired: false }));
+    if (p === "/config/public" || p === "/public-config") return route.fulfill(ok({ emailVerificationRequired: true }));
     return route.fulfill(ok({}));
   });
 }

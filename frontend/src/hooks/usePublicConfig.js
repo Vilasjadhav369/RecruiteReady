@@ -27,7 +27,6 @@ export function usePublicConfig() {
     ...query,
     config,
     emailVerificationRequired: config.emailVerificationRequired,
-    inviteCodeRequired: config.inviteCodeRequired,
   };
 }
 

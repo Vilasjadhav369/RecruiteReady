@@ -22,6 +22,5 @@ See `docs/UPGRADE_REPORT.md` for what changed, what was verified, and what remai
 When deployed on Render's free tier with `EMAIL_VERIFICATION_REQUIRED=false`, the frontend dynamically detects runtime capabilities via `GET /api/public-config` (cached via TanStack Query):
 - Hides email resend verification UI on `/verify-email` and `AccountSecurityTab`.
 - Displays `"Password reset by email is off in this test version. Ask the organiser to reset it."` on the forgot password page.
-- Renders the `"Invite code"` field on `/register` and `/consent` when `SIGNUP_INVITE_CODE` is enabled on the backend.
 - Degrades safely to default state if `/api/public-config` is unreachable.
 - Direct outbound SMTP is blocked on Render free tier (see [Render SMTP Port Restriction](https://render.com/changelog/free-web-services-will-no-longer-allow-outbound-traffic-to-smtp-ports)); migration to an HTTPS-API provider (e.g. Resend) is the recommended path for production email.

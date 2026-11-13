@@ -5,7 +5,6 @@ import api from "./api.js";
  */
 export const DEFAULT_PUBLIC_CONFIG = Object.freeze({
   emailVerificationRequired: true,
-  inviteCodeRequired: false,
 });
 
 /**
@@ -21,10 +20,6 @@ export async function getPublicConfig() {
         response.data.emailVerificationRequired !== undefined
           ? Boolean(response.data.emailVerificationRequired)
           : DEFAULT_PUBLIC_CONFIG.emailVerificationRequired,
-      inviteCodeRequired:
-        response.data.inviteCodeRequired !== undefined
-          ? Boolean(response.data.inviteCodeRequired)
-          : DEFAULT_PUBLIC_CONFIG.inviteCodeRequired,
     };
   } catch {
     return DEFAULT_PUBLIC_CONFIG;

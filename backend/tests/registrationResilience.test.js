@@ -16,7 +16,6 @@ describe('Registration Resilience Suite (Mailer Failure Recovery)', () => {
     process.env = { ...originalEnv };
     process.env.JWT_SECRET = TEST_SECRET;
     process.env.EMAIL_VERIFICATION_REQUIRED = 'true';
-    delete process.env.SIGNUP_INVITE_CODE;
     vi.spyOn(securityLogger, 'logSecurityEvent').mockResolvedValue(true);
   });
 

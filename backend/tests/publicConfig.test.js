@@ -20,9 +20,8 @@ describe('GET /api/public-config', () => {
     return app;
   };
 
-  it('returns default config with exactly { emailVerificationRequired, inviteCodeRequired } and nothing else', async () => {
+  it('returns default config with exactly { emailVerificationRequired } and nothing else', async () => {
     delete process.env.EMAIL_VERIFICATION_REQUIRED;
-    delete process.env.SIGNUP_INVITE_CODE;
 
     const app = createTestApp();
     const res = await request(app).get('/api/public-config');
@@ -30,14 +29,12 @@ describe('GET /api/public-config', () => {
     expect(res.status).toBe(200);
     expect(res.body).toEqual({
       emailVerificationRequired: true,
-      inviteCodeRequired: false,
     });
-    expect(Object.keys(res.body).sort()).toEqual(['emailVerificationRequired', 'inviteCodeRequired']);
+    expect(Object.keys(res.body)).toEqual(['emailVerificationRequired']);
   });
 
-  it('reflects EMAIL_VERIFICATION_REQUIRED=false and SIGNUP_INVITE_CODE being set without leaking the code', async () => {
+  it('reflects EMAIL_VERIFICATION_REQUIRED=false', async () => {
     process.env.EMAIL_VERIFICATION_REQUIRED = 'false';
-    process.env.SIGNUP_INVITE_CODE = 'SuperSecretInviteCode123!';
 
     const app = createTestApp();
     const res = await request(app).get('/api/public-config');
@@ -45,10 +42,7 @@ describe('GET /api/public-config', () => {
     expect(res.status).toBe(200);
     expect(res.body).toEqual({
       emailVerificationRequired: false,
-      inviteCodeRequired: true,
     });
-    // Strict leak check: the secret invite code string should never appear in JSON output
-    expect(JSON.stringify(res.body)).not.toContain('SuperSecretInviteCode123!');
-    expect(Object.keys(res.body).sort()).toEqual(['emailVerificationRequired', 'inviteCodeRequired']);
+    expect(Object.keys(res.body)).toEqual(['emailVerificationRequired']);
   });
 });

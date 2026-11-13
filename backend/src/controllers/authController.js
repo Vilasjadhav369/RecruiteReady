@@ -12,8 +12,6 @@ import securityLogger from '../services/securityLogger.js';
 import { reconcileGoalsFromStringArray } from '../services/goalService.js';
 import {
   isEmailVerificationRequired,
-  isInviteCodeRequired,
-  verifyInviteCode,
 } from '../config/features.js';
 import logger from '../utils/logger.js';
 
@@ -95,16 +93,6 @@ export const register = async (req, res, next) => {
         success: false,
         message: 'You must accept the Terms of Service and Privacy Policy to create an account.',
       });
-    }
-
-    if (isInviteCodeRequired()) {
-      const { inviteCode } = req.body;
-      if (!verifyInviteCode(inviteCode)) {
-        return res.status(403).json({
-          success: false,
-          message: 'Invalid invite code',
-        });
-      }
     }
 
     // Optional string fields type validation
@@ -1462,7 +1450,7 @@ export const submitOnboarding = async (req, res, next) => {
  */
 export const recordConsent = async (req, res, next) => {
   try {
-    const { consent, inviteCode } = req.body;
+    const { consent } = req.body;
     if (consent !== true) {
       return res.status(400).json({
         success: false,
@@ -1473,16 +1461,6 @@ export const recordConsent = async (req, res, next) => {
     const user = await User.findById(req.user._id);
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
-    }
-
-    // First-time social sign-ups require matching invite code when configured
-    if (isInviteCodeRequired() && !user.consentAcceptedAt) {
-      if (!verifyInviteCode(inviteCode)) {
-        return res.status(403).json({
-          success: false,
-          message: 'Invalid invite code',
-        });
-      }
     }
 
     user.consentAcceptedAt = new Date();
