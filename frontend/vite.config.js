@@ -16,9 +16,9 @@ export default defineConfig({
             { name: "react-vendor", test: /node_modules[\\/](react|react-dom|react-router|react-router-dom|scheduler)[\\/]/, priority: 20 },
           ],
         },
-        // Drop console.log and debugger calls in production builds
+        // Keep console.error and console.warn visible in production builds while dropping debugger statements
         minify: {
-          compress: { dropConsole: true, dropDebugger: true },
+          compress: { dropDebugger: true },
         },
       },
     },
