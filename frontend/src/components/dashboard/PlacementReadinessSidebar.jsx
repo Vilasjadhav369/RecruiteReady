@@ -6,6 +6,7 @@ import {
   CheckIcon,
 } from "../ui/Icons.jsx";
 import { getGoals, toggleGoal } from "../../services/goalService.js";
+import { isCodingEnabled } from "../../utils/featureFlags.js";
 
 /**
  * Format fallback legacy goal tokens into human-friendly labels.

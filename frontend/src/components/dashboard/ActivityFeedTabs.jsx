@@ -8,6 +8,7 @@ import {
 } from "../ui/Icons.jsx";
 import RecentlyViewed from "./RecentlyViewed.jsx";
 import { formatExecutionStatus } from "../../utils/formatters.js";
+import { isCodingEnabled } from "../../utils/featureFlags.js";
 
 function formatRelativeTime(ts) {
   if (!ts) return "";

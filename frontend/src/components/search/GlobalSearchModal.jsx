@@ -15,6 +15,7 @@ import searchService from '../../services/searchService.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useTheme } from '../../context/ThemeContext.jsx';
 import { useRecentlyViewed } from '../../lib/recentlyViewed.js';
+import { isCodingEnabled } from '../../utils/featureFlags.js';
 
 export function GlobalSearchModal({ isOpen, onClose }) {
   const [query, setQuery] = useState('');

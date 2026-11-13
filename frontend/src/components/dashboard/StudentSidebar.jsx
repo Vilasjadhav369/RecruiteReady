@@ -598,7 +598,7 @@ function StudentSidebar({ mobileOpen, setMobileOpen }) {
         } ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}
         role="dialog"
         aria-modal="true"
-        inert={!mobileOpen ? "" : undefined}
+        inert={!mobileOpen}
         aria-label="Student navigation menu"
       >
         {navContent}

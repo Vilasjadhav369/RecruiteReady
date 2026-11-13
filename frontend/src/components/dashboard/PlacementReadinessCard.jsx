@@ -2,6 +2,7 @@ import React from "react";
 import { Card } from "../ui/Card.jsx";
 import { Button } from "../ui/Button.jsx";
 import { ArrowRightIcon } from "../ui/Icons.jsx";
+import { isCodingEnabled } from "../../utils/featureFlags.js";
 
 /**
  * PlacementReadinessCard — Transparent, data-driven readiness calculation.
