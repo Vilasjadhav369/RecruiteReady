@@ -128,3 +128,35 @@ npm run test:integration
 # Run all integration suites
 npm run test:all
 ```
+
+---
+
+## 8. Frontend Route Smoke Testing (`npm run qa:smoke`)
+
+The smoke test (`frontend/qa/smoke.mjs`) verifies that every student route and admin route in `AppRoutes.jsx` renders cleanly against a local running app without console errors, unhandled exceptions, or triggering the `"This page hit a problem"` ErrorBoundary.
+
+### Prerequisites:
+1. Ensure the backend API server is running on `http://localhost:5000` with seeded test accounts.
+2. Ensure the frontend development server is running:
+   ```bash
+   npm --prefix frontend run dev
+   ```
+
+### Execution Command:
+```bash
+# On Linux / macOS:
+QA_EMAIL="student@test.dev" QA_PASSWORD="YourPassword123!" \
+QA_ADMIN_EMAIL="admin@test.dev" QA_ADMIN_PASSWORD="AdminPassword123!" \
+npm run qa:smoke
+
+# On Windows PowerShell:
+$env:QA_EMAIL="student@test.dev"; $env:QA_PASSWORD="YourPassword123!"
+$env:QA_ADMIN_EMAIL="admin@test.dev"; $env:QA_ADMIN_PASSWORD="AdminPassword123!"
+npm run qa:smoke
+```
+
+If testing a custom URL (e.g. production build via `npm --prefix frontend run preview`), pass `APP_URL`:
+```bash
+APP_URL="http://localhost:4173" QA_EMAIL="student@test.dev" QA_PASSWORD="YourPassword123!" npm run qa:smoke
+```
+
