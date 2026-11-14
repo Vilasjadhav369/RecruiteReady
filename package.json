@@ -6,6 +6,7 @@
   "scripts": {
     "test": "npm --prefix backend test",
     "qa:smoke": "npm --prefix frontend run qa:smoke",
+    "qa:smoke:empty": "npm --prefix frontend run qa:smoke:empty",
     "seed:prod": "npm --prefix backend run seed:prod",
     "test:integration": "npm --prefix backend run test:integration",
     "test:all": "npm --prefix backend run test:all"

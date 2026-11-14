@@ -9,6 +9,7 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "qa:smoke": "node qa/smoke.mjs",
+    "qa:smoke:empty": "node qa/smoke.mjs --empty-db",
     "qa:dashboard": "node qa/dashboard-regression.mjs",
     "gen:dark-theme": "node scripts/gen-dark-theme.mjs"
   },
