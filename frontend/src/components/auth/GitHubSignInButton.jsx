@@ -33,7 +33,7 @@ export function GitHubSignInButton({ disabled = false, onError }) {
       // Determine backend endpoint: relative /api/auth/github works via Vite proxy in dev
       // Fallback directly to localhost:5000 if needed
       const backendUrl = import.meta.env.VITE_API_URL
-        ? `${import.meta.env.VITE_API_URL}/auth/github`
+        ? `${import.meta.env.VITE_API_URL}/api/auth/github`
         : "/api/auth/github";
 
       window.location.href = backendUrl;
