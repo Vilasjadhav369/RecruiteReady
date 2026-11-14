@@ -116,6 +116,35 @@ export default function AdminReviewsPage() {
   const [ratingFilter, setRatingFilter] = useState('');
   const searchTimerRef = useRef(null);
 
+  // ── Client-side search and rating filter over loaded page ──
+  const filteredReviews = useMemo(() => {
+    return (reviews || []).filter((r) => {
+      // Rating filter
+      if (ratingFilter && String(r?.rating) !== String(ratingFilter)) {
+        return false;
+      }
+
+      // Search query (matches student name, title, comment, or college)
+      if (debouncedSearch) {
+        const q = debouncedSearch.toLowerCase().trim();
+        const studentName = getStudentName(r?.user).toLowerCase();
+        const college = (r?.user?.college || '').toLowerCase();
+        const title = (r?.title || '').toLowerCase();
+        const comment = (r?.comment || '').toLowerCase();
+
+        if (
+          !studentName.includes(q) &&
+          !college.includes(q) &&
+          !title.includes(q) &&
+          !comment.includes(q)
+        ) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [reviews, ratingFilter, debouncedSearch]);
+
   // ── Moderation Action Confirmation Modal ──
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
@@ -242,35 +271,6 @@ export default function AdminReviewsPage() {
   useEffect(() => {
     fetchReviews();
   }, [fetchReviews]);
-
-  // ── Client-side search and rating filter over loaded page ──
-  const filteredReviews = useMemo(() => {
-    return reviews.filter((r) => {
-      // Rating filter
-      if (ratingFilter && String(r.rating) !== String(ratingFilter)) {
-        return false;
-      }
-
-      // Search query (matches student name, title, comment, or college)
-      if (debouncedSearch) {
-        const q = debouncedSearch.toLowerCase().trim();
-        const studentName = getStudentName(r.user).toLowerCase();
-        const college = (r.user?.college || '').toLowerCase();
-        const title = (r.title || '').toLowerCase();
-        const comment = (r.comment || '').toLowerCase();
-
-        if (
-          !studentName.includes(q) &&
-          !college.includes(q) &&
-          !title.includes(q) &&
-          !comment.includes(q)
-        ) {
-          return false;
-        }
-      }
-      return true;
-    });
-  }, [reviews, ratingFilter, debouncedSearch]);
 
   const hasActiveFilters = debouncedSearch || ratingFilter;
 
@@ -449,14 +449,9 @@ export default function AdminReviewsPage() {
       <div className="flex flex-wrap items-center gap-1 bg-white border border-slate-200/80 rounded-xl p-1 shadow-xs w-fit">
         {STATUS_TABS.map((tab) => {
           const isActive = activeTab === tab.key;
-          const count =
-            tab.key === 'pending'
-              ? statusCounts.pending
-              : tab.key === 'approved'
-              ? statusCounts.approved
-              : tab.key === 'rejected'
-              ? statusCounts.rejected
-              : statusCounts.all;
+          const count = safeNumber(
+            statusCounts?.[tab.key] ?? (tab.key === 'all' ? statusCounts?.all : 0)
+          );
 
           return (
             <button

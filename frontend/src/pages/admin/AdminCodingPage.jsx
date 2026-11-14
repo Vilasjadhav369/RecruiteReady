@@ -658,7 +658,7 @@ export default function AdminCodingPage() {
                           <p className="text-[11px] text-slate-400 font-mono mt-0.5">
                             /{p.slug || "—"}
                           </p>
-                          {p.topics && p.topics.length > 0 && (
+                          {Array.isArray(p.topics) && p.topics.length > 0 && (
                             <div className="mt-1.5 flex flex-wrap gap-1">
                               {p.topics.slice(0, 3).map((topic, idx) => (
                                 <Badge key={idx} variant="default" size="sm">
@@ -840,7 +840,7 @@ export default function AdminCodingPage() {
                 {/* Meta */}
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
                   <span>{p.category || "—"}</span>
-                  {p.topics && p.topics.length > 0 && (
+                  {Array.isArray(p.topics) && p.topics.length > 0 && (
                     <>
                       <span>•</span>
                       <span>{p.topics.slice(0, 2).join(", ")}</span>
@@ -849,7 +849,7 @@ export default function AdminCodingPage() {
                 </div>
 
                 {/* Languages */}
-                {p.supportedLanguages && p.supportedLanguages.length > 0 && (
+                {Array.isArray(p.supportedLanguages) && p.supportedLanguages.length > 0 && (
                   <div className="flex flex-wrap gap-1">
                     {p.supportedLanguages.map((lang, idx) => (
                       <span
@@ -1265,7 +1265,7 @@ export default function AdminCodingPage() {
             </div>
 
             {/* Topics */}
-            {viewProblem.topics && viewProblem.topics.length > 0 && (
+            {Array.isArray(viewProblem.topics) && viewProblem.topics.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
                 {viewProblem.topics.map((topic, idx) => (
                   <Badge key={idx} variant="default" size="sm">
@@ -1286,7 +1286,7 @@ export default function AdminCodingPage() {
             </div>
 
             {/* Constraints */}
-            {viewProblem.constraints && viewProblem.constraints.length > 0 && (
+            {Array.isArray(viewProblem.constraints) && viewProblem.constraints.length > 0 && (
               <div>
                 <h4 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
                   Constraints
@@ -1377,7 +1377,7 @@ export default function AdminCodingPage() {
             )}
 
             {/* Test Cases (admin view — only show count + public/hidden breakdown) */}
-            {viewProblem.testCases && viewProblem.testCases.length > 0 && (
+            {Array.isArray(viewProblem.testCases) && viewProblem.testCases.length > 0 && (
               <div>
                 <h4 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">
                   Test Cases
@@ -1424,7 +1424,7 @@ export default function AdminCodingPage() {
             )}
 
             {/* Supported Languages */}
-            {viewProblem.supportedLanguages &&
+            {Array.isArray(viewProblem.supportedLanguages) &&
               viewProblem.supportedLanguages.length > 0 && (
                 <div>
                   <h4 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
@@ -1441,7 +1441,7 @@ export default function AdminCodingPage() {
               )}
 
             {/* Companies */}
-            {viewProblem.companies && viewProblem.companies.length > 0 && (
+            {Array.isArray(viewProblem.companies) && viewProblem.companies.length > 0 && (
               <div>
                 <h4 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
                   Companies

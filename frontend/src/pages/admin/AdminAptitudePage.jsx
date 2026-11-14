@@ -624,7 +624,7 @@ export default function AdminAptitudePage() {
                           <p className="text-sm font-medium text-slate-900 line-clamp-2 leading-snug">
                             {q.question || "—"}
                           </p>
-                          {q.tags && q.tags.length > 0 && (
+                          {Array.isArray(q.tags) && q.tags.length > 0 && (
                             <div className="mt-1.5 flex flex-wrap gap-1">
                               {q.tags.slice(0, 3).map((tag, idx) => (
                                 <Badge key={idx} variant="default" size="sm">
@@ -808,7 +808,7 @@ export default function AdminAptitudePage() {
                   </div>
 
                   {/* Tags */}
-                  {q.tags && q.tags.length > 0 && (
+                  {Array.isArray(q.tags) && q.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1">
                       {q.tags.slice(0, 4).map((tag, idx) => (
                         <Badge key={idx} variant="default" size="sm">
@@ -1163,7 +1163,7 @@ export default function AdminAptitudePage() {
             )}
 
             {/* Tags */}
-            {viewQuestion.tags && viewQuestion.tags.length > 0 && (
+            {Array.isArray(viewQuestion.tags) && viewQuestion.tags.length > 0 && (
               <div>
                 <h4 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
                   Tags

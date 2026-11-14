@@ -1061,7 +1061,7 @@ export default function AdminMockTestsPage() {
               onChange={(e) => updateField('company', e.target.value)}
               options={[
                 { value: '', label: 'None (Generic Platform Test)' },
-                ...companies.map((c) => ({
+                ...(Array.isArray(companies) ? companies : []).map((c) => ({
                   value: c._id,
                   label: `${c.name}${!c.isActive ? ' (Inactive)' : ''}`,
                 })),
