@@ -203,11 +203,22 @@ const MOCKED_EMPTY_ADMIN_RESPONSES = {
       filters: { availableActions: [], availableEntityTypes: [] },
     },
   },
+  "/api/notifications/unread-count": {
+    success: true,
+    data: {
+      unreadCount: 0,
+    },
+  },
   "/api/notifications": {
     success: true,
     data: {
-      notifications: [],
+      items: [],
+      page: 1,
+      limit: 20,
+      total: 0,
+      totalPages: 1,
       unreadCount: 0,
+      hasNextPage: false,
     },
   },
 };
