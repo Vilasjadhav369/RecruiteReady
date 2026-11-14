@@ -326,7 +326,7 @@ export default function AdminAuditLogsPage() {
             </>
           ) : (
             <EmptyState
-              icon={ShieldCheckIcon}
+              icon={<ShieldCheckIcon className="w-8 h-8" />}
               title="No Audit Records Found"
               description="No audit events matched your active filters."
               actionLabel="Clear Filters"
