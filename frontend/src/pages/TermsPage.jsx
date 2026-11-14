@@ -60,9 +60,12 @@ export default function TermsPage() {
             <h2 className="text-base font-bold text-slate-900">4. Questions & Feedback</h2>
             <p>
               For questions regarding these terms, or to report bugs and feedback, please contact us at{" "}
-              <span className="font-mono font-semibold text-slate-900 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-300">
-                [CONTACT_EMAIL]
-              </span>.
+              <a
+                href="mailto:recruitready01@gmail.com"
+                className="font-mono font-semibold text-primary hover:underline"
+              >
+                recruitready01@gmail.com
+              </a>.
             </p>
           </section>
         </div>

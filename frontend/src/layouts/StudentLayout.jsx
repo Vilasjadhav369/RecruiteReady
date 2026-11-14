@@ -62,7 +62,7 @@ function StudentLayout() {
                 Test version
               </span>
               <span className="truncate text-slate-700">
-                Evaluation release for candidate testing. Questions and stats may update. Contact: <span className="font-mono font-medium text-slate-900">[CONTACT_EMAIL]</span>
+                Evaluation release for candidate testing. Questions and stats may update. Contact: <a href="mailto:recruitready01@gmail.com" className="font-mono font-medium text-slate-900 underline">recruitready01@gmail.com</a>
               </span>
             </div>
             <button

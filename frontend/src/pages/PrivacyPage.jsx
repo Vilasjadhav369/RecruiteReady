@@ -61,9 +61,12 @@ export default function PrivacyPage() {
             <h2 className="text-base font-bold text-slate-900">4. Contact & Inquiries</h2>
             <p>
               If you have any questions or feedback regarding this test version privacy notice, please email us at{" "}
-              <span className="font-mono font-semibold text-slate-900 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-300">
-                [CONTACT_EMAIL]
-              </span>.
+              <a
+                href="mailto:recruitready01@gmail.com"
+                className="font-mono font-semibold text-primary hover:underline"
+              >
+                recruitready01@gmail.com
+              </a>.
             </p>
           </section>
         </div>
