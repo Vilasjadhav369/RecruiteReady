@@ -110,13 +110,13 @@ function Navbar() {
             {isAuthenticated ? (
               <div className="flex items-center gap-2.5">
                 <Link
-                  to="/dashboard"
+                  to={user?.role === "admin" ? "/admin" : "/dashboard"}
                   className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 hover:border-primary/50 transition-colors no-underline text-xs font-semibold text-slate-800"
                 >
                   <div className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-[10px] font-bold">
-                    {user?.firstName?.[0]?.toUpperCase() ?? "S"}
+                    {user?.firstName?.[0]?.toUpperCase() ?? (user?.role === "admin" ? "A" : "S")}
                   </div>
-                  <span>Dashboard</span>
+                  <span>{user?.role === "admin" ? "Admin Console" : "Dashboard"}</span>
                 </Link>
 
                 <Button

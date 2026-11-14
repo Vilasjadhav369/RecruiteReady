@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import ContinueCard from "../components/dashboard/ContinueCard.jsx";
 import WelcomeTour from "../components/dashboard/WelcomeTour.jsx";
@@ -27,7 +28,7 @@ import ErrorState from "../components/ui/ErrorState.jsx";
  * Target: Visible with 0 page scroll at 1440x900 and 1920x1080; at most a short scroll on 1366x768.
  */
 function DashboardPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -51,6 +52,10 @@ function DashboardPage() {
   }, [fetchSummary]);
 
   // Loading skeleton
+  if (!authLoading && user?.role === "admin") {
+    return <Navigate to="/admin" replace />;
+  }
+
   if (loading) {
     return (
       <div

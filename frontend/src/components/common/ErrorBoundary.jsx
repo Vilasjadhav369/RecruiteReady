@@ -47,7 +47,11 @@ class ErrorBoundary extends Component {
             Reload page
           </button>
           <a
-            href="/dashboard"
+            href={
+              typeof window !== "undefined" && window.location.pathname.startsWith("/admin")
+                ? "/admin"
+                : "/dashboard"
+            }
             className="px-4 py-2 rounded-lg border border-border bg-card text-sm font-semibold text-ink hover:bg-primary-soft transition-colors"
           >
             Go to dashboard

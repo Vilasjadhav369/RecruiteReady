@@ -315,6 +315,8 @@ export const login = async (req, res, next) => {
  * Retrieves current authenticated user.
  */
 export const getCurrentUser = async (req, res) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.set('Pragma', 'no-cache');
   const userObj = req.user?.toObject ? req.user.toObject() : { ...req.user };
   delete userObj.password;
 

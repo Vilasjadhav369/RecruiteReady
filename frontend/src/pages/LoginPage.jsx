@@ -7,6 +7,7 @@ import { Button } from "../components/ui/Button.jsx";
 import { Card } from "../components/ui/Card.jsx";
 import GoogleSignInButton from "../components/auth/GoogleSignInButton.jsx";
 import GitHubSignInButton from "../components/auth/GitHubSignInButton.jsx";
+import { resolvePostLoginRedirect } from "../utils/authRedirect.js";
 
 const JOURNEY_STEPS = [
   { name: "Aptitude", detail: "Quantitative & logical foundation" },
@@ -29,7 +30,6 @@ function LoginPage() {
 
   // Redirect destination after successful login
   const returnTo = new URLSearchParams(location.search).get("returnTo");
-  const from = returnTo || location.state?.from?.pathname || "/dashboard";
 
   // Check URL query parameters for OAuth error messages (e.g. from GitHub callback)
   useEffect(() => {
@@ -55,15 +55,8 @@ function LoginPage() {
     try {
       const res = await login({ email: email.trim(), password });
       const user = res?.data?.user;
-      if (user?.role === "admin") {
-      navigate("/admin", { replace: true });
-    } else if (!user?.consentAcceptedAt) {
-      navigate("/consent", { replace: true });
-    } else if (!user?.onboardingCompleted) {
-        navigate("/onboarding", { replace: true });
-      } else {
-        navigate(from, { replace: true });
-      }
+      const target = resolvePostLoginRedirect(user, returnTo, location.state?.from?.pathname);
+      navigate(target, { replace: true });
     } catch (err) {
       const msg =
         err.response?.data?.message || "Invalid email or password. Please verify and try again.";
@@ -75,13 +68,8 @@ function LoginPage() {
 
   const handleGoogleSuccess = (res) => {
     const user = res?.data?.user;
-    if (user?.role === "admin") {
-      navigate("/admin", { replace: true });
-    } else if (!user?.onboardingCompleted) {
-      navigate("/onboarding", { replace: true });
-    } else {
-      navigate(from, { replace: true });
-    }
+    const target = resolvePostLoginRedirect(user, returnTo, location.state?.from?.pathname);
+    navigate(target, { replace: true });
   };
 
   return (

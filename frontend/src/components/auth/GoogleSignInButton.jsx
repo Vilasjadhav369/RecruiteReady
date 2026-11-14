@@ -75,6 +75,13 @@ export function GoogleSignInButton({ onSuccess, onError, disabled = false }) {
     [googleLogin, onSuccess, onError]
   );
 
+  const callbackRef = useRef(handleCredentialResponse);
+  const initializedRef = useRef(false);
+
+  useEffect(() => {
+    callbackRef.current = handleCredentialResponse;
+  }, [handleCredentialResponse]);
+
   useEffect(() => {
     if (!isConfigured) {
       return;
@@ -82,12 +89,15 @@ export function GoogleSignInButton({ onSuccess, onError, disabled = false }) {
 
     const initGsi = () => {
       if (window.google?.accounts?.id && buttonContainerRef.current) {
-        window.google.accounts.id.initialize({
-          client_id: clientId,
-          callback: handleCredentialResponse,
-          auto_select: false,
-          cancel_on_tap_outside: true,
-        });
+        if (!initializedRef.current) {
+          window.google.accounts.id.initialize({
+            client_id: clientId,
+            callback: (res) => callbackRef.current(res),
+            auto_select: false,
+            cancel_on_tap_outside: true,
+          });
+          initializedRef.current = true;
+        }
 
         buttonContainerRef.current.innerHTML = "";
         window.google.accounts.id.renderButton(buttonContainerRef.current, {
@@ -120,7 +130,7 @@ export function GoogleSignInButton({ onSuccess, onError, disabled = false }) {
         clearTimeout(timeout);
       };
     }
-  }, [isConfigured, clientId, handleCredentialResponse]);
+  }, [isConfigured, clientId]);
 
   const handlePlaceholderClick = () => {
     if (!isConfigured) {

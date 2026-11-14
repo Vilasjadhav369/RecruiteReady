@@ -70,11 +70,11 @@ function MobileMenu({ isOpen, onClose }) {
               </div>
 
               <Link
-                to="/dashboard"
+                to={user?.role === "admin" ? "/admin" : "/dashboard"}
                 onClick={onClose}
                 className="min-h-[44px] flex items-center px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-800 hover:bg-slate-100 transition-colors no-underline"
               >
-                Go to Student Dashboard
+                {user?.role === "admin" ? "Go to Admin Portal" : "Go to Student Dashboard"}
               </Link>
 
               <button

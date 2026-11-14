@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.jsx";
+import { resolvePostLoginRedirect } from "../../utils/authRedirect.js";
 
 /**
  * AuthCallbackPage — Handles client-side receipt of OAuth redirect sessions (e.g. GitHub).
@@ -36,15 +37,9 @@ export function AuthCallbackPage() {
     const processAuth = async () => {
       try {
         const user = await loginWithToken(token);
-        if (user?.role === "admin") {
-          navigate("/admin", { replace: true });
-        } else if (!user?.consentAcceptedAt) {
-          navigate("/consent", { replace: true });
-        } else if (!user?.onboardingCompleted) {
-          navigate("/onboarding", { replace: true });
-        } else {
-          navigate("/dashboard", { replace: true });
-        }
+        const returnTo = params.get("returnTo");
+        const target = resolvePostLoginRedirect(user, returnTo);
+        navigate(target, { replace: true });
       } catch (err) {
         const msg =
           err.response?.data?.message ||

@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet, useLocation, Navigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext.jsx";
 import StudentSidebar from "../components/dashboard/StudentSidebar.jsx";
 import DashboardHeader from "../components/dashboard/DashboardHeader.jsx";
 
@@ -19,6 +20,12 @@ function StudentLayout() {
     }
   });
   const location = useLocation();
+  const { user, loading } = useAuth();
+
+  // Admins visiting /dashboard are routed to /admin
+  if (!loading && user?.role === "admin" && location.pathname === "/dashboard") {
+    return <Navigate to="/admin" replace />;
+  }
 
   const handleDismissBanner = () => {
     setBannerDismissed(true);

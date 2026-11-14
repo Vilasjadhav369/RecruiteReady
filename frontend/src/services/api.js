@@ -67,6 +67,11 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    // Prevent 304 conditional cache on auth/session endpoints
+    if (config.url && config.url.includes("/auth/")) {
+      config.headers["Cache-Control"] = "no-cache";
+      config.headers["Pragma"] = "no-cache";
+    }
     return config;
   },
   (error) => Promise.reject(error)
