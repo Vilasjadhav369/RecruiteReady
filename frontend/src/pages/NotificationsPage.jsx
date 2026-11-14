@@ -119,7 +119,45 @@ export function NotificationsPage() {
         limit: 15,
         unreadOnly: filter === 'unread',
       });
-      setData(res || { items: [], page: 1, limit: 15, total: 0, totalPages: 1, unreadCount: 0 });
+      const resolvedItems = Array.isArray(res?.items)
+        ? res.items
+        : Array.isArray(res?.notifications)
+        ? res.notifications
+        : Array.isArray(res)
+        ? res
+        : [];
+      const resolvedTotal = typeof res?.total === 'number'
+        ? res.total
+        : typeof res?.pagination?.total === 'number'
+        ? res.pagination.total
+        : resolvedItems.length;
+      const resolvedLimit = typeof res?.limit === 'number'
+        ? res.limit
+        : typeof res?.pagination?.limit === 'number'
+        ? res.pagination.limit
+        : 15;
+      const resolvedPage = typeof res?.page === 'number'
+        ? res.page
+        : typeof res?.pagination?.page === 'number'
+        ? res.pagination.page
+        : page;
+      const resolvedTotalPages = typeof res?.totalPages === 'number'
+        ? res.totalPages
+        : typeof res?.pagination?.pages === 'number'
+        ? res.pagination.pages
+        : Math.max(1, Math.ceil(resolvedTotal / (resolvedLimit || 15)));
+      const resolvedUnreadCount = typeof res?.unreadCount === 'number'
+        ? res.unreadCount
+        : 0;
+
+      setData({
+        items: resolvedItems,
+        page: resolvedPage,
+        limit: resolvedLimit,
+        total: resolvedTotal,
+        totalPages: resolvedTotalPages,
+        unreadCount: resolvedUnreadCount,
+      });
     } catch (err) {
       setError('Unable to load notifications. Please check your network connection.');
       console.error('[NotificationsPage] Error fetching notifications:', err);
@@ -138,13 +176,16 @@ export function NotificationsPage() {
 
     try {
       await notificationService.markNotificationAsRead(item._id);
-      setData((prev) => ({
-        ...prev,
-        unreadCount: Math.max(0, prev.unreadCount - 1),
-        items: prev.items.map((n) =>
-          n._id === item._id ? { ...n, isRead: true, readAt: new Date() } : n
-        ),
-      }));
+      setData((prev) => {
+        const prevItems = Array.isArray(prev?.items) ? prev.items : [];
+        return {
+          ...prev,
+          unreadCount: Math.max(0, (prev?.unreadCount || 0) - 1),
+          items: prevItems.map((n) =>
+            n._id === item._id ? { ...n, isRead: true, readAt: new Date() } : n
+          ),
+        };
+      });
       invalidateUnreadCount();
     } catch (err) {
       console.error('[NotificationsPage] Failed to mark as read:', err);
@@ -152,15 +193,18 @@ export function NotificationsPage() {
   };
 
   const handleMarkAllAsRead = async () => {
-    if (data.unreadCount === 0 || markingAll) return;
+    if ((data?.unreadCount || 0) === 0 || markingAll) return;
     setMarkingAll(true);
     try {
       await notificationService.markAllAsRead();
-      setData((prev) => ({
-        ...prev,
-        unreadCount: 0,
-        items: prev.items.map((n) => ({ ...n, isRead: true, readAt: new Date() })),
-      }));
+      setData((prev) => {
+        const prevItems = Array.isArray(prev?.items) ? prev.items : [];
+        return {
+          ...prev,
+          unreadCount: 0,
+          items: prevItems.map((n) => ({ ...n, isRead: true, readAt: new Date() })),
+        };
+      });
       invalidateUnreadCount();
       if (filter === 'unread') {
         fetchNotifications();
@@ -176,13 +220,16 @@ export function NotificationsPage() {
     e?.stopPropagation();
     try {
       await notificationService.deleteNotification(id);
-      const target = data.items.find((n) => n._id === id);
-      setData((prev) => ({
-        ...prev,
-        total: Math.max(0, prev.total - 1),
-        unreadCount: target && !target.isRead ? Math.max(0, prev.unreadCount - 1) : prev.unreadCount,
-        items: prev.items.filter((n) => n._id !== id),
-      }));
+      setData((prev) => {
+        const prevItems = Array.isArray(prev?.items) ? prev.items : [];
+        const target = prevItems.find((n) => n._id === id);
+        return {
+          ...prev,
+          total: Math.max(0, (prev?.total ?? prevItems.length) - 1),
+          unreadCount: target && !target.isRead ? Math.max(0, (prev?.unreadCount || 0) - 1) : (prev?.unreadCount || 0),
+          items: prevItems.filter((n) => n._id !== id),
+        };
+      });
     } catch (err) {
       console.error('[NotificationsPage] Failed to delete notification:', err);
     }
@@ -196,6 +243,12 @@ export function NotificationsPage() {
       navigate(item.link);
     }
   };
+
+  const items = Array.isArray(data?.items) ? data.items : [];
+  const unreadCount = typeof data?.unreadCount === 'number' ? data.unreadCount : 0;
+  const currentPage = typeof data?.page === 'number' ? data.page : 1;
+  const totalPages = typeof data?.totalPages === 'number' ? data.totalPages : 1;
+  const totalItems = typeof data?.total === 'number' ? data.total : items.length;
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-12">
@@ -215,7 +268,7 @@ export function NotificationsPage() {
 
         {/* Global Actions */}
         <div className="flex items-center gap-2">
-          {data.unreadCount > 0 && (
+          {unreadCount > 0 && (
             <Button
               variant="outline"
               size="sm"
@@ -270,7 +323,7 @@ export function NotificationsPage() {
           }`}
         >
           <span>Unread</span>
-          {data.unreadCount > 0 && (
+          {unreadCount > 0 && (
             <span
               className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
                 filter === 'unread'
@@ -278,7 +331,7 @@ export function NotificationsPage() {
                   : 'bg-primary-tint text-primary-dark'
               }`}
             >
-              {data.unreadCount}
+              {unreadCount}
             </span>
           )}
         </button>
@@ -296,7 +349,7 @@ export function NotificationsPage() {
             </Button>
           </CardContent>
         </Card>
-      ) : loading && data.items.length === 0 ? (
+      ) : loading && items.length === 0 ? (
         <Card>
           <CardContent className="p-6 space-y-4">
             {[1, 2, 3, 4].map((i) => (
@@ -311,7 +364,7 @@ export function NotificationsPage() {
             ))}
           </CardContent>
         </Card>
-      ) : data.items.length === 0 ? (
+      ) : items.length === 0 ? (
         <Card>
           <CardContent className="py-16 text-center space-y-3">
             <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 mx-auto flex items-center justify-center">
@@ -335,7 +388,7 @@ export function NotificationsPage() {
       ) : (
         <Card className="overflow-hidden">
           <ul className="divide-y divide-slate-100 list-none m-0 p-0" role="list">
-            {data.items.map((item) => (
+            {items.map((item) => (
               <li
                 key={item._id}
                 onClick={() => handleItemClick(item)}
@@ -412,11 +465,11 @@ export function NotificationsPage() {
           </ul>
 
           {/* Pagination Controls */}
-          {data.totalPages > 1 && (
+          {totalPages > 1 && (
             <div className="px-5 py-3.5 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
               <span className="text-xs text-slate-500">
-                Page <span className="font-semibold text-slate-800">{data.page}</span> of{' '}
-                <span className="font-semibold text-slate-800">{data.totalPages}</span> ({data.total} total)
+                Page <span className="font-semibold text-slate-800">{currentPage}</span> of{' '}
+                <span className="font-semibold text-slate-800">{totalPages}</span> ({totalItems} total)
               </span>
 
               <div className="flex items-center gap-2">
@@ -424,7 +477,7 @@ export function NotificationsPage() {
                   variant="outline"
                   size="sm"
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={data.page <= 1 || loading}
+                  disabled={currentPage <= 1 || loading}
                   iconLeft={<ChevronLeftIcon className="w-3.5 h-3.5" />}
                 >
                   Previous
@@ -432,8 +485,8 @@ export function NotificationsPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setPage((p) => Math.min(data.totalPages, p + 1))}
-                  disabled={data.page >= data.totalPages || loading}
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage >= totalPages || loading}
                   iconRight={<ChevronRightIcon className="w-3.5 h-3.5" />}
                 >
                   Next
