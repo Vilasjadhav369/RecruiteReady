@@ -9,12 +9,12 @@ import { register } from '../src/controllers/authController.js';
 
 describe('Registration Resilience Suite (Mailer Failure Recovery)', () => {
   const originalEnv = { ...process.env };
-  const TEST_SECRET = 'test-secret-key-that-is-at-least-32-chars-long';
+ const TEST_JWT_KEY = 'test-key-for-unit-tests-only-not-production';
 
   beforeEach(() => {
     vi.restoreAllMocks();
     process.env = { ...originalEnv };
-    process.env.JWT_SECRET = TEST_SECRET;
+     process.env.JWT_SECRET = TEST_JWT_KEY;
     process.env.EMAIL_VERIFICATION_REQUIRED = 'true';
     vi.spyOn(securityLogger, 'logSecurityEvent').mockResolvedValue(true);
   });

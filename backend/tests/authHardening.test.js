@@ -8,9 +8,8 @@ import User from '../src/models/User.js';
 import { generateToken, verifyToken } from '../src/utils/jwt.js';
 
 describe('Auth Hardening Suite (Hermetic Mocks)', () => {
-  const TEST_SECRET = 'test-secret-key-that-is-at-least-32-chars-long';
-  process.env.JWT_SECRET = TEST_SECRET;
-
+ const TEST_JWT_KEY = 'test-key-for-unit-tests-only-not-production';
+ process.env.JWT_SECRET = TEST_JWT_KEY;
   beforeEach(() => {
     vi.restoreAllMocks();
   });
@@ -19,7 +18,7 @@ describe('Auth Hardening Suite (Hermetic Mocks)', () => {
     // Generate token WITHOUT sessionId
     const tokenWithoutSession = jwt.sign(
       { id: '507f1f77bcf86cd799439011', role: 'student' },
-      TEST_SECRET,
+     TEST_JWT_KEY,
       { algorithm: 'HS256', expiresIn: '1h' }
     );
 
@@ -111,7 +110,7 @@ describe('Auth Hardening Suite (Hermetic Mocks)', () => {
   it('optionalAuth rejects tokens without sessionId with 401, but allows unauthenticated visitors', async () => {
     const tokenWithoutSession = jwt.sign(
       { id: '507f1f77bcf86cd799439011', role: 'student' },
-      TEST_SECRET,
+       TEST_JWT_KEY,
       { algorithm: 'HS256', expiresIn: '1h' }
     );
 

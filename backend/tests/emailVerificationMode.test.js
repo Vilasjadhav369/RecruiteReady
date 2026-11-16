@@ -18,12 +18,12 @@ import bcrypt from 'bcryptjs';
 
 describe('EMAIL_VERIFICATION_REQUIRED Suite', () => {
   const originalEnv = { ...process.env };
-  const TEST_SECRET = 'test-secret-key-that-is-at-least-32-chars-long';
+  const TEST_JWT_KEY = 'test-key-for-unit-tests-only-not-production';
 
   beforeEach(() => {
     vi.restoreAllMocks();
     process.env = { ...originalEnv };
-    process.env.JWT_SECRET = TEST_SECRET;
+    process.env.JWT_SECRET = TEST_JWT_KEY;
     vi.spyOn(securityLogger, 'logSecurityEvent').mockResolvedValue(true);
   });
 

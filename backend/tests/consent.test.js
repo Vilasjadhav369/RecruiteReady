@@ -10,8 +10,8 @@ import protect from '../src/middleware/auth.js';
 import { generateToken } from '../src/utils/jwt.js';
 
 describe('Test-Version Consent Suite (Hermetic Unit Tests)', () => {
-  const TEST_SECRET = 'test-secret-key-that-is-at-least-32-chars-long';
-  process.env.JWT_SECRET = TEST_SECRET;
+ const TEST_JWT_KEY = 'test-key-for-unit-tests-only-not-production';
+ process.env.JWT_SECRET = TEST_JWT_KEY;
 
   beforeEach(() => {
     vi.restoreAllMocks();
