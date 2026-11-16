@@ -1,0 +1,12 @@
+[allowlist]
+description = "Audited false positives: test fixtures and business constants"
+
+paths = [
+  '''backend/tests/.*''',
+]
+
+regexes = [
+  '''test-key-for-unit-tests-only-not-production''',
+  '''test-secret-key-that-is-at-least-32-chars-long''',
+  '''aptitude_80_accuracy''',
+]
